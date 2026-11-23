@@ -15,6 +15,7 @@ import sys
 import threading
 import time
 import urllib.request
+from pathlib import Path
 
 import pytest
 
@@ -1128,9 +1129,11 @@ def test_sgs_topo_e_sgs_foot_alternam(ctx):
     assert rodar(ctx, "sgs topo talvez")["ok"] is False
 
 
-def test_a_tela_pelo_django_python_manage_py_runserver(tmp_path):
-    """`python manage.py runserver` (pasta Gerador_Sistemas) serve a MESMA tela do tela_prompt.py: a view do
-    Django repassa tudo para atender() — página, comandos, Host 127.0.0.1, POST só em JSON, gzip e o início."""
+@pytest.mark.parametrize("pasta", [tela.RAIZ_PROJETO, tela.AQUI], ids=["da raiz do projeto", "de Gerador_Sistemas"])
+def test_a_tela_pelo_django_python_manage_py_runserver(tmp_path, pasta):
+    """`python manage.py runserver` (da raiz do projeto ou de Gerador_Sistemas) serve a MESMA tela do
+    tela_prompt.py: a view do Django repassa tudo para atender() — página, comandos, Host 127.0.0.1, POST só em
+    JSON, gzip e o início."""
     import gzip
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
@@ -1140,7 +1143,7 @@ def test_a_tela_pelo_django_python_manage_py_runserver(tmp_path):
     ambiente.pop("DJANGO_SETTINGS_MODULE", None)
     ambiente.pop(tela.MARCA_TELA, None)              # (se a bateria rodar de dentro da tela, ela marca o ambiente)
     processo = subprocess.Popen([sys.executable, "manage.py", "runserver", f"127.0.0.1:{porta}", "--noreload",
-                                 "--sem-abrir"], cwd=tela.AQUI, env=ambiente, stdout=subprocess.PIPE,
+                                 "--sem-abrir"], cwd=pasta, env=ambiente, stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT, text=True)
     try:
         for _ in range(150):                                               # até 30 s para subir
@@ -1175,16 +1178,32 @@ def test_a_tela_pelo_django_python_manage_py_runserver(tmp_path):
     assert "Sistemas gerados em:" in saida and str(tmp_path / "saida") in saida
 
 
-def test_runserver_do_sgs_abre_na_porta_6100():
+@pytest.mark.parametrize("pasta", [tela.RAIZ_PROJETO, tela.AQUI], ids=["da raiz do projeto", "de Gerador_Sistemas"])
+def test_runserver_do_sgs_abre_na_porta_6100(pasta):
     """Sem porta, o runserver do SGS usa a 6100 (o 00), como o tela_prompt.py — e aceita --sem-abrir."""
     ambiente = {k: v for k, v in os.environ.items() if k != "DJANGO_SETTINGS_MODULE"}
     r = subprocess.run([sys.executable, "manage.py", "shell", "-c",
                         "from sgs_web.management.commands.runserver import Command as C; print(C.default_port)"],
-                       cwd=tela.AQUI, env=ambiente, capture_output=True, text=True, timeout=60)
+                       cwd=pasta, env=ambiente, capture_output=True, text=True, timeout=60)
     assert r.stdout.strip().splitlines()[-1] == "6100", r.stderr          # (o shell do Django 6 avisa antes)
-    ajuda = subprocess.run([sys.executable, "manage.py", "runserver", "--help"], cwd=tela.AQUI, env=ambiente,
+    ajuda = subprocess.run([sys.executable, "manage.py", "runserver", "--help"], cwd=pasta, env=ambiente,
                            capture_output=True, text=True, timeout=60).stdout
     assert "--sem-abrir" in ajuda
+
+
+@pytest.mark.parametrize("pasta", [tela.RAIZ_PROJETO, tela.AQUI], ids=["da raiz do projeto", "de Gerador_Sistemas"])
+def test_manage_py_acha_o_venv_do_projeto_sem_ativar(pasta):
+    """Terminal novo (sem o .venv ativado): o python3 do sistema não tem Django — o manage.py roda de novo com o
+    python do .venv do projeto (Gerador_Sistemas/.venv)."""
+    sistema = Path("/usr/bin/python3")
+    if not sistema.exists() or subprocess.run([str(sistema), "-c", "import django"], capture_output=True).returncode == 0:
+        pytest.skip("aqui o python do sistema já tem Django (ou não existe)")
+    ambiente = {k: v for k, v in os.environ.items() if k not in ("VIRTUAL_ENV", "DJANGO_SETTINGS_MODULE")}
+    ambiente["PATH"] = "/usr/local/bin:/usr/bin:/bin"
+    r = subprocess.run([str(sistema), "manage.py", "runserver", "--help"], cwd=pasta, env=ambiente,
+                       capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0 and "--sem-abrir" in r.stdout, r.stderr
+    assert "usando o do projeto" in r.stderr and ".venv/bin/python" in r.stderr
 
 
 def test_runserver_do_sgs_dentro_da_propria_tela_nao_abre_outro(tmp_path):

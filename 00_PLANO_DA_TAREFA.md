@@ -142,6 +142,13 @@ cd "Treino_Prova/exercicios/ex01_strategy_frete" && ALVO=exercicio ../../../.ven
       janela só "SGS"; prompt `~\caminho>` numa linha; caixas do rodapé numa linha, sem cor
 - [x] Janela de app num perfil só do SGS (sem ícone de extensão e sem ⋮), sempre com `pwa=true` ao abrir;
       Alt+Enter maximiza/volta; `sgs topo` (abre oculto) e `sgs foot` alternam o topo e as caixas; sem botão executar
-- [x] A tela também pelo Django: `cd Gerador_Sistemas && python manage.py runserver` (porta 6100, mesmo início e
+- [x] A tela também pelo Django: `python manage.py runserver` da raiz do projeto (o `manage.py` da raiz repassa
+      para o `Gerador_Sistemas/manage.py`, que também funciona de lá; sem o `.venv` ativado, os dois rodam de novo
+      com o python do `.venv`) (porta 6100, mesmo início e
       janela); as rotas saíram do http.server para `tela_prompt.atender()`, usada pelos dois servidores; a tela abre
       sem topo e sem caixas; `sgs topo` e `sgs foot` são sempre as duas primeiras sugestões ao digitar `sgs`
+- [x] O `.venv` mora em `Gerador_Sistemas/.venv` (recriado pelo `Gerador_Sistemas/requirements.txt`); na raiz, um
+      atalho `.venv` para ele (ativar e runserver nas duas pastas)
+- [x] requirements.txt dos sistemas gerados: o Python exigido (3.12+, conferido pelo iniciar.sh), o Django e o que
+      ele usa, os testes e as dependências pontuais de cada sistema, cada linha com o porquê; o `iniciar.sh deps`
+      confere TODAS (pip --no-index, sem internet) em vez de só Django/pytest

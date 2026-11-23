@@ -255,6 +255,25 @@ def test_django_sai_pronto_para_rodar(tmp_path):
     assert "web/.env" in (destino / ".gitignore").read_text(encoding="utf-8")
 
 
+def test_requirements_tem_o_python_o_django_os_testes_e_os_pontuais():
+    """O requirements.txt de cada sistema: o Python exigido (cabeçalho), o Django e o que ele usa, os testes e as
+    dependências PONTUAIS deste sistema (pelas opções escolhidas) — cada linha com o porquê."""
+    baseline = g.montar_arquivos(g.montar_spec(dominio="hotel", django=True, web={"seguranca": "baseline"}), "x")
+    req = baseline["requirements.txt"]
+    assert "# Python: 3.12 ou mais novo" in req and "python3 --version" in req
+    for linha in ("Django>=6.0,<7.0", "asgiref>=3.9.1", "sqlparse>=0.5.0", 'tzdata; sys_platform == "win32"',
+                  "pytest>=8.0", "pytest-django>=4.9", "argon2-cffi>=23.1"):
+        assert re.search(rf"^{re.escape(linha)} +# \S", req, re.M), linha           # cada uma com o porquê
+    assert req.index("# --- deste sistema ---") < req.index("argon2-cffi")
+    basica = g.montar_arquivos(g.montar_spec(dominio="biblioteca", django=True), "x")["requirements.txt"]
+    assert "argon2" not in basica and "nenhuma a mais" in basica               # pontual só quando a opção pede
+    nucleo = g.montar_arquivos(g.montar_spec(dominio="academia"), "x")["requirements.txt"]
+    assert "Django" not in nucleo and "pytest>=8.0" in nucleo and "pytest-django" not in nucleo
+    iniciar = baseline["iniciar.sh"]
+    assert "sys.version_info < (3, 12)" in iniciar                             # confere o Python antes do .venv
+    assert "--no-index" in iniciar and 'import django, pytest, pytest_django' not in iniciar   # confere TODAS
+
+
 @pytest.mark.parametrize("django", [False, True])
 def test_gitignore_tem_o_minimo_das_instrucoes_django(tmp_path, django):
     destino, _ = g.gerar(dominio="hotel", padroes=["strategy"], django=django, saida=tmp_path)

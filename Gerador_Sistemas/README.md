@@ -9,6 +9,7 @@ temas, `.env`, migrations, superusuário, PWA). **A mesma entrada gera sempre a 
 |---|---|
 | [`tela_prompt.py`](tela_prompt.py) | o **SGS**: tela estilo terminal no navegador (porta 6100); as rotas em `atender()` |
 | [`manage.py`](manage.py) · [`sgs_web/`](sgs_web/) | a mesma tela pelo **Django**: `python manage.py runserver` (settings mínimo, uma view que chama `atender()`) |
+| [`requirements.txt`](requirements.txt) · `.venv/` | o ambiente do projeto (Python 3.12+, Django, pytest, pytest-django, argon2): o `.venv` mora aqui; na raiz há um atalho para ele |
 | [`gerar_sistema.py`](gerar_sistema.py) | o gerador (também roda sozinho, pela linha de comando) |
 | [`sgs_terminal.py`](sgs_terminal.py) · [`sgs_comand.py`](sgs_comand.py) · [`sgs_perguntas.py`](sgs_perguntas.py) | terminal da tela · help numerado · perguntas antes de gerar |
 | [`temas_web.py`](temas_web.py) | cores dos 10 temas × 6 tons (pasta `temas/`) e das 20 paletas, com contraste WCAG |
@@ -24,16 +25,28 @@ temas, `.env`, migrations, superusuário, PWA). **A mesma entrada gera sempre a 
 
 ## 1. Rodar o SGS
 
-No WSL, com o `.venv` ativado — pelo **Django**:
+No WSL, na raiz do projeto, com o `.venv` ativado — pelo **Django**:
 
 ```bash
 source .venv/bin/activate
-cd Gerador_Sistemas
 python manage.py runserver              # http://127.0.0.1:6100 (o 00) e abre a janela de app
 python manage.py runserver --sem-abrir  # só sobe o servidor · runserver 6150 = outra porta
 ```
 
-ou, sem Django (só a biblioteca padrão), da raiz do projeto: `python Gerador_Sistemas/tela_prompt.py`.
+(o `manage.py` da raiz só repassa para o `Gerador_Sistemas/manage.py`; de dentro de `Gerador_Sistemas/` o mesmo
+comando também funciona) ou, sem Django (só a biblioteca padrão): `python Gerador_Sistemas/tela_prompt.py`.
+
+O **`.venv` mora em `Gerador_Sistemas/.venv`** (tudo do projeto numa pasta só; fora dela ficam as aulas) e é
+criado pelo [`requirements.txt`](requirements.txt) desta pasta:
+
+```bash
+cd Gerador_Sistemas && python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
+```
+
+Na raiz do projeto há um **atalho** `.venv` → `Gerador_Sistemas/.venv` (link simbólico, fora do git), então
+`source .venv/bin/activate` e `python manage.py runserver` valem nas duas pastas. Sem ativar (terminal novo: só
+existe o `python3` do sistema, sem Django), `python3 manage.py runserver` também funciona — os dois `manage.py`
+percebem e rodam de novo com o python do `.venv`.
 Os dois servem **a mesma tela**: as rotas moram em `tela_prompt.atender()`, que o `http.server` e a view do Django
 (`sgs_web/`: settings mínimo, sem banco nem sessão, uma rota só) chamam do mesmo jeito. No Django, o `runserver`
 do SGS usa a porta 6100 quando nenhuma é dada, faz o mesmo início (estilo cmd, sites de uma tela anterior

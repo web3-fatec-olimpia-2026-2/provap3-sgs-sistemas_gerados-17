@@ -64,7 +64,15 @@ MARCADOR = ".gerado_por_gerar_sistema"
 PASTA_PADRAO = Path(__file__).resolve().parent / "sistemas_gerados"
 REFERENCIA_GOF = "referencias/wikipedia_padrao_de_projeto_de_software.html"
 # Dependências de um sistema gerado com Django (testado com Django 6.1, pytest 9 e pytest-django 4.14).
-REQUISITOS_WEB = "Django>=6.0,<7.0\npytest>=8.0\npytest-django>=4.9\n"
+# requirements.txt dos sistemas gerados: o PYTHON exigido, o DJANGO e o que ele usa, os TESTES e as dependências
+# PONTUAIS de cada sistema (as que dependem das opções escolhidas).
+PYTHON_MINIMO = (3, 12)     # o Django 6 exige 3.12+ (e o núcleo conta com o sum() exato do 3.12+)
+DEPENDENCIAS_DJANGO = [("Django>=6.0,<7.0", "o framework web: MVT, ORM, admin, formulários"),
+                       ("asgiref>=3.9.1", "o Django usa (views síncronas e assíncronas)"),
+                       ("sqlparse>=0.5.0", "o Django usa (formata o SQL das migrations)"),
+                       ('tzdata; sys_platform == "win32"', "o Django usa só no Windows (fusos horários)")]
+DEPENDENCIAS_TESTES = [("pytest>=8.0", "os testes do núcleo"),
+                       ("pytest-django>=4.9", "os testes da camada web (Django)")]
 AQUI = Path(__file__).resolve().parent
 BOOTSTRAP = AQUI / "recursos" / "bootstrap-5.3.3"
 MOTOR_LNNL = AQUI / "motor-id-interno" / "referencia" / "python" / "lnnl.py"
@@ -7605,7 +7613,7 @@ def gerar_web_pronto(s):
         # PWA=0 = aba comum; ABRIR=0 = não abre nada.
         #
         # Variáveis opcionais:
-        #   VENV=/caminho/.venv   usa um ambiente virtual que já existe (ex.: o da raiz do projeto)
+        #   VENV=/caminho/.venv   usa um ambiente virtual que já existe (ex.: o do SGS, Gerador_Sistemas/.venv)
         #   PY=/caminho/python    usa um Python específico (ignora VENV)
         #   PWA=0|1, ABRIR=0      como (e se) abrir o navegador
         #   DJANGO_SUPERUSER_USERNAME / _EMAIL / _PASSWORD   têm prioridade sobre o web/.env
@@ -7621,13 +7629,20 @@ def gerar_web_pronto(s):
 
         criar_venv() {
           if [ -x "$PY" ]; then echo "ambiente ok: $PY"; return; fi
+          # O Python exigido está no cabeçalho do requirements.txt (o pip não instala Python).
+          python3 -c 'import sys; sys.exit(sys.version_info < (@@PYMAJ@@, @@PYMIN@@))' || {
+            echo "ERRO: este sistema precisa do Python @@PYMAJ@@.@@PYMIN@@ ou mais novo — achei $(python3 --version 2>&1)" >&2
+            exit 1
+          }
           passo "criando o ambiente virtual em $VENV"
           python3 -m venv "$VENV"
         }
 
         instalar_deps() {
-          if "$PY" -c "import django, pytest, pytest_django" 2>/dev/null; then
-            echo "dependências ok (Django, pytest e pytest-django já instalados)"
+          # Tudo do requirements.txt já instalado? (--no-index: o pip só confere o que já está aqui, sem internet)
+          if "$PY" -m pip install -q --disable-pip-version-check --no-index -r "$RAIZ/requirements.txt" \
+               >/dev/null 2>&1; then
+            echo "dependências ok (todas as do requirements.txt já estão instaladas)"
             return
           fi
           passo "instalando as dependências do requirements.txt"
@@ -7705,7 +7720,7 @@ def gerar_web_pronto(s):
           ajuda|-h|--help) awk 'NR > 1 && /^set -euo/ { exit } NR > 1 && !/^# =/ { sub(/^# ?/, ""); print }' "$0" ;;
           *) echo "comando desconhecido: $1  (veja: bash iniciar.sh ajuda)" >&2; exit 2 ;;
         esac
-        ''', SISTEMA=s.sistema, APP=app)
+        ''', SISTEMA=s.sistema, APP=app, PYMAJ=str(PYTHON_MINIMO[0]), PYMIN=str(PYTHON_MINIMO[1]))
     return arq
 
 
@@ -7748,7 +7763,7 @@ def _montar_readme(s, tv, padroes_txt, decisao, nome_pasta):
         arvore += ["docs/                       ← um ADR por padrão"]
     arvore += ["especificacao.json          ← a entrada usada (dá para editar e regenerar)"]
     if s.django:
-        arvore += ["requirements.txt            ← TODAS as dependências (Django, pytest, pytest-django)",
+        arvore += ["requirements.txt            ← o Python exigido, o Django e o que ele usa, os testes e as deste sistema",
                    "iniciar.sh                  ← prepara e sobe o site: venv · deps · .env · migrations · admin",
                    "web/                        ← projeto Django (MVT) que usa o núcleo",
                    "  .env.example              ← modelo do .env (chave secreta, admin, porta)",
@@ -7855,7 +7870,9 @@ def _montar_readme(s, tv, padroes_txt, decisao, nome_pasta):
             python manage.py runserver 127.0.0.1:8000
             ```
 
-            Reaproveitar um `.venv` que já tem Django (ex.: o da raiz do projeto): `VENV=/caminho/.venv bash iniciar.sh`.
+            Reaproveitar um `.venv` que já tem Django (ex.: o do SGS, `Gerador_Sistemas/.venv`):
+            `VENV=/caminho/.venv bash iniciar.sh`. As dependências estão explicadas no `requirements.txt` (o Python
+            exigido, o Django e o que ele usa, os testes e as pontuais deste sistema).
             ''', APP=s.app, PREFIXO=s.app.upper())
     exerc = ""
     if s.exercicio:
@@ -8246,6 +8263,49 @@ def mover_para_apps(arq, s):
     return novo
 
 
+def dependencias_pontuais(s):
+    """As dependências que só ESTE sistema usa, pelas opções escolhidas: [(requisito, para quê)]."""
+    pontuais = []
+    if s.django and s.web["seguranca"] == "baseline":
+        pontuais.append(("argon2-cffi>=23.1", "senhas com Argon2id (segurança baseline, §16.1)"))
+    return pontuais
+
+
+def requisitos_txt(s):
+    """requirements.txt do sistema: o Python exigido (cabeçalho — o pip não instala Python), o Django e o que ele
+    usa (com camada web), os testes e as dependências pontuais deste sistema. Uma linha por pacote, com o porquê."""
+    py = ".".join(map(str, PYTHON_MINIMO))
+    instalar = "python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt"
+    linhas = ["# " + "=" * 77,
+              f'# requirements.txt — sistema "{s.sistema}" (gerado pelo SGS)',
+              "#",
+              f"# Python: {py} ou mais novo (" + ("o Django 6 exige; " if s.django else "")
+              + f"o núcleo conta com o sum() exato do {py}+).",
+              "#         Confira: python3 --version" + ("  ·  o iniciar.sh confere sozinho antes de criar o .venv"
+                                                     if s.django else ""),
+              "#",
+              f"# Instalar: {instalar}"]
+    if s.django:
+        linhas.append("#           (ou: bash iniciar.sh deps)")
+    linhas.append("# " + "=" * 77)
+
+    def bloco(titulo, itens):
+        largura = max(len(r) for r, _ in itens)
+        return ["", f"# --- {titulo} ---", *(f"{r:<{largura}}  # {porque}" for r, porque in itens)]
+
+    if s.django:
+        linhas += bloco("Django e o que ele usa", DEPENDENCIAS_DJANGO)
+    linhas += bloco("testes", DEPENDENCIAS_TESTES if s.django else DEPENDENCIAS_TESTES[:1])
+    pontuais = dependencias_pontuais(s)
+    if pontuais:
+        linhas += bloco("deste sistema", pontuais)
+    else:
+        linhas += ["", "# --- deste sistema ---",
+                   "# (nenhuma a mais: " + ("além do Django e dos testes, " if s.django else "além dos testes, ")
+                   + "só a biblioteca padrão do Python)"]
+    return "\n".join(linhas) + "\n"
+
+
 def gitignore_sistema(django):
     """.gitignore de cada sistema gerado: o conjunto mínimo global das Instruções de desenvolvimento DJANGO
     (AGENT_INSTRUCTIONS_DJANGO.md §4.7) + SQLite local + o que é só desta máquina no site (web/)."""
@@ -8277,8 +8337,7 @@ def montar_arquivos(s, nome_pasta):
         for caminho in [k for k in arq if k.startswith("tests/test_")]:
             arq[caminho] = remover_referencias_antes(arq[caminho])
     arq["pytest.ini"] = "[pytest]\npythonpath = .\ntestpaths = tests\n"
-    arq["requirements.txt"] = (REQUISITOS_WEB + ("argon2-cffi>=23.1\n" if s.web["seguranca"] == "baseline" else "")
-                               if s.django else "pytest>=8.0\n")
+    arq["requirements.txt"] = requisitos_txt(s)
     arq[".gitignore"] = gitignore_sistema(s.django)
     if s.estudo:
         for n, p in enumerate(s.padroes, 1):

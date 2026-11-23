@@ -16,7 +16,7 @@ A porta da versão é a do sistema com o último dígito da versão no fim: 01.3
 PWA: a tela e os sites abrem numa janela de app isolada (Edge/Chrome --app); sgs pwa=false → aba comum.
 
 Como rodar (no WSL, com o .venv ativado) — dois jeitos, a MESMA tela (as rotas moram em atender()):
-    cd Gerador_Sistemas && python manage.py runserver   → Django: http://127.0.0.1:6100 (em modo PWA)
+    python manage.py runserver                           → Django (da raiz ou de Gerador_Sistemas): porta 6100, PWA
     python Gerador_Sistemas/tela_prompt.py              → biblioteca padrão (http.server), mesma porta
     … --sem-abrir                                        → nos dois: só sobe o servidor
 
@@ -1533,7 +1533,7 @@ def sgs_comandos(ctx, args, _opcoes=None):
     destino, n = escolher(ctx, args[0] if args else None)
     info = info_sistema(destino)
     pasta = str(destino.resolve())
-    venv = f"{RAIZ_PROJETO}/.venv"
+    venv = f"{AQUI}/.venv"                          # o .venv do projeto mora em Gerador_Sistemas/
     porta = ctx.porta_do(n)
     blocos = [bloco("titulo", texto=f"Rodar o sistema {nn(n)} fora da tela (terminal do WSL) — porta {porta}"),
               texto("Entrar na pasta:"), bloco("codigo", texto=f'cd "{pasta}"')]

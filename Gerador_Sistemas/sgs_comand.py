@@ -15,7 +15,8 @@ CATALOGO = [
     # ---------------------------------------------------------------- 1. navegar
     ("pwd", "1 · Navegar", "Mostra em que pasta você está.", "pwd", "pwd",
      "/home/oscar/projetos/django/Tecnicas de Programacao II",
-     "Na tela, ~ é a raiz do projeto (onde está o .venv).", "de verdade"),
+     "Na tela, ~ é a raiz do projeto (o .venv mora em Gerador_Sistemas/.venv; na raiz há um atalho para ele).",
+     "de verdade"),
     ("ls", "1 · Navegar", "Lista os arquivos e pastas (pastas terminam com /).", "ls [-a] [-l] [pasta]",
      "ls -l Gerador_Sistemas", "README.md  gerar_sistema.py  sistemas_gerados/  tela_prompt.py",
      "-a mostra os ocultos (.env, .venv); -l mostra tamanho e tipo.", "de verdade"),

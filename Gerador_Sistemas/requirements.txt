@@ -1,0 +1,23 @@
+# =============================================================================
+# requirements.txt do SGS — o gerador, a tela e os testes (base do Gerador_Sistemas/.venv).
+#
+# Python: 3.12 ou mais novo (o Django 6 exige; o projeto é gerado e testado no 3.14) — confira: python3 --version
+#
+# Criar o ambiente (uma vez, nesta pasta):
+#     python3 -m venv .venv
+#     source .venv/bin/activate          (da raiz do projeto também: lá há um atalho .venv → Gerador_Sistemas/.venv)
+#     pip install -r requirements.txt
+# =============================================================================
+
+# --- Django e o que ele usa (a tela pelo runserver e os sites dos sistemas gerados) ---
+Django>=6.0,<7.0
+asgiref>=3.9.1
+sqlparse>=0.5.0
+tzdata; sys_platform == "win32"
+
+# --- testes (os do SGS, os das aulas e os dos sistemas gerados) ---
+pytest>=8.0
+pytest-django>=4.9
+
+# --- sistemas gerados com segurança "baseline": senhas com Argon2id ---
+argon2-cffi>=23.1

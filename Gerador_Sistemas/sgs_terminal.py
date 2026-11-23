@@ -344,7 +344,8 @@ def cmd_source(args, ctx, env):
     caminho = ctx.sessao.resolver(args[0])
     if not caminho.is_file():
         return [saida(f"bash: {args[0]}: No such file or directory", "erro"),
-                nota("o .venv do projeto fica na raiz: source ~/.venv/bin/activate")]
+                nota("o .venv do projeto fica em Gerador_Sistemas/.venv (na raiz há um atalho): "
+                     "source ~/.venv/bin/activate")]
     if caminho.name != "activate" or caminho.parent.name != "bin":
         return [saida("source: a tela só ativa ambientes virtuais (…/.venv/bin/activate)", "aviso")]
     ctx.sessao.venv = caminho.parent.parent

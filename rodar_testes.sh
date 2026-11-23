@@ -9,7 +9,8 @@
 
 cd "$(dirname "$0")" || exit 1
 RAIZ="$(pwd)"
-PY="$RAIZ/.venv/bin/python"
+PY="$RAIZ/Gerador_Sistemas/.venv/bin/python"     # o .venv do projeto (na raiz, .venv é um atalho para ele)
+[ -x "$PY" ] || PY="$RAIZ/.venv/bin/python"
 [ -x "$PY" ] || PY="python3"
 
 filtro="${1:-}"
@@ -29,7 +30,7 @@ pasta_de_teste() {
 }
 
 mapfile -t pastas < <(
-  find . -path ./.venv -prune -o -path ./Extras -prune -o -path '*/material_original' -prune \
+  find . -name .venv -prune -o -path ./Extras -prune -o -path '*/material_original' -prune \
        -o -path '*/gabarito' -prune -o -name 'test_*.py' -print |
   while read -r f; do pasta_de_teste "$(dirname "$f")"; done | sort -u
 )
