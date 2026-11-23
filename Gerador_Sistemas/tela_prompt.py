@@ -15,9 +15,10 @@ A porta da versão é a do sistema com o último dígito da versão no fim: 01.3
 61019 (por isso a base é 6100: 6199 + 1 dígito ainda cabe nas 65.535 portas).
 PWA: a tela e os sites abrem numa janela de app isolada (Edge/Chrome --app); sgs pwa=false → aba comum.
 
-Como rodar (no WSL, na raiz do projeto, com o .venv ativado):
-    python Gerador_Sistemas/tela_prompt.py              → abre http://127.0.0.1:6100 (em modo PWA)
-    python Gerador_Sistemas/tela_prompt.py --sem-abrir  → só sobe o servidor
+Como rodar (no WSL, com o .venv ativado) — dois jeitos, a MESMA tela (as rotas moram em atender()):
+    cd Gerador_Sistemas && python manage.py runserver   → Django: http://127.0.0.1:6100 (em modo PWA)
+    python Gerador_Sistemas/tela_prompt.py              → biblioteca padrão (http.server), mesma porta
+    … --sem-abrir                                        → nos dois: só sobe o servidor
 
 Arquitetura (Aula 07): a tela é uma VIEW FINA. A geração mora em gerar_sistema.py, o terminal em
 sgs_terminal.py e o help numerado em sgs_comand.py; aqui ficam o roteamento dos comandos e a página.
@@ -100,7 +101,7 @@ CONFIG_INICIAL = {
     "comentarios_web": False, "perguntar": False, "estilo": "web", "tema": "T01", "tom": "tom3", "paleta": "P02",
     "id_publico": "inteiro", "id_interno": False, "lnnl_tipo": "21", "estrutura": "plana", "seguranca": "basica",
     "pwa": True, "porta_base": PORTA_PADRAO, "admin_usuario": "admin", "admin_email": "admin@exemplo.com",
-    "admin_senha": "admin123", "visual": "cmd", "topo": False, "rodape": True,
+    "admin_senha": "admin123", "visual": "cmd", "topo": False, "rodape": False,
 }
 # Valores fechados (listas): nada de texto livre vira CSS ou código.
 ESCOLHAS = {"estilo": list(gs.ESTILOS), "tema": list(temas_web.TEMAS), "tom": temas_web.TONS,
@@ -131,7 +132,8 @@ EXPLICA_CONFIG = {
     "visual": "o estilo desta tela: cmd (o padrão ao abrir: como o Prompt de Comando do Windows — preto e cinza) · "
               "sgs (as cores do SGS, prompt verde) — mude com sgs cmd / sgs cmd sgs",
     "topo": "os comandos principais no topo da tela (sgs topo alterna; a tela abre com eles ocultos)",
-    "rodape": "as caixas de seleção embaixo do prompt (sgs foot alterna; a linha do comando sempre fica)",
+    "rodape": "as caixas de seleção embaixo do prompt (sgs foot alterna; a tela abre sem elas; a linha do comando "
+              "sempre fica)",
 }
 SIM = {"sim", "s", "true", "1", "on", "yes", "y"}
 NAO = {"nao", "não", "n", "false", "0", "off", "no"}
@@ -542,6 +544,10 @@ POR_SISTEMA = [   # (comando, o que faz) para cada número de sistema: o intelli
     ("sgs ligar {n}", "classes e ligações"), ("sgs incrementar {n}", "campos e padrões"),
     ("sgs api config {n}", "campos de cada endpoint da API"),
 ]
+SUGESTOES_FIXAS = [   # sempre as DUAS PRIMEIRAS do intellisense quando o que foi digitado é o começo delas (sgs…)
+    ("sgs topo", "mostra/oculta os comandos principais no topo"),
+    ("sgs foot", "mostra/oculta as caixas de seleção embaixo do prompt"),
+]
 
 
 def sugestoes(ctx, limite_historico=40):
@@ -555,6 +561,8 @@ def sugestoes(ctx, limite_historico=40):
             vistos.add(comando)
             itens.append({"cmd": comando, "desc": descricao, "tipo": tipo})
 
+    for comando, descricao in SUGESTOES_FIXAS:      # SEMPRE as duas primeiras ao digitar sgs (a página garante)
+        add(comando, descricao, "fixo")
     for linha in reversed(ctx.historico.linhas()[-limite_historico:]):
         add(linha, "↺ do histórico", "historico")
     try:
@@ -1181,7 +1189,8 @@ COMANDOS_SGS = [
     ("sgs cmd [sgs]", "estilo da tela: sgs cmd = como o Prompt de Comando do Windows (o padrão ao abrir) · "
                       "sgs cmd sgs = as cores do SGS · sem o sgs também vale: cmd · cmd sgs", False),
     ("sgs topo", "mostra os comandos principais no topo · de novo: oculta (a tela abre com eles ocultos)", False),
-    ("sgs foot", "oculta as caixas de seleção embaixo do prompt (a linha do comando fica) · de novo: mostra", False),
+    ("sgs foot", "mostra as caixas de seleção embaixo do prompt · de novo: oculta (a tela abre sem elas; a linha "
+                 "do comando sempre fica)", False),
     ("sgs clear  (ou clear)", "limpa a tela — ficam só as duas linhas do topo", False),
     ("sgs history  (ou history)", "histórico de comandos (arquivo .sgs_historico: sobrevive ao F5) · history N · "
                                   "history -c limpa · history -d N apaga um", False),
@@ -1713,7 +1722,7 @@ def sgs_topo(ctx, args, _opcoes=None):
 
 
 def sgs_foot(ctx, args, _opcoes=None):
-    """sgs foot — oculta as caixas de seleção do rodapé (a linha do comando fica); de novo, mostra (alterna)."""
+    """sgs foot — mostra as caixas de seleção do rodapé; de novo, oculta (alterna; a linha do comando sempre fica)."""
     if _alternar(ctx, "rodape", args):
         msg = "caixas de seleção à mostra · sgs foot de novo oculta"
     else:
@@ -2300,147 +2309,156 @@ self.addEventListener("fetch", (e) => {
 """
 
 
-class Tela(BaseHTTPRequestHandler):
-    server_version = "SGS/3.0"
+# -----------------------------------------------------------------------------
+# ATENDER UM PEDIDO — o MESMO caminho para os dois servidores da tela:
+#   * python Gerador_Sistemas/tela_prompt.py        → http.server (classe Tela, abaixo)
+#   * python Gerador_Sistemas/manage.py runserver   → Django (sgs_web/views.py)
+# Recebe o método, o caminho (com a query), os cabeçalhos (qualquer objeto com .get) e uma função que lê N bytes
+# do corpo; devolve Resposta(status, cabecalhos, corpo). Nada aqui sabe qual servidor está rodando.
+# -----------------------------------------------------------------------------
+def _resposta(status, corpo, tipo, extras=None, aceita=""):
+    dados = corpo.encode("utf-8") if isinstance(corpo, str) else corpo
+    # Texto grande vai COMPRIMIDO (gzip) quando o navegador aceita: pelo repasse localhost do WSL2
+    # (Windows → Linux), respostas de ~200 KB (o CSS da Wiki, o Study Hub) travavam no fim e a página não
+    # terminava de carregar; comprimidas (~25–50 KB) passam inteiras.
+    comprimir = len(dados) > COMPRIMIR_ACIMA and "gzip" in aceita and tipo.startswith(TIPOS_COMPRIMIVEIS)
+    if comprimir:
+        dados = gzip.compress(dados, 6)
+    cabecalhos = [("Content-Type", tipo), ("Content-Length", str(len(dados))), ("Cache-Control", "no-store")]
+    if comprimir:
+        cabecalhos += [("Content-Encoding", "gzip"), ("Vary", "Accept-Encoding")]
+    cabecalhos += list((extras or {}).items())
+    return SimpleNamespace(status=status, cabecalhos=cabecalhos, corpo=dados)
 
-    def _responder(self, status, corpo, tipo, extras=None):
-        dados = corpo.encode("utf-8") if isinstance(corpo, str) else corpo
-        # Texto grande vai COMPRIMIDO (gzip) quando o navegador aceita: pelo repasse localhost do WSL2
-        # (Windows → Linux), respostas de ~200 KB (o CSS da Wiki, o Study Hub) travavam no fim e a página não
-        # terminava de carregar; comprimidas (~25–50 KB) passam inteiras.
-        comprimir = (len(dados) > COMPRIMIR_ACIMA and "gzip" in self.headers.get("Accept-Encoding", "")
-                     and tipo.startswith(TIPOS_COMPRIMIVEIS))
-        if comprimir:
-            dados = gzip.compress(dados, 6)
-        self.send_response(status)
-        self.send_header("Content-Type", tipo)
-        self.send_header("Content-Length", str(len(dados)))
-        self.send_header("Cache-Control", "no-store")
-        if comprimir:
-            self.send_header("Content-Encoding", "gzip")
-            self.send_header("Vary", "Accept-Encoding")
-        for chave, valor in (extras or {}).items():
-            self.send_header(chave, valor)
-        self.end_headers()
-        self.wfile.write(dados)
 
-    def _json(self, status, dados):
-        self._responder(status, json.dumps(dados, ensure_ascii=False), "application/json; charset=utf-8")
+def atender(ctx, metodo, alvo, cabecalhos, ler_corpo):
+    """Um pedido HTTP à tela → Resposta. Só atende quem chama por 127.0.0.1/localhost (bloqueia outro site
+    tentando usar a tela) e só aceita POST em JSON (um formulário de OUTRO site não dispara ações aqui)."""
+    aceita = cabecalhos.get("Accept-Encoding") or ""
 
-    def _host_ok(self):
-        # Só atende quem chama por 127.0.0.1/localhost (bloqueia outro site tentando usar a tela).
-        if self.headers.get("Host", "").rsplit(":", 1)[0] in HOSTS_PERMITIDOS:
-            return True
-        self._json(403, {"ok": False, "erro": "Acesse por http://127.0.0.1"})
-        return False
+    def responder(status, corpo, tipo, extras=None):
+        return _resposta(status, corpo, tipo, extras, aceita)
 
-    def _ler_json(self):
-        """Corpo JSON do POST, ou None (já respondido com o erro)."""
-        # Exigir JSON impede que um formulário de OUTRO site dispare ações aqui.
-        if not self.headers.get("Content-Type", "").startswith("application/json"):
-            self._json(415, {"ok": False, "erro": "Envie JSON."})
-            return None
-        tamanho = int(self.headers.get("Content-Length") or 0)
-        if tamanho > LIMITE_CORPO:
-            self._json(413, {"ok": False, "erro": "Pedido grande demais."})
-            return None
-        try:
-            dados = json.loads(self.rfile.read(tamanho) or b"{}")
-            if not isinstance(dados, dict):
-                raise ValueError
-            return dados
-        except ValueError:
-            self._json(400, {"ok": False, "erro": "JSON inválido."})
-            return None
+    def responder_json(status, dados):
+        return responder(status, json.dumps(dados, ensure_ascii=False), "application/json; charset=utf-8")
 
-    def do_GET(self):  # noqa: N802 (nome exigido pelo http.server)
-        if not self._host_ok():
-            return
-        ctx = self.server.ctx
-        url = urlparse(self.path)
-        rotas = {
-            "/": lambda: self._responder(200, PAGINA, "text/html; charset=utf-8"),
-            "/config": lambda: self._json(200, {"ok": True, "config": ctx.config.publica(),
+    if (cabecalhos.get("Host") or "").rsplit(":", 1)[0] not in HOSTS_PERMITIDOS:
+        return responder_json(403, {"ok": False, "erro": "Acesse por http://127.0.0.1"})
+    url = urlparse(alvo)
+    if metodo == "GET":
+        return _atender_get(ctx, url, responder, responder_json)
+    if metodo == "POST":
+        return _atender_post(ctx, url.path, cabecalhos, ler_corpo, responder_json)
+    return responder_json(405, {"ok": False, "erro": "Método não permitido."})
+
+
+def _atender_get(ctx, url, responder, responder_json):
+    rotas = {
+        "/": lambda: responder(200, PAGINA, "text/html; charset=utf-8"),
+        "/config": lambda: responder_json(200, {"ok": True, "config": ctx.config.publica(),
                                                 "prompt": ctx.sessao.prompt(),
                                                 "historico": ctx.historico.linhas()}),   # ↑/↓ depois do F5
-            "/catalogo": lambda: self._json(200, catalogo()),
-            "/sugestoes": lambda: self._json(200, {"ok": True, "itens": sugestoes(ctx)}),   # intellisense
-            "/manifest.webmanifest": lambda: self._responder(200, MANIFEST, "application/manifest+json"),
-            "/sw.js": lambda: self._responder(200, SERVICE_WORKER, "application/javascript",
-                                              {"Service-Worker-Allowed": "/"}),
-            "/icone-192.png": lambda: self._responder(200, gs.icone_png(192), "image/png"),
-            "/icone-512.png": lambda: self._responder(200, gs.icone_png(512), "image/png"),
-        }
-        if url.path in rotas:
-            rotas[url.path]()
-        elif url.path == "/arquivo":
-            q = parse_qs(url.query)
-            r = ler_arquivo(q.get("pasta", [""])[0], q.get("caminho", [""])[0], ctx.saida)
-            self._json(200 if r["ok"] else 404, r)
-        elif url.path == "/tutorial":
-            self._responder(200, sgs_tutorial.pagina(), "text/html; charset=utf-8")
-        elif url.path in PAGINAS_REFERENCIA:          # a cópia é servida da pasta dela (os caminhos relativos valem)
-            self.send_response(302)
-            self.send_header("Location", "/referencias/" + PAGINAS_REFERENCIA[url.path])
-            self.send_header("Content-Length", "0")
-            self.end_headers()
-        elif url.path.startswith("/referencias/"):
-            self._servir_referencia(url.path[len("/referencias/"):])
-        else:
-            self._json(404, {"ok": False, "erro": "Página não encontrada."})
+        "/catalogo": lambda: responder_json(200, catalogo()),
+        "/sugestoes": lambda: responder_json(200, {"ok": True, "itens": sugestoes(ctx)}),   # intellisense
+        "/manifest.webmanifest": lambda: responder(200, MANIFEST, "application/manifest+json"),
+        "/sw.js": lambda: responder(200, SERVICE_WORKER, "application/javascript", {"Service-Worker-Allowed": "/"}),
+        "/icone-192.png": lambda: responder(200, gs.icone_png(192), "image/png"),
+        "/icone-512.png": lambda: responder(200, gs.icone_png(512), "image/png"),
+        "/tutorial": lambda: responder(200, sgs_tutorial.pagina(), "text/html; charset=utf-8"),
+    }
+    if url.path in rotas:
+        return rotas[url.path]()
+    if url.path == "/arquivo":
+        q = parse_qs(url.query)
+        r = ler_arquivo(q.get("pasta", [""])[0], q.get("caminho", [""])[0], ctx.saida)
+        return responder_json(200 if r["ok"] else 404, r)
+    if url.path in PAGINAS_REFERENCIA:              # a cópia é servida da pasta dela (os caminhos relativos valem)
+        return responder(302, b"", "text/plain; charset=utf-8",
+                         {"Location": "/referencias/" + PAGINAS_REFERENCIA[url.path]})
+    if url.path.startswith("/referencias/"):
+        return _servir_referencia(url.path[len("/referencias/"):], responder, responder_json)
+    return responder_json(404, {"ok": False, "erro": "Página não encontrada."})
 
-    def _servir_referencia(self, relativo):
-        """Um arquivo da pasta referencias/ (página, estilo, script, dado ou imagem) — nada fora dela. As páginas
-        ganham a barra Tutorial | Wiki | Django Study Hub | SGS no topo (só na resposta; o arquivo não muda)."""
-        alvo = (PASTA_REFERENCIAS / unquote(relativo)).resolve()
-        tipo = TIPOS_ESTATICOS.get(alvo.suffix.lower())
-        if tipo is None or not alvo.is_relative_to(PASTA_REFERENCIAS.resolve()) or not alvo.is_file():
-            self._json(404, {"ok": False, "erro": "Arquivo de referência não encontrado."})
-            return
-        dados = alvo.read_bytes()
-        if alvo.suffix.lower() == ".html":
-            atual = "/hub" if "study_hub" in alvo.name else "/referencia"
-            dados = sgs_tutorial.com_barra(dados.decode("utf-8", "replace"), atual)
-        self._responder(200, dados, tipo)
+
+def _servir_referencia(relativo, responder, responder_json):
+    """Um arquivo da pasta referencias/ (página, estilo, script, dado ou imagem) — nada fora dela. As páginas
+    ganham a barra Tutorial | Wiki | Django Study Hub | SGS no topo (só na resposta; o arquivo não muda)."""
+    alvo = (PASTA_REFERENCIAS / unquote(relativo)).resolve()
+    tipo = TIPOS_ESTATICOS.get(alvo.suffix.lower())
+    if tipo is None or not alvo.is_relative_to(PASTA_REFERENCIAS.resolve()) or not alvo.is_file():
+        return responder_json(404, {"ok": False, "erro": "Arquivo de referência não encontrado."})
+    dados = alvo.read_bytes()
+    if alvo.suffix.lower() == ".html":
+        atual = "/hub" if "study_hub" in alvo.name else "/referencia"
+        dados = sgs_tutorial.com_barra(dados.decode("utf-8", "replace"), atual)
+    return responder(200, dados, tipo)
+
+
+def _atender_post(ctx, caminho, cabecalhos, ler_corpo, responder_json):
+    if caminho not in ("/gerar", "/comando", "/config"):
+        return responder_json(404, {"ok": False, "erro": "Página não encontrada."})
+    # Exigir JSON impede que um formulário de OUTRO site dispare ações aqui.
+    if not (cabecalhos.get("Content-Type") or "").startswith("application/json"):
+        return responder_json(415, {"ok": False, "erro": "Envie JSON."})
+    try:
+        tamanho = int(cabecalhos.get("Content-Length") or 0)
+    except ValueError:
+        tamanho = -1
+    if not 0 <= tamanho <= LIMITE_CORPO:
+        return responder_json(413, {"ok": False, "erro": "Pedido grande demais."})
+    try:
+        pedido = json.loads(ler_corpo(tamanho) or b"{}")
+        if not isinstance(pedido, dict):
+            raise ValueError
+    except ValueError:
+        return responder_json(400, {"ok": False, "erro": "JSON inválido."})
+    try:
+        if caminho == "/config":
+            return responder_json(200, salvar_config(ctx, pedido))
+        if caminho == "/comando":
+            opcoes = pedido.get("opcoes") if isinstance(pedido.get("opcoes"), dict) else {}
+            with TRAVA:
+                return responder_json(200, executar_linha(str(pedido.get("linha", "")), ctx, opcoes))
+        c = ctx.config.valores                       # /gerar: API direta (a página usa "sgs gerar" pelo /comando)
+        with TRAVA:
+            r = processar(pedido.get("texto"), pedido.get("django", c["django"]),
+                          pedido.get("exercicio", c["exercicio"]), pedido.get("testar", c["testar"]),
+                          ctx.saida, pedido.get("estudo", c["estudo"]), pedido.get("comentarios", c["comentarios"]),
+                          porta_base=c["porta_base"])
+        return responder_json(200, r)
+    except Exception as erro:  # erro inesperado: mostra na tela em vez de derrubar o servidor
+        return responder_json(500, {"ok": False, "erro": f"Erro interno: {erro!r}", "prompt": ctx.sessao.prompt()})
+
+
+def salvar_config(ctx, pedido):
+    """POST /config: as caixas e o sgs config da página (tudo ou nada: um valor ruim não grava os outros)."""
+    config = ctx.config
+    try:
+        for chave, valor in pedido.items():
+            config.alterar(chave, valor)
+    except ValueError as erro:
+        return {"ok": False, "erro": str(erro), "config": config.publica()}
+    config.salvar()
+    return {"ok": True, "config": config.publica()}
+
+
+class Tela(BaseHTTPRequestHandler):
+    """O servidor da biblioteca padrão (python tela_prompt.py): só repassa o pedido para atender()."""
+    server_version = "SGS/3.0"
+
+    def _atender(self, metodo):
+        r = atender(self.server.ctx, metodo, self.path, self.headers, self.rfile.read)
+        self.send_response(r.status)
+        for chave, valor in r.cabecalhos:
+            self.send_header(chave, valor)
+        self.end_headers()
+        self.wfile.write(r.corpo)
+
+    def do_GET(self):  # noqa: N802 (nome exigido pelo http.server)
+        self._atender("GET")
 
     def do_POST(self):  # noqa: N802
-        if not self._host_ok():
-            return
-        ctx = self.server.ctx
-        caminho = urlparse(self.path).path
-        if caminho not in ("/gerar", "/comando", "/config"):
-            self._json(404, {"ok": False, "erro": "Página não encontrada."})
-            return
-        pedido = self._ler_json()
-        if pedido is None:
-            return
-        try:
-            if caminho == "/config":
-                self._json(200, self._salvar_config(pedido))
-            elif caminho == "/comando":
-                opcoes = pedido.get("opcoes") if isinstance(pedido.get("opcoes"), dict) else {}
-                with TRAVA:
-                    self._json(200, executar_linha(str(pedido.get("linha", "")), ctx, opcoes))
-            else:   # /gerar: API direta (a página usa "sgs gerar" pelo /comando)
-                c = ctx.config.valores
-                with TRAVA:
-                    r = processar(pedido.get("texto"), pedido.get("django", c["django"]),
-                                  pedido.get("exercicio", c["exercicio"]), pedido.get("testar", c["testar"]),
-                                  ctx.saida, pedido.get("estudo", c["estudo"]), pedido.get("comentarios", c["comentarios"]),
-                                  porta_base=c["porta_base"])
-                self._json(200, r)
-        except Exception as erro:  # erro inesperado: mostra na tela em vez de derrubar o servidor
-            self._json(500, {"ok": False, "erro": f"Erro interno: {erro!r}", "prompt": ctx.sessao.prompt()})
-
-    def _salvar_config(self, pedido):
-        config = self.server.ctx.config
-        try:
-            for chave, valor in pedido.items():
-                config.alterar(chave, valor)
-        except ValueError as erro:
-            return {"ok": False, "erro": str(erro), "config": config.publica()}
-        config.salvar()
-        return {"ok": True, "config": config.publica()}
+        self._atender("POST")
 
     def log_message(self, formato, *args):
         # Uma linha curta por pedido no terminal (o padrão do http.server é bem poluído).
@@ -2458,6 +2476,34 @@ def criar_servidor(porta=PORTA_PADRAO, saida=None, config=None, raiz=RAIZ_PROJET
     return servidor
 
 
+MARCA_TELA = "SGS_TELA_ABERTA"      # no ambiente da tela que está servindo (e dos comandos que ela roda)
+
+
+def marcar_tela_aberta(porta):
+    """Os comandos que a tela roda herdam a marca: um `python manage.py runserver` digitado DENTRO da tela, na
+    pasta Gerador_Sistemas, não abre um segundo SGS (que encerraria os sites deste e trocaria o config)."""
+    os.environ[MARCA_TELA] = str(porta)
+
+
+AO_ABRIR = (("visual", "cmd"),      # sempre no estilo do Prompt de Comando (sgs cmd),
+            ("pwa", True),          # em janela de app (PWA),
+            ("topo", False),        # sem os comandos no topo (sgs topo mostra)
+            ("rodape", False))      # e sem as caixas de seleção (sgs foot mostra)
+
+
+def preparar_inicio(ctx):
+    """O que a tela faz ao abrir — igual no tela_prompt.py e no python manage.py runserver: todas as caixas
+    marcadas (desmarque na tela), o estilo de AO_ABRIR e os sites de uma tela anterior que caiu sem limpar
+    encerrados. Devolve as linhas para o terminal."""
+    for caixa in OPCOES_CAIXA:
+        ctx.config.alterar(caixa, True)
+    for chave, valor in AO_ABRIR:
+        ctx.config.alterar(chave, valor)
+    ctx.config.salvar()
+    return [f"  porta {porta} liberada (site {chave} que ficou no ar de uma sessão anterior)"
+            for chave, porta in ctx.servidores.encerrar_orfaos()]
+
+
 def principal(argv=None):
     p = argparse.ArgumentParser(description=f"{NOME_SGS} — a tela estilo terminal (sem IA).")
     p.add_argument("--porta", type=int, default=PORTA_PADRAO, help=f"porta do SGS (padrão {PORTA_PADRAO} = o 00)")
@@ -2470,16 +2516,9 @@ def principal(argv=None):
               f"Outra porta: --porta {a.porta + 50}", file=sys.stderr)
         return 2
     ctx = servidor.ctx
-    for caixa in OPCOES_CAIXA:                    # ao abrir, TODAS as caixas começam marcadas (desmarque na tela)
-        ctx.config.alterar(caixa, True)
-    for chave, valor in (("visual", "cmd"),       # ao abrir: sempre no estilo do Prompt de Comando (sgs cmd),
-                         ("pwa", True),           # em janela de app (PWA),
-                         ("topo", False),         # sem os comandos no topo (sgs topo mostra)
-                         ("rodape", True)):       # e com as caixas de seleção (sgs foot oculta)
-        ctx.config.alterar(chave, valor)
-    ctx.config.salvar()
-    for chave, porta in ctx.servidores.encerrar_orfaos():   # sites de uma tela anterior que caiu sem limpar
-        print(f"  porta {porta} liberada (site {chave} que ficou no ar de uma sessão anterior)")
+    marcar_tela_aberta(servidor.server_address[1])
+    for linha in preparar_inicio(ctx):
+        print(linha)
     atexit.register(ctx.servidores.parar_todos)   # sites que a tela subiu caem junto com ela
 
     def ao_receber_sinal(_numero, _quadro):
@@ -2512,7 +2551,7 @@ def principal(argv=None):
 #    Texto que vem do servidor entra com textContent (nunca innerHTML).
 # =============================================================================
 PAGINA = r"""<!doctype html>
-<html lang="pt-br" data-visual="cmd" data-topo="0" data-rodape="1">
+<html lang="pt-br" data-visual="cmd" data-topo="0" data-rodape="0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -2740,7 +2779,12 @@ function buscarSugestoes(texto) {
   const t = texto.toLowerCase();
   if (!t.trim() || t.includes("\n")) return [];
   const achados = [];
-  catalogoSug.forEach((s, ordem) => { const p = pontuar(s.cmd, t); if (p !== null) achados.push([p, ordem, s]); });
+  catalogoSug.forEach((s, ordem) => {
+    // sgs topo e sgs foot: SEMPRE as duas primeiras quando o digitado é o começo delas (s, sg, sgs, sgs …)
+    const fixa = s.tipo === "fixo" && s.cmd.toLowerCase() !== t && s.cmd.toLowerCase().startsWith(t);
+    const p = fixa ? -1 : pontuar(s.cmd, t);
+    if (p !== null) achados.push([p, ordem, s]);
+  });
   achados.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   return achados.slice(0, MAX_SUG).map((a) => a[2]);
 }

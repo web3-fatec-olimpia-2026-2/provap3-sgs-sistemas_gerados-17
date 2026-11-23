@@ -7,7 +7,7 @@ from .models import Viagcert
 class ViagcertForm(forms.ModelForm):
     class Meta:
         model = Viagcert
-        fields = ["viajante", "voo", "noites", "valor_noite", "observacao", "tipo"]
+        fields = ["viajante", "voo", "noites", "valor_noite", "observacao", "destino", "tipo"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

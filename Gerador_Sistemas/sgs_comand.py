@@ -226,9 +226,9 @@ CATALOGO = [
      "comando sgs"),
     ("sgs topo", "8 · SGS", "Mostra os comandos principais no topo da tela; de novo, oculta (a tela abre com eles "
      "ocultos).", "sgs topo [sim|nao]", "sgs topo", "os comandos aparecem no topo", "", "comando sgs"),
-    ("sgs foot", "8 · SGS", "Oculta as caixas de seleção embaixo do prompt (a linha do comando fica); de novo, "
-     "mostra.", "sgs foot [sim|nao]", "sgs foot", "as caixas somem; o prompt continua", "Alt+Enter maximiza a "
-     "janela e, de novo, volta ao tamanho de antes.", "comando sgs"),
+    ("sgs foot", "8 · SGS", "Mostra as caixas de seleção embaixo do prompt; de novo, oculta (a tela abre sem "
+     "elas; a linha do comando sempre fica).", "sgs foot [sim|nao]", "sgs foot", "as caixas aparecem embaixo do "
+     "prompt", "Alt+Enter maximiza a janela e, de novo, volta ao tamanho de antes.", "comando sgs"),
     ("sgs comand", "8 · SGS", "Este módulo: a lista numerada dos comandos.", "sgs comand [n]", "sgs comand 24",
      "(a explicação do comando 24)", "Dentro do módulo, digitar só o número também funciona.", "comando sgs"),
     ("sgs exit", "8 · SGS", "Sai do módulo comand e volta para a tela principal (como estava).", "sgs exit   ou   exit",

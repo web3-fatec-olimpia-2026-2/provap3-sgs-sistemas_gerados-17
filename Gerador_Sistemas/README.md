@@ -7,7 +7,8 @@ temas, `.env`, migrations, superusuário, PWA). **A mesma entrada gera sempre a 
 
 | Peça | Para quê |
 |---|---|
-| [`tela_prompt.py`](tela_prompt.py) | o **SGS**: tela estilo terminal no navegador (porta 6100) |
+| [`tela_prompt.py`](tela_prompt.py) | o **SGS**: tela estilo terminal no navegador (porta 6100); as rotas em `atender()` |
+| [`manage.py`](manage.py) · [`sgs_web/`](sgs_web/) | a mesma tela pelo **Django**: `python manage.py runserver` (settings mínimo, uma view que chama `atender()`) |
 | [`gerar_sistema.py`](gerar_sistema.py) | o gerador (também roda sozinho, pela linha de comando) |
 | [`sgs_terminal.py`](sgs_terminal.py) · [`sgs_comand.py`](sgs_comand.py) · [`sgs_perguntas.py`](sgs_perguntas.py) | terminal da tela · help numerado · perguntas antes de gerar |
 | [`temas_web.py`](temas_web.py) | cores dos 10 temas × 6 tons (pasta `temas/`) e das 20 paletas, com contraste WCAG |
@@ -23,15 +24,22 @@ temas, `.env`, migrations, superusuário, PWA). **A mesma entrada gera sempre a 
 
 ## 1. Rodar o SGS
 
-No WSL, na raiz do projeto:
+No WSL, com o `.venv` ativado — pelo **Django**:
 
 ```bash
 source .venv/bin/activate
-python Gerador_Sistemas/tela_prompt.py
+cd Gerador_Sistemas
+python manage.py runserver              # http://127.0.0.1:6100 (o 00) e abre a janela de app
+python manage.py runserver --sem-abrir  # só sobe o servidor · runserver 6150 = outra porta
 ```
 
-Abre em **http://127.0.0.1:6100**, numa janela de app (PWA). Ctrl+C no terminal para parar;
-`--sem-abrir` só sobe o servidor. A tela sempre abre em **janela de app** (`pwa=true`) do Chrome (ou Edge) num
+ou, sem Django (só a biblioteca padrão), da raiz do projeto: `python Gerador_Sistemas/tela_prompt.py`.
+Os dois servem **a mesma tela**: as rotas moram em `tela_prompt.atender()`, que o `http.server` e a view do Django
+(`sgs_web/`: settings mínimo, sem banco nem sessão, uma rota só) chamam do mesmo jeito. No Django, o `runserver`
+do SGS usa a porta 6100 quando nenhuma é dada, faz o mesmo início (estilo cmd, sites de uma tela anterior
+encerrados) e reinicia sozinho quando um arquivo do SGS muda (derrubando os sites que subiu, como no Ctrl+C).
+
+Abre em **http://127.0.0.1:6100**, numa janela de app (PWA). Ctrl+C no terminal para parar. A tela sempre abre em **janela de app** (`pwa=true`) do Chrome (ou Edge) num
 **perfil só do SGS** (`%LOCALAPPDATA%\SGS\navegador`): sem extensões e sem app instalado, a janela fica limpa — só
 o título **SGS** e os botões da janela, sem o ícone de extensão e sem o ⋮. (O atalho “SGS” instalado pelo Chrome
 continua mostrando os dois: é o Chrome que põe esses botões nos apps instalados.) **Alt+Enter** maximiza a janela;
@@ -39,8 +47,9 @@ de novo, volta ao tamanho de antes.
 
 A tela abre limpa como o Prompt de Comando: `sgs topo` mostra no topo os **comandos principais sem o `sgs` na
 frente** (`ajuda|gerar|listar|…|cmd|topo|foot`, fonte menor, separados por `|`, até o fim da tela; o clique executa
-ou escreve no prompt o comando inteiro) e, de novo, oculta. `sgs foot` oculta as caixas de seleção (a linha do
-comando fica) e, de novo, mostra. Não há botão executar: o Enter executa.
+ou escreve no prompt o comando inteiro) e, de novo, oculta. `sgs foot` mostra as caixas de seleção e, de novo,
+oculta (a linha do comando sempre fica) — a tela abre sem as duas. Ao digitar `sgs`, as duas primeiras sugestões
+do intellisense são sempre `sgs topo` e `sgs foot`. Não há botão executar: o Enter executa.
 
 A tela **abre sempre no estilo do Prompt de Comando** do Windows (`sgs cmd`): fundo `#0c0c0c` e tudo em cinza
 `#cccccc` — o prompt numa linha só, `~\caminho>comando`, e as caixas do rodapé numa linha, sem cor. Para as cores
@@ -106,7 +115,7 @@ Principais comandos `sgs`:
 | `sgs padroes` · `sgs config` · `sgs pwa=false` · `clear` | catálogo, configuração, PWA, limpar |
 | `sgs tutorial` · `sgs wiki` · `sgs hub` | tutorial prático · Wikipédia (padrões GoF) · Django Study Hub, lado a lado |
 | `sgs cmd` · `sgs cmd sgs` (ou `cmd` · `cmd sgs`) | estilo da tela: Prompt de Comando (padrão ao abrir) · cores do SGS |
-| `sgs topo` · `sgs foot` | mostra/oculta os comandos do topo · oculta/mostra as caixas de seleção (alternam) |
+| `sgs topo` · `sgs foot` | mostra/oculta os comandos do topo · mostra/oculta as caixas de seleção (alternam; a tela abre sem os dois) |
 
 As caixas embaixo valem para o `sgs gerar` e ficam salvas: **+ Django**, **Modo exercício**, **Rodar testes**,
 **Para estudo** (desmarcada = só gerar), **Comentários no código**, **Notas na web** e **Perguntar antes de gerar**.

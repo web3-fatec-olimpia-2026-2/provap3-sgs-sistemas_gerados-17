@@ -8,7 +8,7 @@
 #   bash iniciar.sh venv            cria .venv nesta pasta (se não existir)
 #   bash iniciar.sh deps            instala o requirements.txt (só se faltar alguma dependência)
 #   bash iniciar.sh env             cria web/.env a partir de web/.env.example (nunca sobrescreve)
-#   bash iniciar.sh migrar          makemigrations viagcerts + migrate
+#   bash iniciar.sh migrar          makemigrations viagcerts destinos + migrate
 #   bash iniciar.sh admin           cria/atualiza o superusuário (dados do web/.env)
 #   bash iniciar.sh testar          testes do núcleo e da web
 #   bash iniciar.sh rodar [porta]   sobe o servidor em http://127.0.0.1:porta (Ctrl+C para parar)
@@ -58,7 +58,7 @@ criar_env() {
 
 migrar() {
   passo "migrations"
-  (cd "$WEB" && "$PY" manage.py makemigrations viagcerts && "$PY" manage.py migrate)
+  (cd "$WEB" && "$PY" manage.py makemigrations viagcerts destinos && "$PY" manage.py migrate)
 }
 
 criar_admin() {

@@ -1,0 +1,82 @@
+[
+  {
+    "app": "destinos",
+    "pacote": "destinos",
+    "caminho": "destinos",
+    "entidade": "Destino",
+    "assunto": "destinos de viagem com os campos cidade e pais",
+    "dominio": "generico",
+    "padroes": [
+      "encapsulamento",
+      "polimorfismo",
+      "srp",
+      "service",
+      "singleton",
+      "factory_method",
+      "abstract_factory",
+      "builder",
+      "prototype",
+      "strategy"
+    ],
+    "campos": [
+      "cliente",
+      "codigo",
+      "quantidade",
+      "valor_unitario",
+      "cidade",
+      "pais",
+      "observacao"
+    ],
+    "atributos": [
+      {
+        "nome": "cliente",
+        "tipo": "str",
+        "regra": "obrigatorio",
+        "min": null,
+        "max": null
+      },
+      {
+        "nome": "codigo",
+        "tipo": "int",
+        "regra": "minimo",
+        "min": 1,
+        "max": null
+      },
+      {
+        "nome": "quantidade",
+        "tipo": "int",
+        "regra": "faixa",
+        "min": 1,
+        "max": 100
+      },
+      {
+        "nome": "valor_unitario",
+        "tipo": "float",
+        "regra": "minimo",
+        "min": 0,
+        "max": null
+      },
+      {
+        "nome": "cidade",
+        "tipo": "str",
+        "regra": "obrigatorio",
+        "min": null,
+        "max": null
+      },
+      {
+        "nome": "pais",
+        "tipo": "str",
+        "regra": "obrigatorio",
+        "min": null,
+        "max": null
+      },
+      {
+        "nome": "observacao",
+        "tipo": "str",
+        "regra": "livre",
+        "min": null,
+        "max": null
+      }
+    ]
+  }
+]

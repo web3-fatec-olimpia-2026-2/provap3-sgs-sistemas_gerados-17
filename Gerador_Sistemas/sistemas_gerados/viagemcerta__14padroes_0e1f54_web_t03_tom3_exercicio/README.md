@@ -515,3 +515,13 @@ Cada resposta fica **oculta** até você clicar em **Ver resposta**.
 
 - Abra `exercicios.html` (nesta pasta) direto no navegador — não precisa de servidor.
 - Com o site no ar, o mesmo questionário está em `/exercicios/` (link **Exercícios** no topo ou na lista).
+
+
+## Módulo `destinos` (Destino)
+
+App Django acrescentada por `sgs app` (pedido: _"destinos de viagem com os campos cidade e pais"_). Telas em `/destinos/`, API REST em `/destinos/api/v1/`, padrões: encapsulamento, polimorfismo, srp, service, singleton, factory_method, abstract_factory, builder, prototype, strategy. Detalhes: `web/destinos/README.md`.
+
+
+## Ligação `Viagcert.destino` → `Destino`
+
+Campo de referência (ForeignKey) opcional, acrescentado por `sgs ligar`: aparece no formulário e na API REST de `viagcerts` (o id do Destino); apagar o Destino só limpa o campo (SET_NULL). Teste: `web/viagcerts/tests/test_ligacao_destino.py`.

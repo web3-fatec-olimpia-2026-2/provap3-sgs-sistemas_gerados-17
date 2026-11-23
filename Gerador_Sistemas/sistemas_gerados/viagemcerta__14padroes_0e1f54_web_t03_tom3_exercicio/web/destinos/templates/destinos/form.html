@@ -1,0 +1,22 @@
+{% extends "destinos/base.html" %}
+{% block title %}{% if obj %}Editar{% else %}Cadastrar{% endif %} Destino — ViagemCerta{% endblock %}
+{% block page_title %}{% if obj %}Editar{% else %}Cadastrar{% endif %} Destino{% endblock %}
+{% block content %}
+<aside class="apresentacao alert alert-info small" data-apresentacao><strong>Apresentação ·</strong> Formulário = <code>DestinoForm</code> (ModelForm): reaproveita os validators do model — a mesma regra do encapsulamento, agora no mundo Django.</aside>
+<aside class="apresentacao alert alert-info small" data-apresentacao><strong>Apresentação ·</strong> Ao salvar, <code>form.is_valid()</code> roda as validações; <code>save()</code> sozinho não validaria (pegadinha testada em <code>tests/test_models.py</code>).</aside>
+<div class="card"><div class="card-body">
+  <form method="post">
+    {% csrf_token %}
+    {% for erro in form.non_field_errors %}<div class="alert alert-danger">{{ erro }}</div>{% endfor %}
+    {% for campo in form %}
+    <div class="mb-3">
+      <label class="form-label" for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+      {{ campo }}
+      {% for erro in campo.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+    </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-primary">Salvar</button>
+    <a class="btn btn-outline-primary" href="{% if obj %}{% url 'destinos:detalhe' obj.pk %}{% else %}{% url 'destinos:lista' %}{% endif %}">Voltar</a>
+  </form>
+</div></div>
+{% endblock %}

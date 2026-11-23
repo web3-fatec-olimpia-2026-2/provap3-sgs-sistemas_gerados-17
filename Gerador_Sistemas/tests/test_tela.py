@@ -413,7 +413,8 @@ def test_sugestoes_tem_historico_pastas_sistemas_sgs_e_terminal_com_e_sem_sgs(ct
     rodar(ctx, "sgs listar")
     itens = tela.sugestoes(ctx)
     comandos = [i["cmd"] for i in itens]
-    assert comandos[0] == "sgs listar" and itens[0]["tipo"] == "historico"      # o mais recente vem primeiro
+    assert comandos[:2] == ["sgs topo", "sgs foot"]                         # sempre as duas primeiras
+    assert comandos[2] == "sgs listar" and itens[2]["tipo"] == "historico"      # depois, o mais recente
     for esperado in ("cd pasta_a", "sgs rodar 01", "sgs incrementar 01", "cd 01", "sgs gerar ", "sgs ligar ",
                      "sgs incrementar ", "ls", "sgs ls", "history -c", "sgs history -c", "python manage.py runserver"):
         assert esperado in comandos, esperado
@@ -997,7 +998,8 @@ def test_pagina_tem_os_comandos_do_topo_e_o_terminal(servidor):
     assert '<p class="principais" id="principais"></p>' in html and '[i ? "|" : "", item]' in html   # "|" sem espaço
     assert "max-width: 1100px" not in html                                 # até o fim da tela
     assert "VISUAIS" not in html and "janela[" not in html                  # o estilo muda por comando (sgs cmd)
-    assert '<html lang="pt-br" data-visual="cmd" data-topo="0" data-rodape="1">' in html   # estilo cmd, topo oculto
+    assert '<html lang="pt-br" data-visual="cmd" data-topo="0" data-rodape="0">' in html   # cmd, sem topo nem caixas
+    assert 'fixa ? -1 : pontuar(s.cmd, t)' in html                        # sgs topo e sgs foot sempre primeiro
     assert ':root[data-topo="0"] #principais { display: none; }' in html                   # sgs topo
     assert ':root[data-rodape="0"] .opcoes { display: none; }' in html                     # sgs foot: o prompt fica
     assert 'id="enviar"' not in html and "Executar" not in html          # sem botão executar (Enter executa)
@@ -1117,13 +1119,102 @@ def test_sgs_cmd_troca_o_estilo_da_tela(ctx, tmp_path):
 
 
 def test_sgs_topo_e_sgs_foot_alternam(ctx):
-    assert ctx.config.valores["topo"] is False and ctx.config.valores["rodape"] is True   # abre: topo oculto
+    assert ctx.config.valores["topo"] is False and ctx.config.valores["rodape"] is False  # abre sem os dois
     assert rodar(ctx, "sgs topo")["config"]["topo"] is True                # mostra
     assert rodar(ctx, "sgs topo")["config"]["topo"] is False               # de novo: oculta
-    assert rodar(ctx, "sgs foot")["config"]["rodape"] is False             # oculta as caixas
-    assert rodar(ctx, "sgs foot")["config"]["rodape"] is True              # de novo: mostra
+    assert rodar(ctx, "sgs foot")["config"]["rodape"] is True              # mostra as caixas
+    assert rodar(ctx, "sgs foot")["config"]["rodape"] is False             # de novo: oculta
     assert rodar(ctx, "sgs topo sim")["config"]["topo"] is True            # sim/não fixa
     assert rodar(ctx, "sgs topo talvez")["ok"] is False
+
+
+def test_a_tela_pelo_django_python_manage_py_runserver(tmp_path):
+    """`python manage.py runserver` (pasta Gerador_Sistemas) serve a MESMA tela do tela_prompt.py: a view do
+    Django repassa tudo para atender() — página, comandos, Host 127.0.0.1, POST só em JSON, gzip e o início."""
+    import gzip
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        porta = s.getsockname()[1]
+    ambiente = {**os.environ, "SGS_SAIDA": str(tmp_path / "saida"), "SGS_CONFIG": str(tmp_path / "cfg.json"),
+                "SGS_RAIZ": str(tmp_path), "PYTHONUNBUFFERED": "1"}
+    ambiente.pop("DJANGO_SETTINGS_MODULE", None)
+    ambiente.pop(tela.MARCA_TELA, None)              # (se a bateria rodar de dentro da tela, ela marca o ambiente)
+    processo = subprocess.Popen([sys.executable, "manage.py", "runserver", f"127.0.0.1:{porta}", "--noreload",
+                                 "--sem-abrir"], cwd=tela.AQUI, env=ambiente, stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT, text=True)
+    try:
+        for _ in range(150):                                               # até 30 s para subir
+            if processo.poll() is not None or not tela.porta_livre(porta):
+                break
+            time.sleep(0.2)
+        assert processo.poll() is None, processo.stdout.read()
+        time.sleep(0.3)
+        status, tipo, html = pedir(porta, "GET", "/")
+        assert status == 200 and tipo.startswith("text/html") and "<title>SGS</title>" in html.decode("utf-8")
+        status, r = postar(porta, "/comando", {"linha": "sgs listar"})
+        assert status == 200 and r["ok"] and "sistema(s)" in textos(r)
+        status, cfg = postar(porta, "/config", {})
+        assert cfg["config"]["visual"] == "cmd" and cfg["config"]["topo"] is False   # o início do SGS rodou
+        assert cfg["config"]["rodape"] is False and cfg["config"]["pwa"] is True
+        assert pedir(porta, "POST", "/comando", "linha=sgs",
+                     {"Content-Type": "application/x-www-form-urlencoded"})[0] == 415   # só JSON
+        assert pedir(porta, "GET", "/", None, {"Host": "site-malicioso.com"})[0] in (400, 403)   # só 127.0.0.1
+        assert pedir(porta, "GET", "/nada")[0] == 404
+        assert pedir(porta, "GET", "/referencia")[0] == 302
+        css = "/referencias/wikipedia_padrao_de_projeto_de_software_arquivos/estilo1.css"
+        conexao = http.client.HTTPConnection("127.0.0.1", porta, timeout=30)
+        conexao.request("GET", css, headers={"Accept-Encoding": "gzip"})
+        resposta = conexao.getresponse()
+        assert resposta.getheader("Content-Encoding") == "gzip"
+        assert gzip.decompress(resposta.read()) == (tela.PASTA_REFERENCIAS / css.removeprefix("/referencias/")).read_bytes()
+        conexao.close()
+    finally:
+        processo.terminate()
+        processo.wait(timeout=15)
+    saida = processo.stdout.read()
+    assert "Sistemas gerados em:" in saida and str(tmp_path / "saida") in saida
+
+
+def test_runserver_do_sgs_abre_na_porta_6100():
+    """Sem porta, o runserver do SGS usa a 6100 (o 00), como o tela_prompt.py — e aceita --sem-abrir."""
+    ambiente = {k: v for k, v in os.environ.items() if k != "DJANGO_SETTINGS_MODULE"}
+    r = subprocess.run([sys.executable, "manage.py", "shell", "-c",
+                        "from sgs_web.management.commands.runserver import Command as C; print(C.default_port)"],
+                       cwd=tela.AQUI, env=ambiente, capture_output=True, text=True, timeout=60)
+    assert r.stdout.strip().splitlines()[-1] == "6100", r.stderr          # (o shell do Django 6 avisa antes)
+    ajuda = subprocess.run([sys.executable, "manage.py", "runserver", "--help"], cwd=tela.AQUI, env=ambiente,
+                           capture_output=True, text=True, timeout=60).stdout
+    assert "--sem-abrir" in ajuda
+
+
+def test_runserver_do_sgs_dentro_da_propria_tela_nao_abre_outro(tmp_path):
+    """Digitado DENTRO da tela (que marca o ambiente), o manage.py da tela recusa: um 2º SGS encerraria os sites
+    do 1º e trocaria o config."""
+    ambiente = {k: v for k, v in os.environ.items() if k != "DJANGO_SETTINGS_MODULE"}
+    ambiente.update({tela.MARCA_TELA: "6100", "SGS_CONFIG": str(tmp_path / "cfg.json"),
+                     "SGS_SAIDA": str(tmp_path / "saida")})
+    r = subprocess.run([sys.executable, "manage.py", "runserver", "--noreload", "--sem-abrir"], cwd=tela.AQUI,
+                       env=ambiente, capture_output=True, text=True, timeout=60)
+    assert r.returncode != 0 and "PRÓPRIA tela do SGS" in r.stderr and "cd NN" in r.stderr
+    assert not (tmp_path / "cfg.json").exists()                            # nada foi preparado
+
+
+def test_ao_abrir_sem_topo_nem_caixas(ctx):
+    ctx.config.alterar("topo", True)
+    ctx.config.alterar("rodape", True)
+    ctx.config.alterar("pwa", False)
+    tela.preparar_inicio(ctx)
+    v = ctx.config.valores
+    assert (v["visual"], v["pwa"], v["topo"], v["rodape"]) == ("cmd", True, False, False)
+    assert all(v[caixa] for caixa in tela.OPCOES_CAIXA)                    # as caixas começam marcadas
+
+
+def test_sgs_topo_e_sgs_foot_sao_sempre_as_duas_primeiras_sugestoes(ctx):
+    for linha in ("sgs listar", "sgs tema", "sgs config"):                 # o histórico vem antes de tudo…
+        rodar(ctx, linha)
+    itens = tela.sugestoes(ctx)
+    assert [i["cmd"] for i in itens[:2]] == ["sgs topo", "sgs foot"]     # …menos destas duas
+    assert itens[0]["tipo"] == itens[1]["tipo"] == "fixo"
 
 
 def test_janela_de_app_num_perfil_so_do_sgs():

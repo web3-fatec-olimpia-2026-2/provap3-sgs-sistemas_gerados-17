@@ -38,6 +38,7 @@ class Viagcert(models.Model):
     noites = models.IntegerField("noites", validators=[MinValueValidator(1), MaxValueValidator(30)])
     valor_noite = models.DecimalField("valor noite", max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal("0"))])
     observacao = models.CharField("observacao", max_length=200, blank=True, default="")  # sem regra
+    destino = models.ForeignKey("destinos.Destino", verbose_name="destino", null=True, blank=True, on_delete=models.SET_NULL, related_name="viagcerts_destino")  # ligação (sgs ligar): opcional; apagar o Destino só limpa este campo
     tipo = models.CharField("tipo de cliente", max_length=30, choices=TIPOS, default="comum")
 
     @property
