@@ -140,3 +140,5 @@ cd "Treino_Prova/exercicios/ex01_strategy_frete" && ALVO=exercicio ../../../.ven
 - [x] Tela no estilo do Prompt de Comando: `sgs cmd` (o padrão ao abrir; também `cmd`) e `sgs cmd sgs` (as cores do
       SGS) no lugar do seletor do topo; topo sem o nome, com os comandos sem o `sgs` até o fim da tela; barra da
       janela só "SGS"; prompt `~\caminho>` numa linha; caixas do rodapé numa linha, sem cor
+- [x] Janela de app num perfil só do SGS (sem ícone de extensão e sem ⋮), sempre com `pwa=true` ao abrir;
+      Alt+Enter maximiza/volta; `sgs topo` (abre oculto) e `sgs foot` alternam o topo e as caixas; sem botão executar

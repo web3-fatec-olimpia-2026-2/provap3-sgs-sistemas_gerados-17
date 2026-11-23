@@ -80,10 +80,11 @@ HOSTS_PERMITIDOS = {"127.0.0.1", "localhost"}
 # Nunca listados nem abertos pelo visualizador de arquivos (o .env tem a senha do admin e a chave secreta).
 IGNORAR = {"__pycache__", ".pytest_cache", ".venv", "staticfiles", gs.MARCADOR, "db.sqlite3", ".env",
            "servidor.log"}
-NAVEGADORES = ["/mnt/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
-               "/mnt/c/Program Files/Microsoft/Edge/Application/msedge.exe",
-               "/mnt/c/Program Files/Google/Chrome/Application/chrome.exe",
-               "/mnt/c/Program Files (x86)/Google/Chrome/Application/chrome.exe"]
+NAVEGADORES = ["/mnt/c/Program Files/Google/Chrome/Application/chrome.exe",
+               "/mnt/c/Program Files (x86)/Google/Chrome/Application/chrome.exe",
+               "/mnt/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
+               "/mnt/c/Program Files/Microsoft/Edge/Application/msedge.exe"]
+PERFIL_NAVEGADOR = r"SGS\navegador"        # dentro do %LOCALAPPDATA% do Windows: o perfil SÓ das janelas do SGS
 OPCOES_CAIXA = ("django", "exercicio", "testar", "estudo", "comentarios", "comentarios_web", "perguntar")
 OPCOES_WEB = tuple(gs.WEB_PADRAO)          # estilo, tema, tom, paleta, comentarios_web, id_publico…
 
@@ -99,7 +100,7 @@ CONFIG_INICIAL = {
     "comentarios_web": False, "perguntar": False, "estilo": "web", "tema": "T01", "tom": "tom3", "paleta": "P02",
     "id_publico": "inteiro", "id_interno": False, "lnnl_tipo": "21", "estrutura": "plana", "seguranca": "basica",
     "pwa": True, "porta_base": PORTA_PADRAO, "admin_usuario": "admin", "admin_email": "admin@exemplo.com",
-    "admin_senha": "admin123", "visual": "cmd",
+    "admin_senha": "admin123", "visual": "cmd", "topo": False, "rodape": True,
 }
 # Valores fechados (listas): nada de texto livre vira CSS ou código.
 ESCOLHAS = {"estilo": list(gs.ESTILOS), "tema": list(temas_web.TEMAS), "tom": temas_web.TONS,
@@ -129,6 +130,8 @@ EXPLICA_CONFIG = {
     "admin_senha": "senha do superusuário (mín. 6 caracteres; vai para o web/.env do sistema)",
     "visual": "o estilo desta tela: cmd (o padrão ao abrir: como o Prompt de Comando do Windows — preto e cinza) · "
               "sgs (as cores do SGS, prompt verde) — mude com sgs cmd / sgs cmd sgs",
+    "topo": "os comandos principais no topo da tela (sgs topo alterna; a tela abre com eles ocultos)",
+    "rodape": "as caixas de seleção embaixo do prompt (sgs foot alterna; a linha do comando sempre fica)",
 }
 SIM = {"sim", "s", "true", "1", "on", "yes", "y"}
 NAO = {"nao", "não", "n", "false", "0", "off", "no"}
@@ -742,14 +745,48 @@ def encerrar(processo):
         processo.wait(timeout=5)
 
 
+_PERFIL = []
+
+
+def perfil_do_navegador():
+    """A pasta (Windows) do perfil só das janelas do SGS: %LOCALAPPDATA%\\SGS\\navegador.
+
+    Num perfil próprio, sem extensões e sem o SGS instalado como app, a janela --app abre LIMPA: só o título e
+    os botões da janela — sem o ícone de extensão e sem o menu ⋮ que o Chrome põe nos apps instalados.
+    Sem o Windows por perto (cmd.exe), devolve "" e a janela abre no perfil de sempre."""
+    if not _PERFIL:
+        pasta = ""
+        cmd = Path("/mnt/c/Windows/System32/cmd.exe")
+        if cmd.exists():
+            try:
+                saida = subprocess.run([str(cmd), "/c", "echo %LOCALAPPDATA%"], cwd="/mnt/c", capture_output=True,
+                                       text=True, timeout=10).stdout.strip()
+            except (OSError, subprocess.SubprocessError):
+                saida = ""
+            if re.fullmatch(r"[A-Za-z]:\\[^%\r\n\"]+", saida):
+                pasta = saida.rstrip("\\") + "\\" + PERFIL_NAVEGADOR
+        _PERFIL.append(pasta)
+    return _PERFIL[0]
+
+
+def comando_janela_app(exe, url, perfil):
+    """A linha que abre a janela de app: perfil próprio (sem extensões) quando há um; sem ele, só o --app (o
+    --disable-extensions no perfil de sempre desligaria as extensões do navegador inteiro)."""
+    if not perfil:
+        return [exe, f"--app={url}"]
+    return [exe, f"--user-data-dir={perfil}", "--no-first-run", "--no-default-browser-check", "--disable-extensions",
+            f"--app={url}"]
+
+
 def abrir_no_navegador(url, pwa=True):
-    """PWA: janela de app isolada das abas (Edge/Chrome --app). Sem PWA: aba comum. Devolve o que fez (ou None)."""
+    """PWA: janela de app isolada das abas (Chrome/Edge --app, num perfil só do SGS). Sem PWA: aba comum.
+    Devolve o que fez (ou None)."""
     exe = next((p for p in NAVEGADORES if os.access(p, os.X_OK)), None)
     quieto = {"stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL, "stdin": subprocess.DEVNULL,
               "start_new_session": True}
     try:
         if pwa and exe:
-            subprocess.Popen([exe, f"--app={url}"], cwd="/mnt/c", **quieto)
+            subprocess.Popen(comando_janela_app(exe, url, perfil_do_navegador()), cwd="/mnt/c", **quieto)
             return "aberto em modo PWA (janela de app isolada)"
         if shutil.which("wslview"):
             subprocess.Popen(["wslview", url], **quieto)
@@ -1143,6 +1180,8 @@ COMANDOS_SGS = [
     ("sgs hub", "abre a cópia do Django Study Hub (estudo de Django: models, views, ORM, forms, DRF, P3)", False),
     ("sgs cmd [sgs]", "estilo da tela: sgs cmd = como o Prompt de Comando do Windows (o padrão ao abrir) · "
                       "sgs cmd sgs = as cores do SGS · sem o sgs também vale: cmd · cmd sgs", False),
+    ("sgs topo", "mostra os comandos principais no topo · de novo: oculta (a tela abre com eles ocultos)", False),
+    ("sgs foot", "oculta as caixas de seleção embaixo do prompt (a linha do comando fica) · de novo: mostra", False),
     ("sgs clear  (ou clear)", "limpa a tela — ficam só as duas linhas do topo", False),
     ("sgs history  (ou history)", "histórico de comandos (arquivo .sgs_historico: sobrevive ao F5) · history N · "
                                   "history -c limpa · history -d N apaga um", False),
@@ -1657,6 +1696,31 @@ def sgs_cmd(ctx, args, _opcoes=None):
               config=ctx.config.publica())
 
 
+def _alternar(ctx, chave, args):
+    """Liga/desliga uma chave booleana do config (sem argumento: inverte · com sim/não: fixa) e grava."""
+    ctx.config.alterar(chave, args[0] if args else not ctx.config.valores[chave])
+    ctx.config.salvar()
+    return ctx.config.valores[chave]
+
+
+def sgs_topo(ctx, args, _opcoes=None):
+    """sgs topo — mostra os comandos principais no topo; de novo, oculta (alterna). sgs topo sim|nao fixa."""
+    if _alternar(ctx, "topo", args):
+        msg = "comandos do topo à mostra · sgs topo de novo oculta"
+    else:
+        msg = "comandos do topo ocultos · sgs topo de novo mostra"
+    return ok(texto(msg, "suave"), config=ctx.config.publica())
+
+
+def sgs_foot(ctx, args, _opcoes=None):
+    """sgs foot — oculta as caixas de seleção do rodapé (a linha do comando fica); de novo, mostra (alterna)."""
+    if _alternar(ctx, "rodape", args):
+        msg = "caixas de seleção à mostra · sgs foot de novo oculta"
+    else:
+        msg = "caixas de seleção ocultas (a linha do comando fica) · sgs foot de novo mostra"
+    return ok(texto(msg, "suave"), config=ctx.config.publica())
+
+
 def sgs_limpar(ctx, _args, _opcoes=None):
     return {"ok": True, "blocos": [], "limpar": True}
 
@@ -2121,7 +2185,8 @@ SGS = {"ajuda": sgs_ajuda, "help": sgs_ajuda, "gerar": sgs_gerar, "listar": sgs_
        "tipo": sgs_tipos, "editar": sgs_editar, "versao": sgs_editar, "versão": sgs_editar, "app": sgs_app,
        "modulo": sgs_app, "módulo": sgs_app, "ligar": sgs_ligar, "incrementar": sgs_incrementar,
        "modificar": sgs_incrementar, "api": sgs_api, "tutorial": sgs_tutorial_cmd, "hub": sgs_hub,
-       "cmd": sgs_cmd, "visual": sgs_cmd, "cor": sgs_cmd}
+       "cmd": sgs_cmd, "visual": sgs_cmd, "cor": sgs_cmd, "topo": sgs_topo, "foot": sgs_foot, "rodape": sgs_foot,
+       "rodapé": sgs_foot}
 
 
 def executar_linha(linha, ctx, opcoes=None):
@@ -2407,7 +2472,11 @@ def principal(argv=None):
     ctx = servidor.ctx
     for caixa in OPCOES_CAIXA:                    # ao abrir, TODAS as caixas começam marcadas (desmarque na tela)
         ctx.config.alterar(caixa, True)
-    ctx.config.alterar("visual", "cmd")           # ao abrir, sempre no estilo do Prompt de Comando (sgs cmd)
+    for chave, valor in (("visual", "cmd"),       # ao abrir: sempre no estilo do Prompt de Comando (sgs cmd),
+                         ("pwa", True),           # em janela de app (PWA),
+                         ("topo", False),         # sem os comandos no topo (sgs topo mostra)
+                         ("rodape", True)):       # e com as caixas de seleção (sgs foot oculta)
+        ctx.config.alterar(chave, valor)
     ctx.config.salvar()
     for chave, porta in ctx.servidores.encerrar_orfaos():   # sites de uma tela anterior que caiu sem limpar
         print(f"  porta {porta} liberada (site {chave} que ficou no ar de uma sessão anterior)")
@@ -2443,7 +2512,7 @@ def principal(argv=None):
 #    Texto que vem do servidor entra com textContent (nunca innerHTML).
 # =============================================================================
 PAGINA = r"""<!doctype html>
-<html lang="pt-br" data-visual="cmd">
+<html lang="pt-br" data-visual="cmd" data-topo="0" data-rodape="1">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -2480,6 +2549,8 @@ PAGINA = r"""<!doctype html>
   .principais { margin: 0 0 8px; font-size: 12px; line-height: 1.5; color: var(--suave); overflow-wrap: anywhere; }
   .principais .cmd { color: var(--topo); text-decoration: none; white-space: nowrap; }   /* "api config" não parte */
   .principais .cmd:hover { color: #ffffff; text-decoration: underline; }
+  :root[data-topo="0"] #principais { display: none; }      /* sgs topo mostra/oculta (abre oculto) */
+  :root[data-rodape="0"] .opcoes { display: none; }        /* sgs foot oculta/mostra as caixas; o prompt fica */
   .eco-cmd { margin-top: 14px; color: var(--forte); white-space: pre-wrap; overflow-wrap: anywhere; }
   .eco-cmd .ps1 { display: block; }
   .seta { color: var(--prompt); font-weight: var(--prompt-peso); white-space: nowrap; }
@@ -2549,10 +2620,6 @@ PAGINA = r"""<!doctype html>
                   border: 1px solid var(--marca); border-radius: 1px; background: var(--fundo); }
   .opcoes input:checked { background: var(--marca); box-shadow: inset 0 0 0 2px var(--fundo); }
   .opcoes input:focus-visible { outline: 1px solid #ffffff; outline-offset: 1px; }
-  #enviar { margin-left: auto; flex: none; font: inherit; background: transparent; color: var(--marca);
-            border: 1px solid var(--marca); border-radius: 3px; padding: 0 7px; cursor: pointer; }
-  #enviar:hover { background: var(--marca); color: var(--fundo); }
-  #enviar:disabled { opacity: .4; cursor: wait; }
 </style>
 </head>
 <body>
@@ -2581,7 +2648,6 @@ PAGINA = r"""<!doctype html>
       <label><input type="checkbox" data-opcao="comentarios"> Comentários no código</label>
       <label><input type="checkbox" data-opcao="comentarios_web"> Notas na web</label>
       <label><input type="checkbox" data-opcao="perguntar"> Perguntar antes de gerar</label>
-      <button id="enviar" type="button" title="Executar (Enter)" aria-label="Executar">⏎</button>
     </div>
   </div>
 </div>
@@ -2598,7 +2664,8 @@ const PRINCIPAIS = [
   ["sgs info ", true], ["sgs testar ", true], ["sgs servidores", false], ["sgs parar ", true], ["sgs editar ", true],
   ["sgs app ", true], ["sgs ligar ", true], ["sgs incrementar ", true], ["sgs api config ", true], ["history", false],
   ["sgs dominios", false], ["sgs tipos ", true], ["sgs tema", false], ["sgs comandos ", true], ["sgs cancelar", false],
-  ["sgs tutorial", false], ["sgs wiki", false], ["sgs hub", false], ["sgs cmd ", true]
+  ["sgs tutorial", false], ["sgs wiki", false], ["sgs hub", false], ["sgs cmd ", true], ["sgs topo", false],
+  ["sgs foot", false]
 ];
 const historico = [];             // cópia do arquivo .sgs_historico (vem do servidor: sobrevive ao F5)
 let posHist = 0;
@@ -2733,7 +2800,38 @@ function escrever(comando) {
   ta.setSelectionRange(comando.length, comando.length);
   atualizarEco();
 }
+/* ---------- Alt+Enter: maximiza a janela; de novo, volta ao tamanho de antes (como no Prompt de Comando) ----------
+   Na janela de app (PWA) o SGS ocupa a área útil da tela com moveTo/resizeTo e guarda onde estava; numa aba comum
+   (o navegador não deixa a página mexer na janela) vira tela cheia. */
+let antesDeMaximizar = null;      // [x, y, largura, altura] da janela antes do Alt+Enter
+function alternarMaximizar() {
+  const s = window.screen;
+  const area = [s.availLeft ?? 0, s.availTop ?? 0, s.availWidth, s.availHeight];
+  const agora = [window.screenX, window.screenY, window.outerWidth, window.outerHeight];
+  const maximizada = Math.abs(agora[2] - area[2]) <= 16 && Math.abs(agora[3] - area[3]) <= 16;
+  let alvo;
+  if (!maximizada) {
+    antesDeMaximizar = agora;
+    alvo = area;
+  } else {
+    alvo = antesDeMaximizar || [area[0] + area[2] * 0.1, area[1] + area[3] * 0.1, area[2] * 0.8, area[3] * 0.8];
+    antesDeMaximizar = null;
+  }
+  window.moveTo(Math.round(alvo[0]), Math.round(alvo[1]));
+  window.resizeTo(Math.round(alvo[2]), Math.round(alvo[3]));
+  setTimeout(() => {                                          // nada mudou: aba comum → tela cheia (liga/desliga)
+    if (window.outerWidth !== agora[2] || window.outerHeight !== agora[3]) return;
+    antesDeMaximizar = null;
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    else document.documentElement.requestFullscreen?.().catch(() => {});
+  }, 150);
+}
+document.addEventListener("keydown", (ev) => {
+  if (ev.key === "Enter" && ev.altKey) { ev.preventDefault(); ev.stopPropagation(); alternarMaximizar(); }
+}, true);                                                     // antes do Enter do prompt (que executaria)
+
 ta.addEventListener("keydown", (ev) => {
+  if (ev.key === "Enter" && ev.altKey) return;                // Alt+Enter: só a janela (acima)
   if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); executar(); return; }
   if (ev.key === "Tab" && !ev.shiftKey) {                    // TAB completa com a sugestão marcada
     if (sugAtuais.length) { ev.preventDefault(); escolherSugestao(sugAtuais[sugSel].cmd); return; }
@@ -2903,8 +3001,11 @@ function voltarPrincipal() {
 const caixas = [...document.querySelectorAll("[data-opcao]")];
 function aplicarConfig(c) {
   for (const cx of caixas) cx.checked = !!c[cx.dataset.opcao];
-  if (c.visual && c.visual !== document.documentElement.dataset.visual) {   // sgs cmd · sgs cmd sgs
-    document.documentElement.dataset.visual = c.visual;
+  const raiz = document.documentElement.dataset;
+  if ("topo" in c) raiz.topo = c.topo ? "1" : "0";            // sgs topo
+  if ("rodape" in c) raiz.rodape = c.rodape ? "1" : "0";      // sgs foot
+  if (c.visual && c.visual !== raiz.visual) {                 // sgs cmd · sgs cmd sgs
+    raiz.visual = c.visual;
     desenharPrompt();
   }
 }
@@ -2920,9 +3021,10 @@ for (const cx of caixas) {
 }
 
 /* ---------- executar: tudo vai para /comando (o servidor decide: sgs, terminal ou anotação) ---------- */
+let executando = false;           // um comando por vez (Enter durante a execução não manda outro)
 async function executar(forcado) {
   let texto = (forcado ?? ta.value).trim();
-  if ((!texto && !pergunta) || $("enviar").disabled) return;      // numa pergunta, Enter vazio = padrão
+  if ((!texto && !pergunta) || executando) return;                // numa pergunta, Enter vazio = padrão
   posHist = historico.length;
   ta.value = "";
   atualizarSugestoes();                                         // linha vazia: a caixa de sugestões fecha
@@ -2935,7 +3037,7 @@ async function executar(forcado) {
   const resposta = el("div", { class: "resp" }, el("p", { class: "suave espera" }, "executando "));
   saida.append(resposta);
   rolar();
-  $("enviar").disabled = true;
+  executando = true;
   try {
     const r = await fetch("/comando", { method: "POST", headers: { "Content-Type": "application/json" },
                                        body: JSON.stringify({ linha: texto, opcoes: lerOpcoes() }) });
@@ -2959,12 +3061,11 @@ async function executar(forcado) {
     resposta.replaceChildren(el("p", { class: "erro" }, "sem resposta do servidor (o SGS ainda está rodando no terminal?): " + e));
   }
   desenharPrompt();
-  $("enviar").disabled = false;
+  executando = false;
   ta.focus();
   rolar();
   carregarSugestoes();                  // pasta, sistemas e histórico podem ter mudado: o intellisense acompanha
 }
-$("enviar").addEventListener("click", () => executar());
 
 /* ---------- início: só as duas linhas do topo ---------- */
 fetch("/config").then((r) => r.json()).then((d) => {

@@ -392,7 +392,7 @@ def test_todos_os_comandos_listados_funcionam_com_e_sem_sgs(ctx, tmp_path):
                   "sgs padroes", "sgs dominios saude", "sgs tipos nome, idade", "sgs config", "sgs estilo", "sgs tema",
                   "sgs pwa", "sgs servidores", "sgs comand", "sgs comand 3", "sgs wiki", "sgs cancelar", "sgs exit",
                   "sgs clear", "sgs cls", "sgs history", "sgs help", "sgs tutorial", "sgs hub", "sgs cmd", "sgs cmd sgs", "cmd",
-                  "cmd sgs"})
+                  "cmd sgs", "sgs topo", "sgs foot"})
     formas = sgs + [forma for linha in TERMINAL_VERIFICADOS for forma in (linha, f"sgs {linha}")]
     falhas = []
     for linha in formas:
@@ -997,7 +997,11 @@ def test_pagina_tem_os_comandos_do_topo_e_o_terminal(servidor):
     assert '<p class="principais" id="principais"></p>' in html and '[i ? "|" : "", item]' in html   # "|" sem espaço
     assert "max-width: 1100px" not in html                                 # até o fim da tela
     assert "VISUAIS" not in html and "janela[" not in html                  # o estilo muda por comando (sgs cmd)
-    assert '<html lang="pt-br" data-visual="cmd">' in html                 # abre sempre no estilo cmd
+    assert '<html lang="pt-br" data-visual="cmd" data-topo="0" data-rodape="1">' in html   # estilo cmd, topo oculto
+    assert ':root[data-topo="0"] #principais { display: none; }' in html                   # sgs topo
+    assert ':root[data-rodape="0"] .opcoes { display: none; }' in html                     # sgs foot: o prompt fica
+    assert 'id="enviar"' not in html and "Executar" not in html          # sem botão executar (Enter executa)
+    assert 'ev.key === "Enter" && ev.altKey' in html and "window.resizeTo" in html   # Alt+Enter maximiza/volta
     assert ':root[data-visual="cmd"]' in html and "#0c0c0c" in html and "--prompt: #cccccc" in html
     assert "--marca: #cccccc" in html and "appearance: none" in html      # caixas do rodapé sem cor
     assert "flex-wrap: nowrap" in html and "(valem para o sgs gerar)" not in html   # rodapé numa linha só
@@ -1109,7 +1113,27 @@ def test_sgs_cmd_troca_o_estilo_da_tela(ctx, tmp_path):
     (tmp_path / "antigo.json").write_text(json.dumps({"visual": "powershell"}), encoding="utf-8")
     assert tela.Config(tmp_path / "antigo.json").valores["visual"] == "cmd"   # config antiga → cmd
     itens = {i["cmd"] for i in tela.sugestoes(ctx)}
-    assert {"sgs cmd", "sgs cmd sgs", "cmd", "cmd sgs"} <= itens            # no intellisense
+    assert {"sgs cmd", "sgs cmd sgs", "cmd", "cmd sgs", "sgs topo", "sgs foot"} <= itens   # no intellisense
+
+
+def test_sgs_topo_e_sgs_foot_alternam(ctx):
+    assert ctx.config.valores["topo"] is False and ctx.config.valores["rodape"] is True   # abre: topo oculto
+    assert rodar(ctx, "sgs topo")["config"]["topo"] is True                # mostra
+    assert rodar(ctx, "sgs topo")["config"]["topo"] is False               # de novo: oculta
+    assert rodar(ctx, "sgs foot")["config"]["rodape"] is False             # oculta as caixas
+    assert rodar(ctx, "sgs foot")["config"]["rodape"] is True              # de novo: mostra
+    assert rodar(ctx, "sgs topo sim")["config"]["topo"] is True            # sim/não fixa
+    assert rodar(ctx, "sgs topo talvez")["ok"] is False
+
+
+def test_janela_de_app_num_perfil_so_do_sgs():
+    """Perfil próprio = sem extensões e sem o SGS instalado: a janela abre sem o ícone de extensão e sem o ⋮."""
+    exe, url = "/mnt/c/chrome.exe", "http://127.0.0.1:6100/"
+    linha = tela.comando_janela_app(exe, url, r"C:\Users\x\AppData\Local\SGS\navegador")
+    assert linha[0] == exe and linha[-1] == f"--app={url}"
+    assert r"--user-data-dir=C:\Users\x\AppData\Local\SGS\navegador" in linha and "--disable-extensions" in linha
+    assert tela.comando_janela_app(exe, url, "") == [exe, f"--app={url}"]   # sem perfil: não mexe nas extensões
+    assert tela.NAVEGADORES[0].endswith("chrome.exe")
 
 
 @pytest.mark.parametrize("metodo, caminho, corpo, cabecalhos, esperado", [

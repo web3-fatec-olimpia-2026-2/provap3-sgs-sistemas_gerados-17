@@ -31,9 +31,16 @@ python Gerador_Sistemas/tela_prompt.py
 ```
 
 Abre em **http://127.0.0.1:6100**, numa janela de app (PWA). Ctrl+C no terminal para parar;
-`--sem-abrir` só sobe o servidor. Na barra da janela fica só **SGS**; no topo, os **comandos principais sem o
-`sgs` na frente** (`ajuda|gerar|listar|…|cmd`), em fonte menor, separados por `|` e até o fim da tela (o clique
-executa ou escreve no prompt o comando inteiro).
+`--sem-abrir` só sobe o servidor. A tela sempre abre em **janela de app** (`pwa=true`) do Chrome (ou Edge) num
+**perfil só do SGS** (`%LOCALAPPDATA%\SGS\navegador`): sem extensões e sem app instalado, a janela fica limpa — só
+o título **SGS** e os botões da janela, sem o ícone de extensão e sem o ⋮. (O atalho “SGS” instalado pelo Chrome
+continua mostrando os dois: é o Chrome que põe esses botões nos apps instalados.) **Alt+Enter** maximiza a janela;
+de novo, volta ao tamanho de antes.
+
+A tela abre limpa como o Prompt de Comando: `sgs topo` mostra no topo os **comandos principais sem o `sgs` na
+frente** (`ajuda|gerar|listar|…|cmd|topo|foot`, fonte menor, separados por `|`, até o fim da tela; o clique executa
+ou escreve no prompt o comando inteiro) e, de novo, oculta. `sgs foot` oculta as caixas de seleção (a linha do
+comando fica) e, de novo, mostra. Não há botão executar: o Enter executa.
 
 A tela **abre sempre no estilo do Prompt de Comando** do Windows (`sgs cmd`): fundo `#0c0c0c` e tudo em cinza
 `#cccccc` — o prompt numa linha só, `~\caminho>comando`, e as caixas do rodapé numa linha, sem cor. Para as cores
@@ -99,6 +106,7 @@ Principais comandos `sgs`:
 | `sgs padroes` · `sgs config` · `sgs pwa=false` · `clear` | catálogo, configuração, PWA, limpar |
 | `sgs tutorial` · `sgs wiki` · `sgs hub` | tutorial prático · Wikipédia (padrões GoF) · Django Study Hub, lado a lado |
 | `sgs cmd` · `sgs cmd sgs` (ou `cmd` · `cmd sgs`) | estilo da tela: Prompt de Comando (padrão ao abrir) · cores do SGS |
+| `sgs topo` · `sgs foot` | mostra/oculta os comandos do topo · oculta/mostra as caixas de seleção (alternam) |
 
 As caixas embaixo valem para o `sgs gerar` e ficam salvas: **+ Django**, **Modo exercício**, **Rodar testes**,
 **Para estudo** (desmarcada = só gerar), **Comentários no código**, **Notas na web** e **Perguntar antes de gerar**.

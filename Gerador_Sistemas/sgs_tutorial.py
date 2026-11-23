@@ -129,6 +129,8 @@ encerra o anterior (s/N).</p>"""),
 <tr><td>↑ / ↓</td><td>com a caixa aberta: andam nas sugestões · fechada: histórico (sobrevive ao F5)</td></tr>
 <tr><td>Esc · clear · history · history -c</td><td>fecha a caixa · limpa a tela · histórico · limpa o histórico</td></tr>
 <tr><td><code>sgs cmd</code> · <code>sgs cmd sgs</code> (ou <code>cmd</code> · <code>cmd sgs</code>)</td><td>o estilo da tela: Prompt de Comando (o padrão ao abrir) · as cores do SGS</td></tr>
+<tr><td><code>sgs topo</code> · <code>sgs foot</code></td><td>mostra/oculta os comandos do topo · oculta/mostra as caixas de seleção (o prompt fica)</td></tr>
+<tr><td>Alt+Enter</td><td>maximiza a janela; de novo, volta ao tamanho de antes</td></tr>
 <tr><td><code>sgs</code> · <code>sgs comand</code></td><td>ajuda · a lista numerada de todos os comandos</td></tr></table>
 <p>Todo comando do terminal funciona com ou sem <code>sgs</code> na frente (<code>ls</code> = <code>sgs ls</code>).</p>"""),
 ]
@@ -194,4 +196,4 @@ def resumo():
             ("padrões de projeto", "sgs padroes · padroes=state,observer no sgs app"),
             ("API", "sgs api config NN [endpoint campo=sim|nao] · ?campos=a,b"),
             ("versões e sites", "sgs editar NN · sgs rodar/parar/testar NN"),
-            ("tela", "TAB/→ · ↑/↓ · history · sgs cmd · sgs cmd sgs")]
+            ("tela", "TAB/→ · ↑/↓ · history · sgs cmd [sgs] · sgs topo · sgs foot · Alt+Enter")]
