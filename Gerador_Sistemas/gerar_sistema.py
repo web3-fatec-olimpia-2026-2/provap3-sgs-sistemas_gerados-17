@@ -1252,9 +1252,17 @@ class Spec:
         self.slug = snake(self.sistema)
         self.ent = d["entidade"]
         self.ent_var = camel_para_snake(self.ent)
-        self.app = plural(self.ent_var)
-        if self.app in ("nucleo", "config", "tests", "web", "gabarito", "docs"):
+        # PERFIL do domínio (dominios.PERFIS): pasta, projeto e app Django, rota do app, DRF e pytest.ini próprios
+        # (ex.: a Prova P3 — provaP3 / cooperativa / citricultura). Sem perfil: o de sempre.
+        self.perfil = dict(d.get("perfil") or {})
+        self.projeto = self.perfil.get("projeto") or "config"
+        self.app = self.perfil.get("app") or plural(self.ent_var)
+        if self.app in ("nucleo", "config", "tests", "web", "gabarito", "docs", self.projeto):
             self.app += "_app"
+        self.rota = self.perfil.get("rota") or ""                  # "" = o app na raiz do site
+        self.drf = bool(self.perfil.get("drf"))
+        self.pasta = self.perfil.get("pasta")                      # nome fixo da pasta (senão, nome_saida)
+        self.pytest_arquivos = self.perfil.get("pytest_arquivos") or "test_*.py"
         self.atributos = d["atributos"]
         self.ident, self.qtd, self.preco = d["ident"], d["quantidade"], d["preco"]
         self.unidade = d["unidade"]
@@ -1359,6 +1367,13 @@ class Spec:
         for chave in ("titulo", "livre", "ocupado", "acao_livre", "acao_ocupado", "zero", "contagem"):
             if chave not in self.painel:
                 erros.append(f"painel: falta a chave {chave!r}")
+        for campo, valor in (("projeto", self.projeto), ("app", self.app)):      # o perfil vira nome de pacote
+            if not identificador(valor) or valor != valor.lower():
+                erros.append(f"perfil.{campo} {valor!r}: use um nome de pacote Python em minúsculas (ex.: cooperativa)")
+        if self.rota and not re.fullmatch(r"[a-z0-9_-]+/", self.rota):
+            erros.append(f"perfil.rota {self.rota!r}: use letras minúsculas e terminar com / (ex.: citricultura/)")
+        if self.pasta is not None and not re.fullmatch(r"[A-Za-z0-9_]+", str(self.pasta)):
+            erros.append(f"perfil.pasta {self.pasta!r}: só letras, números e _ (ex.: provaP3)")
         if erros:
             raise ErroGerador("especificação inválida:\n  - " + "\n  - ".join(erros))
 
@@ -5777,6 +5792,144 @@ def django_json(s, i=0):
     return "{" + ", ".join(partes) + "}"
 
 
+def gerar_drf(s):
+    """API com o DRF (Django REST Framework) — só quando o perfil do domínio pede (a Prova P3).
+
+    Fica AO LADO da API em Django puro (api.py): a mesma regra (os validators do model) em dois estilos.
+    Serializer (model ↔ JSON + validação) · ViewSet (o CRUD REST inteiro) · router (as rotas) em /api/<recurso>/ ·
+    testes com o APIClient do DRF.
+    """
+    app, ent = s.app, s.ent
+    recurso = plural(s.ent_var).replace("_", "-")
+    arq = {}
+    arq[f"web/{app}/serializers.py"] = render(r'''
+        """
+        SERIALIZER do DRF: converte o @@ENT@@ (model) em JSON e VALIDA o que chega na API.
+
+        O ModelSerializer lê os campos e os validators do model — a mesma regra das telas (ModelForm) e da API em
+        Django puro (api.py): o limite de cada campo mora num lugar só (no model).
+        """
+        from rest_framework import serializers
+
+        from .models import @@ENT@@
+
+
+        class @@ENT@@Serializer(serializers.ModelSerializer):
+            class Meta:
+                model = @@ENT@@
+                fields = "__all__"
+        ''', ENT=ent)
+    arq[f"web/{app}/api_drf.py"] = render(r'''
+        """
+        API com o DRF (Django REST Framework) — compare com api.py (Django puro: JsonResponse e os métodos à mão).
+
+        Um ModelViewSet faz o CRUD REST inteiro e o router cria as rotas (incluídas em /api/ pelo projeto):
+          GET    /api/@@RECURSO@@/        lista            POST   /api/@@RECURSO@@/        cria (201 / 400)
+          GET    /api/@@RECURSO@@/<pk>/   um registro      PUT    /api/@@RECURSO@@/<pk>/   altera tudo
+          PATCH  /api/@@RECURSO@@/<pk>/   altera parte     DELETE /api/@@RECURSO@@/<pk>/   exclui (204)
+        No navegador, /api/ abre a Browsable API do DRF (dá para testar os endpoints por ali).
+        """
+        from rest_framework import viewsets
+        from rest_framework.routers import DefaultRouter
+
+        from .models import @@ENT@@
+        from .serializers import @@ENT@@Serializer
+
+
+        class @@ENT@@ViewSet(viewsets.ModelViewSet):
+            queryset = @@ENT@@.objects.all().order_by("pk")
+            serializer_class = @@ENT@@Serializer
+
+
+        router = DefaultRouter()
+        router.register("@@RECURSO@@", @@ENT@@ViewSet, basename="@@BASE@@")
+        urlpatterns = router.urls
+        ''', ENT=ent, RECURSO=recurso, BASE=s.ent_var)
+    arq[f"web/{app}/tests/test_drf.py"] = render(r'''
+        """Testes da API do DRF com o APIClient (rest_framework.test): CRUD, validação (400) e o 404."""
+        import pytest
+        from django.urls import reverse
+        from rest_framework.test import APIClient
+
+        from @@APP@@.models import @@ENT@@
+
+        pytestmark = pytest.mark.django_db
+        VALIDO = @@VALIDO@@
+
+
+        @pytest.fixture
+        def api():
+            return APIClient()
+
+
+        def test_lista_vazia_e_post_cria(api):
+            lista = reverse("@@BASE@@-list")
+            assert api.get(lista).status_code == 200 and api.get(lista).json() == []
+            resposta = api.post(lista, VALIDO, format="json")
+            assert resposta.status_code == 201, resposta.json()
+            assert resposta.json()["@@IDENT@@"] == VALIDO["@@IDENT@@"] and @@ENT@@.objects.count() == 1
+
+
+        def test_post_invalido_devolve_400_com_o_campo(api):
+            resposta = api.post(reverse("@@BASE@@-list"), {**VALIDO, "@@QTD@@": 0}, format="json")
+            assert resposta.status_code == 400 and "@@QTD@@" in resposta.json()
+            assert @@ENT@@.objects.count() == 0
+
+
+        def test_get_patch_put_delete_de_um_registro(api):
+            criado = api.post(reverse("@@BASE@@-list"), VALIDO, format="json").json()
+            url = reverse("@@BASE@@-detail", args=[criado["id"]])
+            assert api.get(url).json()["id"] == criado["id"]
+            assert api.patch(url, {"@@QTD@@": 2}, format="json").json()["@@QTD@@"] == 2
+            assert api.put(url, {**VALIDO, "@@QTD@@": 3}, format="json").json()["@@QTD@@"] == 3
+            assert api.delete(url).status_code == 204
+            assert api.get(url).status_code == 404
+
+
+        def test_a_raiz_da_api_lista_o_recurso(api):
+            assert "@@RECURSO@@" in api.get("/api/", HTTP_ACCEPT="application/json").json()
+        ''', APP=app, ENT=ent, BASE=s.ent_var, VALIDO=django_json(s), IDENT=s.ident, QTD=s.qtd, RECURSO=recurso)
+    return arq
+
+
+def secao_perfil(s):
+    """Seção do README de um sistema com PERFIL (a Prova P3): o que o guia manda fazer × onde está no sistema."""
+    recurso = plural(s.ent_var).replace("_", "-")
+    web = s.web
+    admin = "gestao" if web["seguranca"] == "baseline" else "admin"
+    return render(r'''
+
+        ## @@NOME@@ — o ambiente do guia, já montado
+
+        Gerado com o **perfil** do domínio (`dominios.PERFIS`), igual ao guia
+        `ProvaPraticaP3/GUIA_Ambiente_Django_Maquinas_FATEC*.pdf`. A pasta `web/` faz o papel da pasta de trabalho
+        do guia (lá, `~/provaP3`; aqui o caminho é **relativo**: `sistemas_gerados/@@PASTA@@/web`).
+
+        | No guia | Aqui |
+        |---|---|
+        | `pip install django djangorestframework pytest pytest-django` | `requirements.txt` (`bash iniciar.sh deps`) |
+        | `django-admin startproject @@PROJETO@@ .` | `web/manage.py` + `web/@@PROJETO@@/` (settings, urls, wsgi) |
+        | `python manage.py startapp @@APP@@` | `web/@@APP@@/` (models, forms, views, api.py, serializers.py, api_drf.py, tests/) |
+        | `"rest_framework"` e `"@@APP@@"` em `INSTALLED_APPS` | `web/@@PROJETO@@/settings.py` |
+        | `pytest.ini`: `DJANGO_SETTINGS_MODULE = @@PROJETO@@.settings` · `python_files = @@ARQUIVOS@@` | `web/pytest.ini` |
+
+        Rotas: `/` leva a `/@@ROTA@@` (telas do CRUD) · `/@@ROTA@@api/v1/` (API em Django puro, `JsonResponse`) ·
+        `/api/@@RECURSO@@/` (API com o **DRF**: Serializer + ViewSet + router; `/api/` abre a Browsable API) ·
+        `/@@ADMIN@@/` (Django Admin).
+
+        Na tela do SGS: `sgs provap3` gera e prepara tudo (.venv, dependências, .env, migrations, admin);
+        `sgs rodar NN` sobe o site. No terminal (com o .venv ativado):
+
+        ```bash
+        cd sistemas_gerados/@@PASTA@@/web
+        python manage.py migrate
+        python manage.py runserver
+        python -m pytest
+        ```
+        ''', NOME=s.perfil.get("nome", s.sistema), PASTA=s.pasta or "", PROJETO=s.projeto, APP=s.app,
+        ARQUIVOS=s.pytest_arquivos, ROTA=s.rota, RECURSO=recurso, ADMIN=admin)
+
+
 def gerar_api_rest(s):
     """API REST (JSON) + settings da app + testes — para TODA app Django gerada (a principal e os módulos).
 
@@ -6253,7 +6406,7 @@ def gerar_web(s):
             "django.contrib.sessions",
             "django.contrib.messages",
             "django.contrib.staticfiles",
-            "@@APP@@",
+            @@APPS_DO_PROJETO@@
         ]
 
         MIDDLEWARE = [
@@ -6287,13 +6440,24 @@ def gerar_web(s):
         STATIC_ROOT = BASE_DIR / "staticfiles"  # destino do `manage.py collectstatic` (publicação)
         DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
         @@SEGURANCA@@
-        ''', APP=app, DEBUG="0" if s.web["seguranca"] == "baseline" else "1",
+        ''', APP=app, APPS_DO_PROJETO=('"rest_framework",  # DRF: Django REST Framework (API com Serializer/ViewSet)\n'
+                                       if s.drf else "") + f'"{app}",',
+        DEBUG="0" if s.web["seguranca"] == "baseline" else "1",
         ADMIN="gestao/" if s.web["seguranca"] == "baseline" else "admin/",
         SEGURANCA=SETTINGS_BASELINE if s.web["seguranca"] == "baseline" else "")
+    # Rotas do projeto. Perfil com rota (Prova P3: "citricultura/"): o app fica em /citricultura/ e a raiz leva
+    # até ele; com DRF, a API do DRF (router) fica em /api/. Sem perfil: o app na raiz, como sempre.
+    rotas_app = []
+    if s.drf:
+        rotas_app.append(f'path("api/", include("{app}.api_drf")),  # API com o DRF (router + ViewSet): /api/…')
+    rotas_app.append(f'path("{s.rota}", include("{app}.urls")),')
+    if s.rota:
+        rotas_app.append(f'path("", RedirectView.as_view(url="/{s.rota}", permanent=False)),  # a raiz leva ao app')
     arq["web/config/urls.py"] = render(r'''
         from django.conf import settings
         from django.contrib import admin
         from django.urls import include, path
+        @@IMPORTA_REDIRECT@@
 
         from . import pwa
 
@@ -6302,9 +6466,12 @@ def gerar_web(s):
             # PWA: manifest e service worker ficam na RAIZ do site (o service worker só controla o que está abaixo dele)
             path("manifest.webmanifest", pwa.manifest, name="manifest"),
             path("sw.js", pwa.service_worker, name="service_worker"),
-            path("", include("@@APP@@.urls")),
+            @@ROTAS_APP@@
         ]
-        ''', APP=app)
+        ''', ROTAS_APP="\n".join(rotas_app),
+        IMPORTA_REDIRECT="from django.views.generic import RedirectView" if s.rota else "")
+    if not s.rota:      # sem a linha vazia que o marcador deixaria (a saída de sempre não muda)
+        arq["web/config/urls.py"] = arq["web/config/urls.py"].replace("import include, path\n\n\nfrom", "import include, path\n\nfrom")
     arq["web/config/pwa.py"] = render(r'''
         """
         PWA (Progressive Web App): o site pode ser INSTALADO e abrir numa janela própria, isolada das abas.
@@ -6376,8 +6543,8 @@ def gerar_web(s):
         [pytest]
         DJANGO_SETTINGS_MODULE = config.settings
         pythonpath = . ..
-        python_files = test_*.py
-        ''')
+        python_files = @@ARQUIVOS_TESTE@@
+        ''', ARQUIVOS_TESTE=s.pytest_arquivos)
     arq[f"web/{app}/__init__.py"] = ""
     arq[f"web/{app}/apps.py"] = render(r'''
         from django.apps import AppConfig
@@ -8263,9 +8430,38 @@ def mover_para_apps(arq, s):
     return novo
 
 
+PROJETO_PADRAO = "config"     # o pacote do projeto Django (web/config/settings.py) quando o perfil não diz outro
+_REF_PROJETO = re.compile(r"\bconfig(?=[./](?:settings|urls|wsgi|env|pwa)\b)")
+
+
+def renomear_projeto_django(arq, projeto):
+    """Troca o pacote do projeto Django "config" por outro (perfil: a Prova P3 usa "cooperativa"): a pasta
+    web/config/ e toda referência a ele — config.settings, config/urls.py, from config.env… — nos textos."""
+    novo = {}
+    for caminho, conteudo in arq.items():
+        if caminho.startswith(f"web/{PROJETO_PADRAO}/"):
+            caminho = f"web/{projeto}/" + caminho[len(f"web/{PROJETO_PADRAO}/"):]
+        if isinstance(conteudo, str):
+            conteudo = _REF_PROJETO.sub(projeto, conteudo)
+        novo[caminho] = conteudo
+    return novo
+
+
+def pacote_do_projeto(projeto):
+    """O pacote do projeto Django de um sistema JÁ gerado (lido do web/manage.py): "config" ou o do perfil."""
+    try:
+        texto = (Path(projeto) / "web" / "manage.py").read_text(encoding="utf-8")
+    except OSError:
+        return PROJETO_PADRAO
+    achado = re.search(r'DJANGO_SETTINGS_MODULE", "(\w+)\.settings"', texto)
+    return achado.group(1) if achado else PROJETO_PADRAO
+
+
 def dependencias_pontuais(s):
     """As dependências que só ESTE sistema usa, pelas opções escolhidas: [(requisito, para quê)]."""
     pontuais = []
+    if s.django and s.drf:
+        pontuais.append(("djangorestframework>=3.15", "DRF: a API com Serializer, ViewSet e router (/api/)"))
     if s.django and s.web["seguranca"] == "baseline":
         pontuais.append(("argon2-cffi>=23.1", "senhas com Argon2id (segurança baseline, §16.1)"))
     return pontuais
@@ -8344,8 +8540,12 @@ def montar_arquivos(s, nome_pasta):
             arq[f"docs/ADR-{n:03d}-{p}.md"] = gerar_adr(s, n, p)
     if s.django:
         arq.update(gerar_web(s))
+        if s.drf:
+            arq.update(gerar_drf(s))
         if s.web["estrutura"] == "apps":
             arq = mover_para_apps(arq, s)
+        if s.projeto != "config":
+            arq = renomear_projeto_django(arq, s.projeto)
     if s.exercicio:
         # Modo exercício = questionário de revisão (resposta oculta em "Ver resposta"). O código NÃO muda:
         # sai completo e correto, igual ao modo normal — não há nada para o aluno corrigir.
@@ -8363,6 +8563,8 @@ def montar_arquivos(s, nome_pasta):
     especificacao["web"] = s.web
     arq["especificacao.json"] = json.dumps(especificacao, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     arq["README.md"] = gerar_readme(s, nome_pasta)
+    if s.perfil and s.django:
+        arq["README.md"] += "\n" + secao_perfil(s)
     arq[MARCADOR] = f"gerar_sistema.py v{VERSAO}\n"
     # checagem final: todo .py gerado precisa ser Python válido
     for caminho, conteudo in arq.items():
@@ -8378,7 +8580,10 @@ def nome_saida(s):
     """Nome da pasta: SÓ letras minúsculas, números e "_" (nada de +, -, espaço) — simples de digitar e de importar.
 
     <sistema>__<padrões>[_web[_estilo]][_exercicio][_direto][_sem_comentarios]; grupos inteiros viram o nome do grupo.
+    Domínio com perfil de pasta fixa (a Prova P3 → provaP3): o nome do perfil, sempre o mesmo.
     """
+    if s.pasta:
+        return s.pasta
     escolhidos = set(s.padroes)
     pad = None
     for grupo in ("todos", "gof", "prova", "criacao", "estrutural", "comportamental", "fundamentos"):
@@ -8470,9 +8675,11 @@ def aplicar_campos(dados, campos, origem):
 
 def gerar(dominio=None, assunto=None, spec=None, padroes=None, sistema=None, entidade=None,
           django=False, exercicio=False, saida=None, nome=None, forcar=False, estudo=True, comentarios=True,
-          web=None, campos=None):
+          web=None, campos=None, regerar_fixa=False):
     """API programática: gera o sistema e devolve (pasta, Spec).
 
+    Pasta FIXA (perfil do domínio, ex.: provaP3): se ela já existe, NÃO é substituída — é onde se trabalha
+    (as tarefas da prova); só com regerar_fixa=True (sgs provap3, depois de perguntar).
     estudo=False → "só gerar" (sem antes_*.py, sem ADRs, README curto);
     comentarios=False → "apenas o código" (sem comentários nem docstrings nos .py);
     web → dict com as opções da camada Django (ver WEB_PADRAO);
@@ -8484,8 +8691,12 @@ def gerar(dominio=None, assunto=None, spec=None, padroes=None, sistema=None, ent
                     django=django, exercicio=exercicio, estudo=estudo, comentarios=comentarios, web=web, campos=campos)
     pasta_saida = Path(saida) if saida else PASTA_PADRAO
     destino = pasta_saida / (nome or nome_saida(s))
+    if s.pasta and not nome and destino.exists() and not regerar_fixa:
+        raise ErroGerador(f"{destino.name} já existe e é a pasta de trabalho de {s.perfil.get('nome', s.sistema)} — "
+                          "não substituo (o que foi feito nela se perderia). Para gerar de novo do zero: sgs provap3 "
+                          "(pergunta antes)")
     arquivos = montar_arquivos(s, destino.name)
-    preparar_destino(destino, forcar)
+    preparar_destino(destino, forcar or (regerar_fixa and bool(s.pasta)))
     escrever(destino, arquivos)
     return destino, s
 
@@ -8724,15 +8935,17 @@ def aplicar_modulo(projeto, plano):
     app, pacote = m["app"], m["pacote"]
     if (projeto / "web" / m["caminho"]).exists():
         raise ErroGerador(f"web/{m['caminho']} já existe neste sistema")
-    settings_py = projeto / "web" / "config" / "settings.py"
-    urls_py = projeto / "web" / "config" / "urls.py"
+    pacote_projeto = pacote_do_projeto(projeto)                # "config" ou o do perfil ("cooperativa")
+    settings_py = projeto / "web" / pacote_projeto / "settings.py"
+    urls_py = projeto / "web" / pacote_projeto / "urls.py"
     texto_settings = settings_py.read_text(encoding="utf-8")
     lista = re.search(r"INSTALLED_APPS = \[\n(.*?)\n\]", texto_settings, re.S)
     texto_urls = urls_py.read_text(encoding="utf-8")
-    raiz = re.search(r'^(\s*)path\("", include\(', texto_urls, re.M)
+    # O 1º include das rotas (o do app principal, na raiz ou em /<rota>/ do perfil): o módulo entra antes dele.
+    raiz = re.search(r'^(\s*)path\("[\w/-]*", include\(', texto_urls, re.M)
     if lista is None or raiz is None:
-        raise ErroGerador("não achei INSTALLED_APPS em web/config/settings.py ou o include da raiz em "
-                          "web/config/urls.py — o projeto foi editado à mão?")
+        raise ErroGerador(f"não achei INSTALLED_APPS em web/{pacote_projeto}/settings.py ou o include das rotas em "
+                          f"web/{pacote_projeto}/urls.py — o projeto foi editado à mão?")
     escrever(projeto, plano["arquivos"])
     if f'"{pacote}"' not in lista.group(1):
         texto_settings = (texto_settings[:lista.end(1)] + f'\n    "{pacote}",  # módulo (sgs app)'
@@ -9083,7 +9296,7 @@ def _classe_refeita(projeto, info, atributos):
         espec["atributos"] = atributos
         s = montar_spec(spec=espec, exercicio=(projeto / "exercicios.html").exists())
         arquivos = montar_arquivos(s, projeto.name)
-        for intocavel in ("README.md", "iniciar.sh", "web/config/settings.py", "web/config/urls.py"):
+        for intocavel in ("README.md", "iniciar.sh", f"web/{s.projeto}/settings.py", f"web/{s.projeto}/urls.py"):
             arquivos.pop(intocavel, None)
         return s, arquivos
     m = info["modulo"]
@@ -9146,7 +9359,7 @@ def exposto_por_padrao(endpoint, campo):
 def ler_api_campos(projeto):
     """{app: {endpoint: {campo: bool}}} — o que o projeto mudou do padrão (o bloco do sgs api config)."""
     try:
-        texto = (Path(projeto) / "web" / "config" / "settings.py").read_text(encoding="utf-8")
+        texto = (Path(projeto) / "web" / pacote_do_projeto(projeto) / "settings.py").read_text(encoding="utf-8")
     except OSError:
         return {}
     saida = {}
@@ -9162,7 +9375,7 @@ def ler_api_campos(projeto):
 
 def gravar_api_campos(projeto, escolhas):
     """Reescreve o bloco do sgs api config no fim do config/settings.py (o resto do arquivo não muda)."""
-    caminho = Path(projeto) / "web" / "config" / "settings.py"
+    caminho = Path(projeto) / "web" / pacote_do_projeto(projeto) / "settings.py"
     texto = caminho.read_text(encoding="utf-8")
     texto = re.sub(rf"\n*{re.escape(INICIO_API)}.*?{re.escape(FIM_API)}\n?", "\n", texto, flags=re.S).rstrip("\n") + "\n"
     linhas = []
@@ -9184,6 +9397,8 @@ def endpoints_do_projeto(projeto):
     except (OSError, ValueError):
         espec = {}
     principal = espec.get("entidade") if isinstance(espec, dict) else None
+    # O app principal fica na raiz — ou em /<rota>/ quando o perfil do domínio diz (Prova P3: /citricultura/).
+    rota_principal = ((espec.get("perfil") or {}).get("rota") or "") if isinstance(espec, dict) else ""
     escolhas = ler_api_campos(projeto)
     saida = []
     for classe, info in sorted(entidades_do_projeto(projeto).items(), key=lambda par: (par[0] != principal, par[0])):
@@ -9195,7 +9410,7 @@ def endpoints_do_projeto(projeto):
             suporta = "API_CAMPOS" in (pasta / "settings.py").read_text(encoding="utf-8")
         except OSError:
             suporta = False
-        prefixo = "/" if classe == principal else f"/{info['app']}/"
+        prefixo = f"/{rota_principal}" if classe == principal else f"/{info['app']}/"
         for endpoint, rota in ENDPOINTS_API.items():
             mudou = escolhas.get(info["app"], {}).get(endpoint, {})
             campos = [(c, mudou.get(c, exposto_por_padrao(endpoint, c)), c in mudou)
@@ -9243,7 +9458,8 @@ def atualizar_migrations(projeto):
         return "Django não está instalado neste Python — rode: bash iniciar.sh migrar"
     apps = sorted({info["app"] for info in entidades_do_projeto(Path(projeto)).values()})
     r = subprocess.run([sys.executable, "manage.py", "makemigrations", *apps], cwd=web, capture_output=True,
-                       text=True, timeout=300, env=dict(os.environ, DJANGO_SETTINGS_MODULE="config.settings"))
+                       text=True, timeout=300,
+                       env=dict(os.environ, DJANGO_SETTINGS_MODULE=f"{pacote_do_projeto(projeto)}.settings"))
     saida = (r.stdout + r.stderr).strip().splitlines()
     if r.returncode:
         raise ErroGerador("makemigrations falhou: " + " | ".join(saida[-5:]))

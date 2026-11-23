@@ -221,6 +221,12 @@ CATALOGO = [
      "o resumo em 9 passos + a página /tutorial", "Abre ao lado da Wiki e do Django Study Hub.", "comando sgs"),
     ("sgs hub", "8 · SGS", "Abre a cópia do Django Study Hub (models, views, ORM, forms, DRF).", "sgs hub", "sgs hub",
      "(abre a página)", "", "comando sgs"),
+    ("sgs provap3", "8 · SGS", "Prova Prática P3: gera o sistema do domínio 101 (citricultura) como no guia da prova "
+     "(pasta provaP3, projeto Django cooperativa, app citricultura, rotas /citricultura/, DRF em /api/) e prepara o "
+     "ambiente (.venv/dependências, web/.env, migrations, admin).", "sgs provap3", "sgs provap3",
+     "sistema NN gerado e preparado em sistemas_gerados/provaP3",
+     "Se a pasta provaP3 já existe, NÃO apaga: mostra o sistema e pergunta (s/N) antes de gerar do zero. "
+     "O guia e o domínio estão em Gerador_Sistemas/ProvaPraticaP3/.", "comando sgs"),
     ("sgs cmd", "8 · SGS", "O estilo desta tela: sgs cmd = como o Prompt de Comando do Windows (preto e cinza, o "
      "padrão ao abrir) · sgs cmd sgs = as cores do SGS (prompt verde).", "sgs cmd [sgs]   ou   cmd [sgs]",
      "sgs cmd sgs", "a tela passa para as cores do SGS", "Sem o sgs na frente também vale: cmd · cmd sgs.",

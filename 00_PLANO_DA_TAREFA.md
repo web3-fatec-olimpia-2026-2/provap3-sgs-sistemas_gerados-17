@@ -152,3 +152,7 @@ cd "Treino_Prova/exercicios/ex01_strategy_frete" && ALVO=exercicio ../../../.ven
 - [x] requirements.txt dos sistemas gerados: o Python exigido (3.12+, conferido pelo iniciar.sh), o Django e o que
       ele usa, os testes e as dependências pontuais de cada sistema, cada linha com o porquê; o `iniciar.sh deps`
       confere TODAS (pip --no-index, sem internet) em vez de só Django/pytest
+- [x] Domínio 101 (`citricultura` — Prova Prática P3, ISW-030) com perfil próprio (`dominios.PERFIS`), DRF
+      (`djangorestframework` com Serializer, ViewSet, router em `/api/` e `tests/test_drf.py`), projeto `cooperativa`,
+      app `citricultura`, rotas `/citricultura/` e comando `sgs provap3` (gera em `sistemas_gerados/provaP3`, prepara o
+      ambiente e protege a pasta contra sobrescrita sem confirmação)

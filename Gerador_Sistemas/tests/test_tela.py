@@ -277,7 +277,8 @@ def test_sgs_tipos_mostra_a_deducao(ctx):
 def test_sgs_dominios_mostra_setores_e_filtra(ctx):
     r = rodar(ctx, "sgs dominios")
     tabela = next(b for b in r["blocos"] if b["t"] == "tabela")
-    assert len(tabela["linhas"]) == 10 and "100 domínios" in textos(r)            # só os setores: tela limpa
+    assert len(tabela["linhas"]) == 11 and "101 domínios" in textos(r)            # só os setores: tela limpa
+    assert "citricultura" in textos(r) and "Prova Prática P3" in textos(r)       # o 101: o domínio da prova
     r = rodar(ctx, "sgs dominios pet")
     assert r["ok"] and "petshop" in textos(r) and "Pet Shop Amigo" in textos(r) and "cinema" not in textos(r)
     assert rodar(ctx, "sgs dominios zzzz")["ok"] is False
@@ -332,7 +333,8 @@ def test_botao_executar_so_em_comandos_de_leitura():
         pass
     executaveis = [c[4] for c in sgs_comand.CATALOGO if sgs_comand._comando_executavel(c[4])]
     assert "pwd" in executaveis and "sgs listar" in executaveis
-    assert not any(e.startswith(("sgs gerar", "sgs config", "sgs pwa", "bash iniciar", "cp ")) for e in executaveis)
+    assert not any(e.startswith(("sgs gerar", "sgs provap3", "sgs config", "sgs pwa", "bash iniciar", "cp "))
+                   for e in executaveis)
 
 
 def test_exit_clear_e_history(ctx):
@@ -992,9 +994,9 @@ def test_pagina_tem_os_comandos_do_topo_e_o_terminal(servidor):
     principais = re.search(r"const PRINCIPAIS = (\[.*?\]);", html, re.S).group(1)
     assert '"sgs comand"' in principais and "pwa" not in principais       # pwa só na lista completa
     comandos = {c.strip() for c, _ in json.loads(principais)}
-    assert {"sgs", "sgs gerar", "sgs listar", "sgs rodar", "sgs estilo", "sgs config", "clear", "sgs info",
-            "sgs parar", "sgs app", "sgs ligar", "sgs incrementar", "sgs api config", "sgs dominios", "sgs tipos",
-            "sgs tutorial", "sgs wiki", "sgs hub", "sgs cmd"} <= comandos
+    assert {"sgs", "sgs gerar", "sgs provap3", "sgs listar", "sgs rodar", "sgs estilo", "sgs config", "clear",
+            "sgs info", "sgs parar", "sgs app", "sgs ligar", "sgs incrementar", "sgs api config", "sgs dominios",
+            "sgs tipos", "sgs tutorial", "sgs wiki", "sgs hub", "sgs cmd"} <= comandos
     assert 'c.trim().replace(/^sgs /, "")' in html                         # no topo, sem o "sgs" na frente
     assert '<p class="principais" id="principais"></p>' in html and '[i ? "|" : "", item]' in html   # "|" sem espaço
     assert "max-width: 1100px" not in html                                 # até o fim da tela
@@ -1216,6 +1218,31 @@ def test_runserver_do_sgs_dentro_da_propria_tela_nao_abre_outro(tmp_path):
                        env=ambiente, capture_output=True, text=True, timeout=60)
     assert r.returncode != 0 and "PRÓPRIA tela do SGS" in r.stderr and "cd NN" in r.stderr
     assert not (tmp_path / "cfg.json").exists()                            # nada foi preparado
+
+
+def test_sgs_provap3_gera_prepara_e_nao_apaga_o_trabalho(ctx):
+    """sgs provap3: o sistema do domínio 101 como no guia da prova, numerado e PREPARADO (.env, migrations, admin);
+    rodar de novo não apaga a pasta de trabalho — pergunta antes (n = deixa; s = gera do zero)."""
+    r = rodar(ctx, "sgs provap3", testar=False)
+    assert r["ok"], textos(r)
+    pasta = ctx.saida / "provaP3"
+    assert (pasta / "web" / "cooperativa" / "settings.py").exists() and (pasta / "web" / "citricultura").is_dir()
+    assert "ambiente preparado" in textos(r) and (pasta / "web" / ".env").exists()
+    assert list((pasta / "web" / "citricultura" / "migrations").glob("0001_*.py"))        # migrations feitas
+    assert r["cartao"]["numero"] == "01" and "sgs rodar 01" in textos(r)
+    (pasta / "web" / "citricultura" / "minha_tarefa.py").write_text("# tarefa 1\n", encoding="utf-8")
+    r = rodar(ctx, "sgs provap3")
+    assert r["ok"] and "não apago sem perguntar" in textos(r) and r["pergunta"] == "gerar do zero? s/N"
+    assert "ok — nada foi" in textos(rodar(ctx, "n"))
+    assert (pasta / "web" / "citricultura" / "minha_tarefa.py").exists()                 # o trabalho ficou
+    assert rodar(ctx, "sgs gerar citricultura")["ok"] is False                           # nem pelo sgs gerar
+    assert (pasta / "web" / "citricultura" / "minha_tarefa.py").exists()
+    r = rodar(ctx, "sgs provap3", testar=False)
+    assert r["ok"] and r["pergunta"] == "gerar do zero? s/N"
+    r = rodar(ctx, "s")
+    assert r["ok"] and "ambiente preparado" in textos(r) and r["cartao"]["numero"] == "01"
+    assert not (pasta / "web" / "citricultura" / "minha_tarefa.py").exists()             # s: gerou do zero
+    assert list((pasta / "web" / "citricultura" / "migrations").glob("0001_*.py"))
 
 
 def test_ao_abrir_sem_topo_nem_caixas(ctx):

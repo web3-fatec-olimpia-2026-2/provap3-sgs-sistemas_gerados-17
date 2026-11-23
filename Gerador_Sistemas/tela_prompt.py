@@ -483,7 +483,7 @@ def cartao(destino, info, saida=None, porta_base=PORTA_PADRAO, **extra):
 # =============================================================================
 def processar(texto=None, django=False, exercicio=False, testar=True, saida=None, estudo=True, comentarios=True,
               dominio=None, padroes=None, porta_base=PORTA_PADRAO, sistema=None, entidade=None, web=None,
-              campos=None):
+              campos=None, regerar_fixa=False):
     """Gera e devolve o cartão do sistema (pronto para virar JSON). O número fixo é dado aqui.
 
     campos: campos a mais da entidade ([{"nome", "tipo"}] do questionário); sem eles, valem os que o pedido listar.
@@ -501,7 +501,7 @@ def processar(texto=None, django=False, exercicio=False, testar=True, saida=None
         destino, s = gs.gerar(assunto=texto or None, dominio=dominio, padroes=padroes, django=bool(django),
                               exercicio=bool(exercicio), saida=saida, forcar=True, estudo=bool(estudo),
                               comentarios=bool(comentarios), sistema=sistema, entidade=entidade, web=web,
-                              campos=campos)
+                              campos=campos, regerar_fixa=regerar_fixa)
     except gs.ErroGerador as erro:
         return {"ok": False, "erro": str(erro)}
     o = s.origem
@@ -884,6 +884,21 @@ class Servidores:
             return False, ["o servidor não respondeu — final do log:"] + cauda(log.read_text(encoding="utf-8"))
         return True, []
 
+    def preparar(self, destino, cfg):
+        """bash iniciar.sh env → o admin do sgs config no web/.env → bash iniciar.sh preparar (.venv/dependências,
+        migrations, admin) — sem subir o servidor. Devolve (pronto?, linhas: o que cada passo disse ou o erro)."""
+        env = self.ambiente()
+        feitos = []
+        for passo in ("env", "preparar"):
+            if passo == "preparar":
+                ajustar_env(destino, cfg)
+            r = subprocess.run(["bash", "iniciar.sh", passo], cwd=destino, env=env, capture_output=True, text=True,
+                               timeout=600)
+            if r.returncode:
+                return False, [f"falhou em: bash iniciar.sh {passo}"] + cauda(r.stdout + r.stderr)
+            feitos += [linha.strip() for linha in r.stdout.splitlines() if linha.strip()]
+        return True, feitos
+
     def iniciar(self, destino, porta, cfg, preparar=True):
         """sgs rodar: bash iniciar.sh env → admin do sgs config no .env → preparar → rodar (em segundo plano)."""
         if destino.name in self.ativos():
@@ -897,13 +912,10 @@ class Servidores:
             return False, [f"a porta {porta} está ocupada (veja quem usa: sgs servidores) — ou suba em outra: "
                            "sgs rodar NN <porta>"]
         env = self.ambiente()
-        for passo in (("env", "preparar") if preparar else ()):
-            if passo == "preparar":
-                ajustar_env(destino, cfg)
-            r = subprocess.run(["bash", "iniciar.sh", passo], cwd=destino, env=env, capture_output=True, text=True,
-                               timeout=600)
-            if r.returncode:
-                return False, [f"falhou em: bash iniciar.sh {passo}"] + cauda(r.stdout + r.stderr)
+        if preparar:
+            pronto, mensagens = self.preparar(destino, cfg)
+            if not pronto:
+                return False, mensagens
         log = destino / "web" / "servidor.log"
         with open(log, "w", encoding="utf-8") as arquivo_log:
             processo = subprocess.Popen(["bash", "iniciar.sh", "rodar", str(porta)], cwd=destino, env=env,
@@ -1151,6 +1163,9 @@ COMANDOS_SGS = [
     ("sgs gerar <pedido>", "GERA um sistema (texto solto só é anotado); com “Perguntar” ligado, pergunta antes", True),
     ("sgs gerar -sp <pedido>", "gera SEM perguntar · sozinho (sgs gerar -sp) encerra as perguntas e gera", True),
     ("sgs gerar <domínio> <padrões…>", "gera escolhendo direto (ex.: sgs gerar hotel criacao)", True),
+    ("sgs provap3", "PROVA PRÁTICA P3: gera o sistema do domínio 101 (citricultura) como no guia da prova — pasta "
+                    "provaP3, projeto cooperativa, app citricultura, rotas /citricultura/, DRF em /api/ — e prepara "
+                    "o ambiente (.venv, .env, migrations, admin); se já existe, pergunta antes de gerar do zero", False),
     ("sgs cancelar", "desiste das perguntas em andamento (nada é gerado)", False),
     ("sgs estilo [simples|cmd|bootstrap|web]", "formatação das páginas web geradas", True),
     ("sgs tema [T01…T10] [tom] [P01…P20]", "tema do estilo web (pasta temas/) e paleta do T10", True),
@@ -1179,7 +1194,8 @@ COMANDOS_SGS = [
     ("sgs comandos NN", "comandos de terminal para rodar o sistema NN fora da tela", True),
     ("sgs comand [n]", "módulo de ajuda: a lista numerada dos comandos da esteira (sgs exit volta)", False),
     ("sgs padroes [categoria]", "os 28 padrões por categoria e as palavras que os ativam", False),
-    ("sgs dominios [termo]", "os 100 domínios por setor; com termo, só os que batem (sgs dominios saude)", True),
+    ("sgs dominios [termo]", "os 101 domínios por setor (o 101 é o da Prova P3: citricultura); com termo, só os que "
+                             "batem (sgs dominios saude)", True),
     ("sgs config [chave=valor]", "mostra/altera a configuração (caixas, porta base, admin, pwa)", False),
     ("sgs pwa=true | sgs pwa=false", "PWA isolado (padrão: janela de app) ou aba comum do navegador", True),
     ("sgs tutorial", "TUTORIAL prático: classe nova, ligar, campos, o padrão do campo (@property), padrões de "
@@ -1355,6 +1371,63 @@ def sgs_gerar(ctx, args, opcoes=None):
     if not resposta["ok"]:
         return falha(resposta["erro"])
     return ok(cartao=resposta)
+
+
+PROVA_P3 = "citricultura"          # o domínio 101: tem o perfil da Prova Prática P3 (dominios.PERFIS)
+
+
+def sgs_provap3(ctx, args, opcoes=None):
+    """sgs provap3 — a Prova Prática P3 num comando: gera o sistema do domínio 101 (citricultura) com o perfil da
+    prova (pasta provaP3, projeto Django cooperativa, app citricultura, rotas /citricultura/, DRF em /api/) e
+    PREPARA o ambiente dele (.venv/dependências, web/.env, migrations, admin). A pasta já existe? Não apaga: é onde
+    se trabalha — mostra o sistema e pergunta (s/N) antes de gerar do zero."""
+    perfil = gs.DOMINIOS[PROVA_P3]["perfil"]
+    destino = Path(ctx.saida) / perfil["pasta"]
+    if destino.exists():
+        n = numero_de(destino, ctx.saida)
+        ctx.confirmacao = {"rotulo": "gerar do zero? s/N",
+                           "dica": f"s = APAGA {perfil['pasta']} e gera de novo · n (ou Enter) = deixa como está",
+                           "acao": lambda: _gerar_provap3(ctx, opcoes, regerar=True)}
+        botoes = [cmd(f"sgs rodar {nn(n)}"), cmd(f"sgs info {nn(n)}"), cmd(f"sgs testar {nn(n)}")] if n else []
+        return ok(texto(f"{perfil['pasta']} já existe" + (f" (sistema {nn(n)})" if n else "") + " — é a pasta de "
+                        "trabalho da prova: não apago sem perguntar.", "aviso"),
+                  bloco("botoes", itens=botoes),
+                  texto(f"Gerar do zero APAGA o que foi feito em {perfil['pasta']}. Gerar de novo? (s/N)", "aviso"))
+    return _gerar_provap3(ctx, opcoes, regerar=False)
+
+
+def _gerar_provap3(ctx, opcoes, regerar):
+    perfil = gs.DOMINIOS[PROVA_P3]["perfil"]
+    c = dict(ctx.config.valores)
+    c.update({k: bool(v) for k, v in (opcoes or {}).items() if k in OPCOES_CAIXA})
+    ctx.questionario = None
+    resposta = processar(dominio=PROVA_P3, padroes=["prova"], django=True, exercicio=False, testar=c["testar"],
+                         saida=ctx.saida, estudo=c["estudo"], comentarios=c["comentarios"], porta_base=c["porta_base"],
+                         web={k: c[k] for k in OPCOES_WEB}, regerar_fixa=regerar)
+    if not resposta["ok"]:
+        return falha(resposta["erro"])
+    destino = Path(ctx.saida) / perfil["pasta"]
+    n = numero_de(destino, ctx.saida)
+    pronto, mensagens = ctx.servidores.preparar(destino, ctx.config.valores)
+    blocos = [bloco("titulo", texto=f"{perfil['nome']} — sistema {nn(n)} gerado e PREPARADO em "
+                                    f"sistemas_gerados/{perfil['pasta']}"),
+              bloco("tabela", colunas=["no guia da prova", "aqui"], linhas=[
+                  ["~/provaP3", f"sistemas_gerados/{perfil['pasta']}/web (caminho relativo)"],
+                  [f"startproject {perfil['projeto']} .", f"web/{perfil['projeto']}/ (settings, urls, wsgi)"],
+                  [f"startapp {perfil['app']}", f"web/{perfil['app']}/ (models, views, api.py, serializers.py, api_drf.py)"],
+                  ['INSTALLED_APPS: "rest_framework", "' + perfil["app"] + '"', f"web/{perfil['projeto']}/settings.py"],
+                  [f"pytest.ini → {perfil['projeto']}.settings · {perfil['pytest_arquivos']}", "web/pytest.ini"],
+                  ["pip install django djangorestframework pytest pytest-django", "requirements.txt (já instalado)"]]),
+              texto(f"Rotas: / → /{perfil['rota']} (telas do CRUD) · /{perfil['rota']}api/v1/ (API em Django puro) · "
+                    "/api/ (API com o DRF: Serializer + ViewSet + router) · /admin/", "suave")]
+    if pronto:
+        blocos.append(texto("✓ ambiente preparado: .venv/dependências, web/.env, migrations e superusuário (admin do "
+                            "sgs config)", "ok"))
+    else:
+        blocos += [texto("o sistema foi gerado, mas o preparo parou:", "erro"), *[texto(m, "suave") for m in mensagens]]
+    blocos.append(bloco("botoes", itens=[cmd(f"sgs rodar {nn(n)}"), cmd(f"sgs testar {nn(n)}"),
+                                         cmd(f"sgs info {nn(n)}"), cmd(f"sgs comandos {nn(n)}")]))
+    return ok(*blocos, cartao=resposta)
 
 
 def sgs_tipos(ctx, args, _opcoes=None):
@@ -1582,7 +1655,7 @@ def sgs_padroes(ctx, args, _opcoes=None):
 
 
 def sgs_dominios(ctx, args, _opcoes=None):
-    """sgs dominios → os 10 setores (100 domínios) · sgs dominios <termo> → só os que batem (saude, pet, 045…)."""
+    """sgs dominios → os setores (101 domínios) · sgs dominios <termo> → só os que batem (saude, pet, 045, 101…)."""
     termo = " ".join(args).strip()
     if not termo:
         setores = {}
@@ -2195,7 +2268,7 @@ SGS = {"ajuda": sgs_ajuda, "help": sgs_ajuda, "gerar": sgs_gerar, "listar": sgs_
        "modulo": sgs_app, "módulo": sgs_app, "ligar": sgs_ligar, "incrementar": sgs_incrementar,
        "modificar": sgs_incrementar, "api": sgs_api, "tutorial": sgs_tutorial_cmd, "hub": sgs_hub,
        "cmd": sgs_cmd, "visual": sgs_cmd, "cor": sgs_cmd, "topo": sgs_topo, "foot": sgs_foot, "rodape": sgs_foot,
-       "rodapé": sgs_foot}
+       "rodapé": sgs_foot, "provap3": sgs_provap3}
 
 
 def executar_linha(linha, ctx, opcoes=None):
@@ -2698,7 +2771,8 @@ const saida = $("saida"), ta = $("texto"), caixa = $("caixa");
 // Os comandos principais do topo, mostrados SEM o "sgs" na frente (o clique manda o comando inteiro).
 // [comando, preencher?] — preencher = só escreve no prompt (falta o NN…). O "sgs" sozinho aparece como "ajuda".
 const PRINCIPAIS = [
-  ["sgs", false], ["sgs gerar ", true], ["sgs listar", false], ["sgs comand", false], ["sgs rodar ", true],
+  ["sgs", false], ["sgs gerar ", true], ["sgs provap3", false], ["sgs listar", false], ["sgs comand", false],
+  ["sgs rodar ", true],
   ["sgs estilo", false], ["sgs padroes", false], ["sgs config", false], ["clear", false],
   ["sgs info ", true], ["sgs testar ", true], ["sgs servidores", false], ["sgs parar ", true], ["sgs editar ", true],
   ["sgs app ", true], ["sgs ligar ", true], ["sgs incrementar ", true], ["sgs api config ", true], ["history", false],

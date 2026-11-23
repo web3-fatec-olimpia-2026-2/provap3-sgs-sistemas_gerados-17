@@ -68,11 +68,12 @@ def test_assunto_sem_dominio_vira_generico_com_nome_extraido():
     assert (r["dominio"], r["sistema"], r["padroes"]) == ("generico", "Observatório Astronômico", ["decorator"])
 
 
-# ---------------------------------------------------------------- os 100 domínios (catalogo_100_dominios.txt)
-def test_catalogo_tem_os_100_dominios_em_10_setores():
-    assert len(g.DOMINIOS) == 100
-    assert [g.INFO_DOMINIOS[c]["id"] for c in g.DOMINIOS] == [f"{n:03d}" for n in range(1, 101)]
-    assert len({i["setor"] for i in g.INFO_DOMINIOS.values()}) == 10
+# ---------------------------------------------------------------- os 101 domínios (catalogo_100_dominios.txt)
+def test_catalogo_tem_os_100_dominios_em_10_setores_e_o_101_da_prova():
+    assert len(g.DOMINIOS) == 101
+    assert [g.INFO_DOMINIOS[c]["id"] for c in g.DOMINIOS] == [f"{n:03d}" for n in range(1, 102)]
+    assert len({i["setor"] for i in g.INFO_DOMINIOS.values()}) == 11
+    assert g.INFO_DOMINIOS["citricultura"] == {"id": "101", "setor": "Prova Prática P3 (ISW-030)"}
     originais = {"hotel": "001", "cinema": "002", "clinica": "011", "academia": "012", "loja": "023",
                  "biblioteca": "045", "estacionamento": "055", "generico": "100"}
     assert {c: g.INFO_DOMINIOS[c]["id"] for c in originais} == originais
@@ -119,7 +120,60 @@ def test_filtrar_dominios_por_termo():
     saude = {c for c, *_ in g.filtrar_dominios("saude")}
     assert {"clinica", "hospital", "hemocentro", "transporte_saude"} <= saude and "cinema" not in saude
     assert {c for c, *_ in g.filtrar_dominios("045")} == {"biblioteca"}
-    assert len(g.filtrar_dominios()) == 100 and g.filtrar_dominios("zzzz") == []
+    assert len(g.filtrar_dominios()) == 101 and g.filtrar_dominios("zzzz") == []
+
+
+# ---------------------------------------------------------------- domínio 101: o perfil da Prova Prática P3
+def test_dominio_101_vem_do_arquivo_da_prova_sem_alteracao():
+    linha = (g.AQUI / "ProvaPraticaP3" / "domínio 101.txt").read_text(encoding="utf-8").strip()
+    _, chave, sistema, entidade, palavras = (p.strip() for p in linha.split("|"))
+    d = g.DOMINIOS["citricultura"]
+    assert (chave, d["sistema"], d["entidade"]) == ("citricultura", sistema, entidade)
+    assert d["palavras"] == [p.strip().replace("_", " ") for p in palavras.split(",")]       # as 101 palavras
+    assert len(d["palavras"]) == 101
+    assert g.montar_spec(assunto="cooperativa de citros: entrega de laranja na safra").dados["sistema"] == sistema
+
+
+def test_perfil_da_prova_p3_pasta_projeto_app_rotas_drf_e_pytest(tmp_path):
+    """O sistema do domínio 101 sai como no guia da prova: pasta provaP3 (relativa, em sistemas_gerados),
+    projeto cooperativa, app citricultura, rotas /citricultura/, DRF em /api/ e o pytest.ini do guia."""
+    destino, s = g.gerar(dominio="citricultura", padroes=["prova"], django=True, saida=tmp_path)
+    assert destino == tmp_path / "provaP3" and (s.projeto, s.app, s.rota, s.drf) == ("cooperativa", "citricultura",
+                                                                                     "citricultura/", True)
+    web = destino / "web"
+    for arquivo in ("cooperativa/settings.py", "cooperativa/urls.py", "cooperativa/wsgi.py", "citricultura/models.py",
+                    "citricultura/serializers.py", "citricultura/api_drf.py", "citricultura/tests/test_drf.py"):
+        assert (web / arquivo).exists(), arquivo
+    assert not (web / "config").exists()
+    ini = (web / "pytest.ini").read_text(encoding="utf-8")
+    assert "DJANGO_SETTINGS_MODULE = cooperativa.settings" in ini and "python_files = tests.py test_*.py" in ini
+    settings = (web / "cooperativa" / "settings.py").read_text(encoding="utf-8")
+    assert '"rest_framework",' in settings and '"citricultura",' in settings and 'ROOT_URLCONF = "cooperativa.urls"' in settings
+    urls = (web / "cooperativa" / "urls.py").read_text(encoding="utf-8")
+    assert 'path("api/", include("citricultura.api_drf"))' in urls and 'path("citricultura/", include(' in urls
+    assert 'RedirectView.as_view(url="/citricultura/"' in urls
+    assert "djangorestframework>=" in (destino / "requirements.txt").read_text(encoding="utf-8")
+    assert "Prova Prática P3" in (destino / "README.md").read_text(encoding="utf-8")
+    assert json.loads((destino / "especificacao.json").read_text(encoding="utf-8"))["perfil"]["pasta"] == "provaP3"
+    textos = "".join(p.read_text(encoding="utf-8") for p in destino.rglob("*") if p.suffix in (".py", ".ini", ".sh"))
+    assert not re.search(r"\bconfig[./](settings|urls|wsgi|env)\b", textos)          # nada ficou com o nome antigo
+    with pytest.raises(g.ErroGerador, match="não substituo"):                          # a pasta de trabalho fica
+        g.gerar(dominio="citricultura", padroes=["prova"], django=True, saida=tmp_path)
+    assert g.gerar(dominio="citricultura", padroes=["prova"], django=True, saida=tmp_path, regerar_fixa=True)[0] == destino
+    assert g.pacote_do_projeto(destino) == "cooperativa"
+    assert {e["rota"] for e in g.endpoints_do_projeto(destino)} == {"/citricultura/api/v1/", "/citricultura/api/"}
+    codigo, saida = rodar_pytest(web)                                                   # inclusive os testes do DRF
+    assert codigo == 0, saida
+
+
+def test_sem_perfil_continua_igual_config_e_app_na_raiz(tmp_path):
+    destino, s = g.gerar(dominio="hotel", padroes=["strategy"], django=True, saida=tmp_path)
+    assert (s.projeto, s.rota, s.drf, s.pasta) == ("config", "", False, None)
+    urls = (destino / "web" / "config" / "urls.py").read_text(encoding="utf-8")
+    assert 'path("", include("reservas.urls")),' in urls and "RedirectView" not in urls and "api_drf" not in urls
+    assert "import include, path\n\nfrom . import pwa" in urls
+    assert "rest_framework" not in (destino / "web" / "config" / "settings.py").read_text(encoding="utf-8")
+    assert "python_files = test_*.py" in (destino / "web" / "pytest.ini").read_text(encoding="utf-8")
 
 
 def test_listar_agrupa_por_setor_e_filtra(capsys):

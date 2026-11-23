@@ -1,5 +1,6 @@
 """
-dominios.py — os 100 DOMÍNIOS do gerador (catálogo escrito à mão, determinístico, sem IA).
+dominios.py — os 100 DOMÍNIOS do gerador (catálogo escrito à mão, determinístico, sem IA) + o 101, o domínio da
+Prova Prática P3 (citricultura), que tem PERFIL próprio (PERFIS, no fim: pasta, projeto/app Django, rotas, DRF).
 
 Duas fontes, juntadas em gerar_sistema.DOMINIOS:
   1. catalogo_100_dominios.txt — a lista enviada pelo usuário (ID | DOMINIO | SISTEMA | ENTIDADE | PALAVRAS):
@@ -26,7 +27,8 @@ SETORES = [(1, 10, "Hospedagem, Turismo e Lazer"), (11, 22, "Saúde e Bem-Estar"
            (35, 44, "Alimentação e Gastronomia"), (45, 54, "Educação e Cultura"),
            (55, 64, "Mobilidade, Veículos e Logística"), (65, 72, "Imóveis, Condomínios e Serviços Urbanos"),
            (73, 80, "Serviços Pessoais, Pets e Estética"), (81, 90, "Finanças, Jurídico e Corporativo"),
-           (91, 100, "Indústria, Agro, Mídia e Genérico")]
+           (91, 100, "Indústria, Agro, Mídia e Genérico"),
+           (101, 101, "Prova Prática P3 (ISW-030)")]
 
 # Nomes de exemplo (o ident é sempre uma pessoa/organização): cada domínio pega 4, em sequência.
 NOMES = ["Ana", "Bruno", "Carla", "Diego", "Elisa", "Fábio", "Gabriela", "Henrique", "Isabela", "João",
@@ -36,7 +38,7 @@ NOMES = ["Ana", "Bruno", "Carla", "Diego", "Elisa", "Fábio", "Gabriela", "Henri
 
 
 def setor(numero):
-    """Nome do setor de um ID do catálogo (1..100)."""
+    """Nome do setor de um ID do catálogo (1..101; o 101 é o domínio da Prova Prática P3)."""
     return next(nome for ini, fim, nome in SETORES if ini <= numero <= fim)
 
 
@@ -808,11 +810,37 @@ DADOS = {
                 "CampanhaAnual 1.1 +10% campanha",
                 "PagaComunidade", "Salão | livre | EM CULTO | Reservar | (ocupado) | AGENDA CHEIA - nenhum salão livre | "
                                   "salão(ões) livre(s)"),
+    # ------------------------------------------------------------ 101 Prova Prática P3 (ISW-030 Web III)
+    # Cooperativa Citrícola: o cooperado entrega lotes de citros (caixas de 40,8 kg) colhidos nos talhões.
+    "citricultura": D("cooperado", "talhao:talhão:1 2 3", "caixas:5000", "preco_caixa", "caixa(s)", "38 32 52 0",
+                      "destino da fruta: Indústria 1, Mesa 1.25, Exportação 1.4; Refugo 0.3",
+                      "caixa: LaranjaPera = Laranja Pera 38; LaranjaValencia = Laranja Valência 40; "
+                      "LimaoTahiti = Limão Tahiti 45; TangerinaPonkan = Tangerina Ponkan 52",
+                      "Frete 120 frete até a indústria; Classificacao 60 classificação por calibre; "
+                      "CamaraFria 90 câmara fria; BonusQualidade 1.1 +10% bônus de qualidade (brix)",
+                      "PagaCoop", "Talhão | pronto para colher | EM COLHEITA | Colher | (em colheita) | "
+                                  "ENTRESSAFRA - nenhum talhão pronto | talhão(ões) pronto(s)"),
 }
+
+# PERFIL de um domínio: as particularidades do sistema gerado — nome da pasta, projeto e app Django, rota do app,
+# DRF e o pytest.ini. Sem perfil, vale o de sempre (pasta <sistema>__<padrões>…, projeto "config", app = plural da
+# entidade, rotas na raiz). Fica nos dados do domínio, então vai para o especificacao.json do sistema e continua
+# valendo nas edições (sgs app, ligar, incrementar, api config).
+PERFIS = {
+    # O ambiente da Prova Prática P3 (ProvaPraticaP3/GUIA_Ambiente_Django_Maquinas_FATEC*.pdf): pasta provaP3,
+    # `django-admin startproject cooperativa .`, `startapp citricultura`, "rest_framework" e "citricultura" em
+    # INSTALLED_APPS, pytest.ini com DJANGO_SETTINGS_MODULE = cooperativa.settings e python_files = tests.py test_*.py.
+    # Caminho RELATIVO: o sistema sai em sistemas_gerados/provaP3 (no lab, a mesma pasta fica em ~/provaP3).
+    "citricultura": {"nome": "Prova Prática P3 — ISW-030 Desenvolvimento Web III", "pasta": "provaP3",
+                     "projeto": "cooperativa", "app": "citricultura", "rota": "citricultura/", "drf": True,
+                     "pytest_arquivos": "tests.py test_*.py"},
+}
+for _chave, _perfil in PERFIS.items():
+    DADOS[_chave]["perfil"] = _perfil
 
 
 def montar(dominios_base):
-    """DOMINIOS completos (100), na ordem do catálogo, + INFO {chave: {"id", "setor"}}.
+    """DOMINIOS completos (101), na ordem do catálogo, + INFO {chave: {"id", "setor"}}.
 
     dominios_base: os 8 domínios originais (dados completos no gerar_sistema.py). As palavras deles passam a
     ser as do catálogo; sistema e entidade precisam bater com o catálogo (senão é erro de cadastro).

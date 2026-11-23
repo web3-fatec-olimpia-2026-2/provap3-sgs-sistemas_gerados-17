@@ -9,11 +9,11 @@ temas, `.env`, migrations, superusuário, PWA). **A mesma entrada gera sempre a 
 |---|---|
 | [`tela_prompt.py`](tela_prompt.py) | o **SGS**: tela estilo terminal no navegador (porta 6100); as rotas em `atender()` |
 | [`manage.py`](manage.py) · [`sgs_web/`](sgs_web/) | a mesma tela pelo **Django**: `python manage.py runserver` (settings mínimo, uma view que chama `atender()`) |
-| [`requirements.txt`](requirements.txt) · `.venv/` | o ambiente do projeto (Python 3.12+, Django, pytest, pytest-django, argon2): o `.venv` mora aqui; na raiz há um atalho para ele |
+| [`requirements.txt`](requirements.txt) · `.venv/` | o ambiente do projeto (Python 3.12+, Django, DRF, pytest, pytest-django, argon2): o `.venv` mora aqui; na raiz há um atalho para ele |
 | [`gerar_sistema.py`](gerar_sistema.py) | o gerador (também roda sozinho, pela linha de comando) |
 | [`sgs_terminal.py`](sgs_terminal.py) · [`sgs_comand.py`](sgs_comand.py) · [`sgs_perguntas.py`](sgs_perguntas.py) | terminal da tela · help numerado · perguntas antes de gerar |
 | [`temas_web.py`](temas_web.py) | cores dos 10 temas × 6 tons (pasta `temas/`) e das 20 paletas, com contraste WCAG |
-| [`dominios.py`](dominios.py) · [`catalogo_100_dominios.txt`](catalogo_100_dominios.txt) | os **100 domínios** em 10 setores: a lista do usuário (sistema, entidade, 30 palavras) + os dados de cada um |
+| [`dominios.py`](dominios.py) · [`catalogo_100_dominios.txt`](catalogo_100_dominios.txt) | os **101 domínios** em 11 setores: a lista do usuário (001–100) + o **101** da Prova Prática P3 (`citricultura`) |
 | [`tipos_campos.py`](tipos_campos.py) | **identificador de tipos**: acha os campos do pedido e deduz o tipo pelo nome (texto, inteiro, decimal, sim/não, data) |
 | `recursos/bootstrap-5.3.3/` | Bootstrap copiado para dentro do projeto (ver [`recursos/README.md`](recursos/README.md)) |
 | `temas/` · `Instruçõs de desenvolvimento DJANGO/` · `motor-id-interno/` | referências usadas nas opções da camada web |
@@ -112,6 +112,7 @@ Principais comandos `sgs`:
 
 | Comando | O que faz |
 |---|---|
+| `sgs provap3` | **Prova Prática P3**: gera o domínio 101 (`citricultura`) em `sistemas_gerados/provaP3` (projeto `cooperativa`, app `citricultura`, `/citricultura/` + DRF em `/api/`) e prepara o ambiente; se a pasta já existe, pergunta (`s/N`) antes de apagar |
 | `sgs listar` · `sgs info NN` · `sgs testar NN` | sistemas pelo **número fixo** (01, 02…, dado na geração) e as **versões** (01.1, 01.2…) |
 | `sgs rodar NN [porta]` · `sgs parar NN` · `sgs servidores` | sobe/derruba o site; o SGS é o 00 (porta 6100), o 01 roda na 6101, a versão 01.3 na 61013 |
 | `sgs editar NN` | **editar = copiar**: cria a versão NN.k (01.1 … 01.99); o original não muda |
@@ -124,7 +125,7 @@ Principais comandos `sgs`:
 | `sgs estilo [simples\|cmd\|bootstrap\|web]` · `sgs tema [T01…T10] [tom] [P01…P20]` | formatação das páginas geradas |
 | `sgs tipos <campos>` | mostra o tipo que cada campo recebe pelo nome e quais viram pergunta (ex.: `sgs tipos nome, idade, status`) |
 | `sgs cancelar` | desiste das perguntas em andamento |
-| `sgs dominios [termo]` | os 100 domínios por setor; com termo, só os que batem (`sgs dominios saude`, `sgs dominios pet`) |
+| `sgs dominios [termo]` | os 101 domínios por setor (101 = Prova P3: `citricultura`); com termo, só os que batem (`sgs dominios saude`, `sgs dominios pet`, `sgs dominios 101`) |
 | `sgs padroes` · `sgs config` · `sgs pwa=false` · `clear` | catálogo, configuração, PWA, limpar |
 | `sgs tutorial` · `sgs wiki` · `sgs hub` | tutorial prático · Wikipédia (padrões GoF) · Django Study Hub, lado a lado |
 | `sgs cmd` · `sgs cmd sgs` (ou `cmd` · `cmd sgs`) | estilo da tela: Prompt de Comando (padrão ao abrir) · cores do SGS |
@@ -398,10 +399,10 @@ python Gerador_Sistemas/gerar_sistema.py --dominio hotel --padrao prova --campos
 
 ---
 
-## 4. Os 100 domínios, por setor
+## 4. Os 101 domínios, por setor
 
 A lista vem do usuário ([`catalogo_100_dominios.txt`](catalogo_100_dominios.txt), lida sem alteração): ID,
-domínio, sistema, entidade e 30 palavras que ativam cada um. O resto (atributos com validação, variantes do
+domínio, sistema, entidade e 30 palavras que ativam cada um (e o **101**, `citricultura`, de `ProvaPraticaP3/domínio 101.txt`, com 101 palavras e perfil próprio da Prova Prática P3). O resto (atributos com validação, variantes do
 Strategy, categorias, extras do Decorator, gateway do Adapter, painel, nomes de exemplo) está escrito à mão em
 [`dominios.py`](dominios.py), coerente com o setor. Os 8 domínios originais continuam iguais (só ganharam as
 palavras novas) e foram renumerados: hotel 001, cinema 002, clinica 011, academia 012, loja 023, biblioteca 045,
@@ -419,6 +420,7 @@ estacionamento 055, generico 100.
 | 073–080 | Serviços Pessoais, Pets e Estética |
 | 081–090 | Finanças, Jurídico e Corporativo |
 | 091–100 | Indústria, Agro, Mídia e Genérico |
+| 101 | Prova Prática P3 (ISW-030) — `citricultura` (`sgs provap3`: pasta `provaP3`, projeto `cooperativa`, app `citricultura`, DRF em `/api/`) |
 
 Ver ou procurar: `sgs dominios [termo]` na tela, `--listar [termo]` na linha de comando. Nomes com “&” (Casa & Obra)
 saem escapados nas páginas; o nome da pasta continua só com `[a-z0-9_]`.
@@ -462,7 +464,7 @@ Grupos: `todos` (28) · `gof` (23) · `prova` (os 9 da P3 — o padrão quando o
 Exemplos em `sistemas_gerados/` (gerados antes desta rodada; continuam passando).
 
 Para os testes do gerador e do SGS, rode `cd Gerador_Sistemas && python -m pytest -v`. Eles cobrem:
-- os 100 domínios × 28 padrões (núcleo), um domínio novo por setor com Django e, com `SGS_TESTE_COMPLETO=1`, os 100 com Django;
+- os 101 domínios × 28 padrões (núcleo), um domínio novo por setor com Django, o perfil da Prova Prática P3 (`citricultura` / `sgs provap3` + DRF em `/api/` + trava contra sobrescrever) e, com `SGS_TESTE_COMPLETO=1`, todos com Django;
 - a pontuação do domínio, o desempate e o filtro `sgs dominios <termo>`;
 - os 4 estilos;
 - os temas, com contraste;
