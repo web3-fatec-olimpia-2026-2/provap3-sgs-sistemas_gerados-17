@@ -1753,17 +1753,51 @@ def sgs_incrementar(ctx, args, opcoes=None):
         ctx.questionario = q
         return ok(texto(f"Incrementar/modificar um campo do sistema {n}: a classe, o campo e o padrão dele.", "destaque"),
                   *perguntas.blocos(q))
+    if classe and not regra:                                   # só faltou o padrão: mostra o campo e exemplos prontos
+        return _como_incrementar_o_campo(n, classes, classe, campo)
     if not (classe and regra):
         linhas = [[cmd(f"{nome}.{a['nome']}", f"sgs incrementar {n} {nome}.{a['nome']} ", True), gs.regra_em_texto(a),
                    gs.descrever_regra(a).split(": ", 1)[1]]
                   for nome, info in sorted(classes.items()) for a in info["atributos"]]
-        return ok(texto(f"Campos das classes do sistema {n} (clique para incrementar/modificar):"),
+        uma = sorted(classes)[0]
+        campo_um = classes[uma]["atributos"][0]["nome"]
+        return ok(texto(f"O INCREMENTAR define o PADRÃO (a regra) de um campo: muda a regra de um campo que já existe, "
+                        f"ou cria um campo novo com ela. Campos das classes do sistema {n} (clique para escolher):"),
                   bloco("tabela", colunas=["classe.campo", "padrão hoje", "o que aceita"], linhas=linhas),
-                  bloco("titulo", texto="Padrões (regras) que um campo pode seguir"),
+                  bloco("titulo", texto="Como usar"),
+                  bloco("tabela", colunas=["", "comando", "o que faz"], linhas=[
+                      ["modificar", cmd(f"sgs incrementar {n} {uma}.{campo_um} texto -sv",
+                                        f"sgs incrementar {n} {uma}.{campo_um} ", True),
+                       f"o campo {campo_um} (que já existe) passa a seguir o padrão dado"],
+                      ["incrementar", cmd(f"sgs incrementar {n} {uma}.assento lista:janela,meio,corredor -sv",
+                                          f"sgs incrementar {n} {uma}.assento lista:janela,meio,corredor -sv", True),
+                       f"a {uma} GANHA o campo assento, que só aceita esses 3 valores"]]),
+                  bloco("titulo", texto="Padrões que um campo pode seguir"),
                   bloco("tabela", colunas=["padrão", "o que faz"], linhas=[[p, o] for p, o in gs.REGRAS_DE_CAMPO]),
-                  texto(f"use: sgs incrementar {n} Classe.campo <padrão> [-sv] — campo que existe = MODIFICAR; nome "
-                        "novo = INCREMENTAR a classe. Sem -sv cria a versão nova; -sv edita o próprio sistema.", "suave"))
+                  texto(f"Formato: sgs incrementar {n} Classe.campo <padrão> [-sv] · -sv = no próprio {n}; sem -sv cria "
+                        f"a versão {n}.1 (cópia). Vale no @property do núcleo e no model/form/API do Django.", "suave"))
     return _aplicar_incremento(ctx, destino, n, classe, campo, regra, sem_versao, c["testar"])
+
+
+def _como_incrementar_o_campo(n, classes, classe, campo):
+    """sgs incrementar NN Classe.campo (sem o padrão): como o campo está hoje e comandos prontos para ele."""
+    nome_classe = gs.achar_classe(classes, classe)
+    if nome_classe is None:
+        return falha(f"a classe {gs.camel(classe)} não existe no sistema {n} (ele tem: {', '.join(sorted(classes))})")
+    campo = gs.camel_para_snake(gs.camel(campo))
+    atual = next((a for a in classes[nome_classe]["atributos"] if a["nome"] == campo), None)
+    base = f"sgs incrementar {n} {nome_classe}.{campo}"
+    exemplos = ["inteiro>=0", "inteiro:1..30", "decimal>=0", "lista:janela,meio,corredor", "texto", "simnao", "data"]
+    if atual:
+        situacao = texto(f"{nome_classe}.{campo} hoje: {gs.regra_em_texto(atual)} — "
+                         f"{gs.descrever_regra(atual).split(': ', 1)[1]}. Diga o padrão NOVO:")
+    else:
+        situacao = texto(f"A {nome_classe} ainda não tem o campo {campo}: ele será CRIADO com o padrão que você der:")
+    explica = dict(gs.REGRAS_DE_CAMPO)
+    return ok(situacao,
+              bloco("tabela", colunas=["comando (clique para escrever)", "o que o campo passa a aceitar"],
+                    linhas=[[cmd(f"{base} {e} -sv", f"{base} {e} -sv", True), explica[e]] for e in exemplos]),
+              texto(f"-sv = no próprio {n}; sem -sv cria a versão {n}.1 (cópia).", "suave"))
 
 
 def _aplicar_incremento(ctx, destino, n, classe, campo, regra, sem_versao, testar):
@@ -1784,6 +1818,31 @@ def _aplicar_incremento(ctx, destino, n, classe, campo, regra, sem_versao, testa
                                f"o campo {plano['classe']}.{plano['campo']} ({plano['acao']})")
 
 
+def _como_ligar(n, entidades):
+    """O passo a passo do sgs ligar, com as classes que o sistema tem e exemplos já com o número dele."""
+    classes = sorted(entidades)
+    uma = classes[0] if classes else "Classe"
+    linhas = [[classe, i["app"], f"web/{i['caminho']}/"] for classe, i in sorted(entidades.items())]
+    blocos = [texto(f"O LIGAR põe um campo de REFERÊNCIA numa classe apontando para OUTRA classe do mesmo sistema (no "
+                    f"formulário vira uma lista de escolha). Classes do sistema {n}:"),
+              bloco("tabela", colunas=["classe", "app", "pasta"], linhas=linhas)]
+    if len(classes) < 2:
+        blocos.append(texto(f"O sistema {n} só tem a {uma}: crie a outra classe primeiro (passo 1).", "aviso"))
+    blocos += [bloco("titulo", texto="Como usar"),
+               bloco("tabela", colunas=["passo", "comando", "o que faz"], linhas=[
+                   ["1", cmd(f"sgs app {n} destinos de viagem", f"sgs app {n} destinos de viagem", True),
+                    "cria a classe nova (Destino) — se ela ainda não existe"],
+                   ["2", cmd(f"sgs ligar {n} {uma}.destino Destino -sv", f"sgs ligar {n} {uma}.destino Destino -sv", True),
+                    f"a {uma} ganha o campo destino → Destino (-sv: no próprio {n}; sem -sv: cria a versão {n}.1)"],
+                   ["atalho", cmd(f"sgs app {n} destinos de viagem ligar={uma}.destino",
+                                  f"sgs app {n} destinos de viagem ligar={uma}.destino", True),
+                    "faz os passos 1 e 2 de uma vez"]]),
+               texto("Formato: sgs ligar NN Classe.campo Alvo — Classe = quem GANHA o campo · campo = o nome dele · "
+                     "Alvo = a classe para onde ele aponta (sem o Alvo, vale o nome do campo: destino → Destino). "
+                     "Apagar o Alvo só limpa o campo.", "suave")]
+    return ok(*blocos)
+
+
 def sgs_ligar(ctx, args, opcoes=None):
     """sgs ligar NN Classe.campo Alvo [-sv] — campo de referência (ForeignKey opcional) entre duas classes do NN.
     Ex.: sgs ligar 16 Viagcert.destino Destino. Sem -sv cria a versão NN.k; com -sv edita o próprio NN."""
@@ -1793,20 +1852,33 @@ def sgs_ligar(ctx, args, opcoes=None):
     args = [a for a in args if a.lower() not in SEM_VERSAO]
     destino, n = escolher(ctx, args[0] if args else None)
     entidades = gs.entidades_do_projeto(destino)
-    if len(args) < 3:
-        linhas = [[classe, i["app"], f"web/{i['caminho']}/"] for classe, i in sorted(entidades.items())]
-        return ok(texto(f"Classes do sistema {n} (use: sgs ligar {n} Classe.campo Alvo [-sv] — ex.: sgs ligar {n} "
-                        f"{next(iter(sorted(entidades)), 'Classe')}.destino Destino):"),
-                  bloco("tabela", colunas=["classe", "app", "pasta"], linhas=linhas),
-                  texto("A Classe ganha o campo (opcional) apontando para o Alvo: aparece no formulário e na API REST; "
-                        "apagar o Alvo só limpa o campo. Sem -sv cria a versão nova; -sv edita o próprio sistema.",
-                        "suave"))
+    if len(args) < 2:
+        return _como_ligar(n, entidades)
     m = re.fullmatch(r"(\w+)\.(\w+)", args[1])
     if not m:
-        raise ValueError(f"use: sgs ligar {n} Classe.campo Alvo (ex.: sgs ligar {n} Viagcert.destino Destino)")
+        return falha(f"escreva a classe e o campo com um ponto: sgs ligar {n} Classe.campo Alvo", *_como_ligar(n, entidades)["blocos"])
+    origem, campo = m.group(1), m.group(2)
+    alvo = args[2] if len(args) > 2 else gs.camel(campo)    # sem o Alvo: o nome do campo diz (destino → Destino)
+    existentes = ", ".join(sorted(entidades)) or "nenhuma"
+    if gs.achar_classe(entidades, origem) is None:
+        return falha(f"a classe {gs.camel(origem)} não existe no sistema {n} (ele tem: {existentes}) — a classe que "
+                     "GANHA o campo vem antes do ponto", *_como_ligar(n, entidades)["blocos"])
+    if gs.achar_classe(entidades, alvo) is None:
+        nova = gs.camel(alvo)
+        pedido = gs.plural(gs.camel_para_snake(nova)).replace("_", " ")
+        atalho = f"sgs app {n} {pedido} ligar={gs.achar_classe(entidades, origem)}.{campo}"
+        return falha(f"a classe {nova} ainda não existe no sistema {n} (ele tem: {existentes}). O ligar liga duas "
+                     "classes que JÁ existem — crie a nova e ligue numa linha só:",
+                     bloco("codigo", texto=atalho),
+                     texto("(com “Perguntar antes de gerar” marcado, ele pergunta o resto — o nome, versão ou edição, "
+                           f"campos; acrescente -sv para editar o próprio {n} em vez de criar a versão {n}.1)", "suave"),
+                     texto("Ou em dois passos:", "suave"),
+                     bloco("codigo", texto=f"sgs app {n} {pedido}\nsgs ligar {n} {gs.achar_classe(entidades, origem)}."
+                                           f"{campo} {nova}"),
+                     bloco("botoes", itens=[cmd(f"escrever: {atalho}", atalho + " ", True)]))
     info = info_sistema(destino)
     try:
-        lig = gs.planejar_ligacao(destino, m.group(1), m.group(2), args[2])
+        lig = gs.planejar_ligacao(destino, origem, campo, alvo)
     except gs.ErroGerador as erro:
         return falha(str(erro))
     alvo_dir, numero = (destino, n) if sem_versao else nova_versao(destino, ctx.config.valores["porta_base"], ctx.saida)

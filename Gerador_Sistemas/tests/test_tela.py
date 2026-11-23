@@ -700,6 +700,26 @@ def test_sgs_incrementar_pergunta_classe_campo_e_padrao(ctx):
     assert "if valor not in ('janela', 'corredor',):" in entidades and ctx.questionario is None
 
 
+def test_ligar_e_incrementar_explicam_o_que_fazer(ctx):
+    """Com o alvo que ainda não existe, o ligar ensina a criar e ligar; sem o padrão, o incrementar mostra o campo."""
+    pytest.importorskip("django")
+    rodar(ctx, "sgs gerar loja com extras opcionais", django=True, testar=False)
+    principal = next(iter(gs.entidades_do_projeto(ctx.pasta_do_numero(1))))
+    como = textos(rodar(ctx, "sgs ligar 01"))
+    assert "Como usar" in como and "crie a outra classe primeiro" in como and f"ligar={principal}.destino" in como
+    r = rodar(ctx, f"sgs ligar 01 {principal}.destino Destino")
+    assert r["ok"] is False and "ainda não existe" in textos(r)
+    assert f"sgs app 01 destinos ligar={principal}.destino" in textos(r)                # o comando que resolve
+    assert "Como usar" in textos(rodar(ctx, "sgs ligar 01 Nada.destino Destino"))
+    campo = gs.classes_do_projeto(ctx.pasta_do_numero(1))[principal]["atributos"][0]["nome"]
+    r = rodar(ctx, f"sgs incrementar 01 {principal}.{campo}")                          # sem o padrão
+    assert "hoje:" in textos(r) and f"sgs incrementar 01 {principal}.{campo} inteiro>=0 -sv" in textos(r)
+    assert "será CRIADO" in textos(rodar(ctx, f"sgs incrementar 01 {principal}.assento"))
+    assert "Como usar" in textos(rodar(ctx, "sgs incrementar 01"))
+    m = gs.preparar_modulo(ctx.pasta_do_numero(1), "destinos de viagem")["modulo"]
+    assert m["padroes"] == ["encapsulamento", "strategy"]                              # sem palavra de padrão: mínimo
+
+
 def test_sgs_ligar_lista_as_classes_e_liga_numa_versao(ctx):
     pytest.importorskip("django")
     rodar(ctx, "sgs gerar loja com extras opcionais", django=True, testar=False)

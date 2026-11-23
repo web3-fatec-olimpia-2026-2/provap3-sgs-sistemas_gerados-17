@@ -8485,6 +8485,8 @@ def preparar_modulo(projeto, assunto, entidade=None, campos=None, padroes=None, 
     aplicar_modulo().
     """
     entidade = entidade or nome_do_pedido(assunto)
+    # Módulo sem palavra de padrão no pedido: só o Strategy (o Service da app usa) — não os 9 da prova.
+    padroes = padroes or analisar_assunto(assunto)["padroes"] or ["strategy"]
     projeto = Path(projeto)
     if not (projeto / "web" / "manage.py").exists():
         raise ErroGerador(f"{projeto.name} não tem o site Django (web/manage.py) — um módulo é uma app Django")

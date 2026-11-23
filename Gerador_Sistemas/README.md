@@ -201,6 +201,20 @@ Com a caixa **Perguntar antes de gerar**, o SGS pergunta antes de mexer em qualq
 nova; `ligar=Classe.campo:Alvo` serve para qualquer par. Tudo é planejado e conferido **antes** de escrever: nome
 repetido ou ligação errada não muda nada.
 
+**Passo a passo — o `ligar` liga duas classes que JÁ existem.** No sistema 16, que só tem a `Viagcert`:
+
+```
+sgs app 16 destinos de viagem ligar=Viagcert.destino -sv   ← cria a Destino e já liga (Viagcert.destino → Destino)
+sgs app 16 horarios de voos entidade=Voo -sv               ← cria a Voo
+sgs ligar 16 Voo.destino Destino -sv                       ← liga duas classes que já existem
+sgs incrementar 16 Viagcert.noites inteiro:1..15 -sv        ← muda o padrão de um campo que existe
+sgs incrementar 16 Viagcert.assento lista:janela,meio,corredor -sv   ← cria um campo novo com o padrão
+```
+
+`sgs ligar NN` e `sgs incrementar NN` sozinhos mostram as classes e os campos, com este passo a passo. Se o Alvo
+ainda não existe, o `ligar` diz o comando que cria e liga. Sem o padrão, `sgs incrementar NN Classe.campo` mostra
+como o campo está hoje e comandos prontos para ele.
+
 **Ligação** (`sgs ligar NN Classe.campo Alvo [-sv]`, ou `ligar=` no `sgs app`) é um `ForeignKey` **opcional**
 (`null`/`blank`, `SET_NULL`: apagar o alvo só limpa o campo). Ela entra:
 
