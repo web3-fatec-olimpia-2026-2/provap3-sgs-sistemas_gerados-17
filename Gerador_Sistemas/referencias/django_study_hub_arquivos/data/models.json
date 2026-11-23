@@ -1,0 +1,229 @@
+[
+  {
+    "id": "model",
+    "category": "models",
+    "title": "Criar um Model",
+    "code": "from django.db import models\n\nclass Quarto(models.Model):\n    numero = models.PositiveIntegerField(unique=True)\n    tipo = models.CharField(max_length=80)\n    disponivel = models.BooleanField(default=True)\n\n    def __str__(self):\n        return f\"Quarto {self.numero}\"",
+    "description": "Um model é uma classe que descreve dados e campos; normalmente corresponde a uma tabela. __str__ define sua representação textual.",
+    "explanation": "Um model é uma classe que descreve dados e campos; normalmente corresponde a uma tabela. __str__ define sua representação textual.",
+    "when": "Em quartos/models.py, antes de criar as migrações.",
+    "keywords": [
+      "criar model",
+      "modelo",
+      "tabela",
+      "campos",
+      "str",
+      "meta"
+    ],
+    "synonyms": [
+      "criar model",
+      "modelo",
+      "tabela",
+      "campos",
+      "str",
+      "meta"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "from django.db import models\n\nclass Quarto(models.Model):\n    numero = models.PositiveIntegerField(unique=True)\n    tipo = models.CharField(max_length=80)\n    disponivel = models.BooleanField(default=True)\n\n    def __str__(self):\n        return f\"Quarto {self.numero}\"",
+    "source": "https://docs.djangoproject.com/en/5.2/topics/db/models/",
+    "version": "Django 5.2",
+    "syntax": "from django.db import models\n\nclass Quarto(models.Model):\n    numero = models.PositiveIntegerField(unique=True)\n    tipo = models.CharField(max_length=80)\n    disponivel = models.BooleanField(default=True)\n\n    def __str__(self):\n        return f\"Quarto {self.numero}\"",
+    "kind": "Classe",
+    "related": [
+      "makemigrations",
+      "filter",
+      "modelform"
+    ]
+  },
+  {
+    "id": "fields",
+    "category": "models",
+    "title": "Campos e tipos de dados",
+    "code": "nome = models.CharField(max_length=80)\ndescricao = models.TextField(blank=True)\nvagas = models.IntegerField(default=0)\nativo = models.BooleanField(default=True)\ndia = models.DateField()\ncriado = models.DateTimeField(auto_now_add=True)\npreco = models.DecimalField(max_digits=7, decimal_places=2)",
+    "description": "Cada campo define um tipo e suas opções. DecimalField é apropriado para valores decimais; max_digits inclui todas as casas.",
+    "explanation": "Cada campo define um tipo e suas opções. DecimalField é apropriado para valores decimais; max_digits inclui todas as casas.",
+    "when": "Ao definir os atributos de um model.",
+    "keywords": [
+      "charfield",
+      "textfield",
+      "integerfield",
+      "booleanfield",
+      "datefield",
+      "datetimefield",
+      "decimalfield",
+      "tipos",
+      "default",
+      "null",
+      "blank"
+    ],
+    "synonyms": [
+      "charfield",
+      "textfield",
+      "integerfield",
+      "booleanfield",
+      "datefield",
+      "datetimefield",
+      "decimalfield",
+      "tipos",
+      "default",
+      "null",
+      "blank"
+    ],
+    "error": "null controla o armazenamento no banco; blank controla validação. Para texto, geralmente prefira blank=True a null=True.",
+    "example": "nome = models.CharField(max_length=80)\ndescricao = models.TextField(blank=True)\nvagas = models.IntegerField(default=0)\nativo = models.BooleanField(default=True)\ndia = models.DateField()\ncriado = models.DateTimeField(auto_now_add=True)\npreco = models.DecimalField(max_digits=7, decimal_places=2)",
+    "source": "https://docs.djangoproject.com/en/5.2/ref/models/fields/",
+    "version": "Django 5.2",
+    "syntax": "nome = models.CharField(max_length=80)\ndescricao = models.TextField(blank=True)\nvagas = models.IntegerField(default=0)\nativo = models.BooleanField(default=True)\ndia = models.DateField()\ncriado = models.DateTimeField(auto_now_add=True)\npreco = models.DecimalField(max_digits=7, decimal_places=2)",
+    "kind": "Conceito",
+    "related": []
+  },
+  {
+    "id": "relationships",
+    "category": "models",
+    "title": "Relacionamentos entre Models",
+    "code": "class Reserva(models.Model):\n    quarto = models.ForeignKey(\"Quarto\", on_delete=models.CASCADE, related_name=\"reservas\")",
+    "description": "ForeignKey representa muitos para um; OneToOneField, um para um; ManyToManyField, muitos para muitos. on_delete define o comportamento ao excluir o objeto referenciado.",
+    "explanation": "ForeignKey representa muitos para um; OneToOneField, um para um; ManyToManyField, muitos para muitos. on_delete define o comportamento ao excluir o objeto referenciado.",
+    "when": "Quando o enunciado pedir relação entre entidades.",
+    "keywords": [
+      "foreignkey",
+      "onetoonefield",
+      "manytomanyfield",
+      "relacionamento",
+      "on_delete",
+      "chave estrangeira"
+    ],
+    "synonyms": [
+      "foreignkey",
+      "onetoonefield",
+      "manytomanyfield",
+      "relacionamento",
+      "on_delete",
+      "chave estrangeira"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "class Reserva(models.Model):\n    quarto = models.ForeignKey(\"Quarto\", on_delete=models.CASCADE, related_name=\"reservas\")",
+    "source": "https://docs.djangoproject.com/en/5.2/topics/db/models/#relationships",
+    "version": "Django 5.2",
+    "syntax": "class Reserva(models.Model):\n    quarto = models.ForeignKey(\"Quarto\", on_delete=models.CASCADE, related_name=\"reservas\")",
+    "kind": "Conceito",
+    "related": []
+  },
+  {
+    "id": "register",
+    "category": "models",
+    "title": "Registrar Model no admin",
+    "code": "from django.contrib import admin\nfrom .models import Quarto\n\nadmin.site.register(Quarto)",
+    "description": "Registra o model no painel administrativo da aplicação.",
+    "explanation": "Registra o model no painel administrativo da aplicação.",
+    "when": "Em quartos/admin.py, após criar o model.",
+    "keywords": [
+      "registrar model",
+      "admin.site.register",
+      "painel admin"
+    ],
+    "synonyms": [
+      "registrar model",
+      "admin.site.register",
+      "painel admin"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "from django.contrib import admin\nfrom .models import Quarto\n\nadmin.site.register(Quarto)",
+    "source": "https://docs.djangoproject.com/en/5.2/ref/contrib/admin/",
+    "version": "Django 5.2",
+    "syntax": "from django.contrib import admin\nfrom .models import Quarto\n\nadmin.site.register(Quarto)",
+    "kind": "Função",
+    "related": []
+  },
+  {
+    "id": "makemigrations",
+    "category": "models",
+    "title": "Criar migrações",
+    "code": "python manage.py makemigrations",
+    "description": "Detecta alterações nos models e cria arquivos de migração. Não aplica as mudanças ao banco.",
+    "explanation": "Detecta alterações nos models e cria arquivos de migração. Não aplica as mudanças ao banco.",
+    "when": "Após criar ou alterar models.",
+    "keywords": [
+      "criar tabelas no banco",
+      "gerar migracao",
+      "alterar model",
+      "makemigrations"
+    ],
+    "synonyms": [
+      "criar tabelas no banco",
+      "gerar migracao",
+      "alterar model",
+      "makemigrations"
+    ],
+    "error": "Criar arquivos não altera as tabelas; execute migrate em seguida. Verifique se o app está em INSTALLED_APPS.",
+    "example": "python manage.py makemigrations",
+    "source": "https://docs.djangoproject.com/en/5.2/topics/migrations/",
+    "version": "Django 5.2",
+    "syntax": "python manage.py makemigrations",
+    "kind": "Terminal",
+    "related": [
+      "migrate",
+      "model"
+    ]
+  },
+  {
+    "id": "migrate",
+    "category": "models",
+    "title": "Aplicar migrações ao banco",
+    "code": "python manage.py migrate",
+    "description": "Aplica as migrações pendentes ao banco configurado, criando ou alterando as tabelas necessárias.",
+    "explanation": "Aplica as migrações pendentes ao banco configurado, criando ou alterando as tabelas necessárias.",
+    "when": "Após makemigrations ou na configuração inicial do projeto.",
+    "keywords": [
+      "criar tabelas",
+      "aplicar alteracoes no banco",
+      "migrate",
+      "banco",
+      "migracao"
+    ],
+    "synonyms": [
+      "criar tabelas",
+      "aplicar alteracoes no banco",
+      "migrate",
+      "banco",
+      "migracao"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "python manage.py migrate",
+    "source": "https://docs.djangoproject.com/en/5.2/topics/migrations/",
+    "version": "Django 5.2",
+    "syntax": "python manage.py migrate",
+    "kind": "Terminal",
+    "related": [
+      "makemigrations"
+    ]
+  },
+  {
+    "id": "showmigrations",
+    "category": "models",
+    "title": "Inspecionar migrações",
+    "code": "python manage.py showmigrations\npython manage.py dbshell",
+    "description": "showmigrations lista migrações e indica as aplicadas. dbshell abre o cliente do banco se a ferramenta correspondente estiver instalada.",
+    "explanation": "showmigrations lista migrações e indica as aplicadas. dbshell abre o cliente do banco se a ferramenta correspondente estiver instalada.",
+    "when": "Ao investigar o estado do esquema.",
+    "keywords": [
+      "mostrar migracoes",
+      "dbshell",
+      "banco",
+      "ver status"
+    ],
+    "synonyms": [
+      "mostrar migracoes",
+      "dbshell",
+      "banco",
+      "ver status"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "python manage.py showmigrations\npython manage.py dbshell",
+    "source": "https://docs.djangoproject.com/en/5.2/ref/django-admin/#showmigrations",
+    "version": "Django 5.2",
+    "syntax": "python manage.py showmigrations\npython manage.py dbshell",
+    "kind": "Terminal",
+    "related": []
+  }
+]

@@ -1,0 +1,150 @@
+{
+  "atributos": [
+    {
+      "max": null,
+      "min": null,
+      "nome": "hospede",
+      "regra": "obrigatorio",
+      "tipo": "str"
+    },
+    {
+      "max": null,
+      "min": 1,
+      "nome": "quarto",
+      "regra": "minimo",
+      "tipo": "int"
+    },
+    {
+      "max": 30,
+      "min": 1,
+      "nome": "diarias",
+      "regra": "faixa",
+      "tipo": "int"
+    },
+    {
+      "max": null,
+      "min": 0,
+      "nome": "valor_diaria",
+      "regra": "minimo",
+      "tipo": "float"
+    },
+    {
+      "max": null,
+      "min": null,
+      "nome": "observacao",
+      "regra": "livre",
+      "tipo": "str"
+    }
+  ],
+  "categorias": {
+    "base": [
+      "Quarto",
+      "Quarto comum",
+      200.0
+    ],
+    "nova": [
+      "Chale",
+      "Chalé",
+      350.0
+    ],
+    "subtipos": [
+      [
+        "Suite",
+        "Suíte",
+        500.0
+      ],
+      [
+        "Presidencial",
+        "Quarto presidencial",
+        1200.0
+      ]
+    ],
+    "unidade": "noite"
+  },
+  "django": false,
+  "entidade": "Reserva",
+  "extras": {
+    "fixos": [
+      [
+        "CafeDaManha",
+        40.0,
+        "café da manhã"
+      ],
+      [
+        "Transfer",
+        80.0,
+        "transfer"
+      ],
+      [
+        "LateCheckout",
+        60.0,
+        "late checkout"
+      ]
+    ],
+    "percentual": [
+      "DescontoFidelidade",
+      0.9,
+      "-10% fidelidade"
+    ]
+  },
+  "gateway": "PagaFacil",
+  "ident": "hospede",
+  "nomes": [
+    "Ana",
+    "Bruno",
+    "Carla",
+    "Diego"
+  ],
+  "padroes": [
+    "encapsulamento",
+    "service",
+    "adapter",
+    "decorator"
+  ],
+  "painel": {
+    "acao_livre": "Reservar",
+    "acao_ocupado": "(ocupado)",
+    "contagem": "quarto(s) livre(s)",
+    "livre": "livre",
+    "ocupado": "INDISPONIVEL",
+    "titulo": "Quarto",
+    "zero": "LOTADO - nenhum quarto livre"
+  },
+  "preco": "valor_diaria",
+  "precos_exemplo": [
+    200.0,
+    150.0,
+    99.9,
+    0.0
+  ],
+  "quantidade": "diarias",
+  "recurso": "quarto",
+  "recursos": [
+    101,
+    201,
+    301
+  ],
+  "sistema": "Hotel Resort",
+  "unidade": "diária(s)",
+  "variantes": {
+    "conceito": "tipo de hóspede",
+    "itens": [
+      [
+        "Comum",
+        1.0
+      ],
+      [
+        "Fidelidade",
+        0.9
+      ],
+      [
+        "Parceiro",
+        0.8
+      ]
+    ],
+    "nova": [
+      "VIP",
+      0.5
+    ]
+  }
+}

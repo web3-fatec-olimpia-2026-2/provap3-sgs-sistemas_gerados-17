@@ -1,0 +1,116 @@
+
+===== Página 1 =====
+FATEC OLÍMPIA — CST em Desenvolvimento de Software Multiplataforma
+ILP-037 · TÉCNICAS DE PROGRAMAÇÃO II (2026/2)
+ GUIA DE ESTUDO DE BOLSO
+ NIVELAMENTO 2
+Objetivo do Nivelamento 2: Firmar a base prática nos três laboratórios essenciais antes da Unidade 3 (Arquitetura e ORM). Estudo
+totalmente assíncrono, sem nota e no seu ritmo. Universo de apoio: As operações do Resort de Olímpia.
+LAB 1 — SQL na Mão com SQLite (A Culinária do Resort)
+No banco de dados do Resort, as informações estão organizadas em tabelas interligadas: a tabela quarto (com id, numero, tipo, diaria) e a
+tabela reserva (com id, hospede, quarto_id, dias). O comando SQL indica diretamente ao banco o que buscar e como filtrar.
+Cláusula
+Função Prática
+Exemplo Prático (Tabelas do Resort)
+SELECT
+Define quais colunas de dados você quer visualizar no
+resultado.
+SELECT numero, diaria FROM quarto;
+FROM
+Especifica de qual tabela principal os dados serão
+extraídos.
+FROM quarto;
+WHERE
+Aplica uma condição de filtro para selecionar apenas
+certas linhas.
+WHERE tipo = 'Presidencial';
+JOIN
+Junta duas tabelas conectadas pelo elo (quarto_id
+aponta para id).
+SELECT r.hospede, q.numero FROM reserva r JOIN quarto q ON
+r.quarto_id = q.id;
+Frase-Chave para a Unidade 3: "O ORM gera SQL por baixo."
+O ORM (Object-Relational Mapping) do Django funciona como o garçom do Resort: você faz o pedido em Python (ex.:
+reserva.quarto.numero) e ele anota em português, mas traduz o pedido em SQL para a cozinha do banco de dados (SQLite). Entender
+SQL na mão é saber como a cozinha funciona de verdade!
+LAB 2 — Git Além do Commit: Branch e Conflito (A Gestão de Quartos)
+ Branch (Linha Paralela): Uma ramificação de trabalho isolada onde você cria novas funcionalidades ou correções sem afetar a versão
+estável principal (main).
+ Conflito de Merge: NÃO é bug nem erro seu! É o Git sendo honesto e pedindo uma decisão humana quando duas branches alteram a
+mesma linha do código de formas diferentes.
+Entendendo as Marcas de Conflito no Arquivo:
+<<<<<<< HEAD       ← Início do código na branch atual (ex: main / Suíte Luxo)
+categoria = 'Suíte Luxo'
+=======             ← Divisória central entre as duas propostas de alteração
+categoria = 'Suíte Presidencial'
+>>>>>>> nova-categoria ← Fim do código vindo da outra branch mesclada
+Como Resolver: 1. Abra o arquivo no editor; 2. Escolha o código correto (ou combine ambos); 3. Apague as três linhas marcadoras (<<<,
+===, >>>); 4. Salve e execute os comandos de gravação abaixo.
+Comando Git
+Ação e Função Prática
+git checkout -b <nome>
+Cria uma nova branch paralela e alterna o trabalho para ela.
+git merge <branch>
+Junta as alterações da <branch> indicada na sua branch atual.
+git add <arquivo>
+Prepara o arquivo ajustado (e marca o conflito resolvido como pronto).
+git commit -m "msg"
+Conclui o salvamento definitivo da fusão no histórico do projeto.
+Fatec Olímpia — Material de Apoio Assíncrono ao Nivelamento 2 (2026/2)
+Página 1 de 2
+===== Página 2 =====
+LAB 3 — Ler um Erro no Python em 3 Passos (O Check-out Sem Pânico)
+Regra de Ouro do Traceback: Leia a mensagem de erro sempre de BAIXO PARA CIMA!
+O meio da mensagem na tela mostra apenas o caminho que o Python percorreu até travar. A causa real do problema está na última linha.
+Exemplo Real de Traceback e seus 3 Passos de Leitura:
+Traceback (most recent call last):
+  File "calculo_diaria.py", line 14, in <module>    ← Passo 2: ONDE (linha 14 de calculo_diaria.py)
+    valor_total = diaria_padrao * dias
+NameError: name 'diaria_padrao' is not defined     ← Passo 1: O QUÊ e Passo 3: PISTA (NameError)
+Passo 1: Última Linha (O QUÊ)
+Passo 2: O 'line N' (ONDE)
+Passo 3: Tipo da Exceção (PISTA)
+Vá direto para o final da tela. A mensagem
+diz exatamente qual problema ocorreu na
+execução.
+Localize o nome do arquivo e o número da
+linha exata (ex.: line 14) onde o código
+parou.
+O nome do erro (ex.: NameError, ValueError)
+entrega a pista direta da causa.
+Tabela de Bolso dos Erros Mais Comuns no Python:
+Exceção (Tipo)
+O que Quase Sempre Significa
+Exemplo Prático no Resort de Olímpia
+NameError
+Nome de variável ou função não encontrado no código
+(quase sempre erro de digitação).
+diaria = diara_padrao (digitação incorreta do nome
+da variável).
+ValueError
+O tipo do dado está certo, mas o valor é incompatível para a
+conversão.
+int('tres') (tentou converter a palavra 'tres' em
+número inteiro).
+IndexError
+Tentou acessar uma posição/índice que não existe na lista
+informada.
+quartos[5] em uma lista com apenas 3 elementos
+(índices 0, 1 e 2).
+ModuleNotFoundError
+Módulo não encontrado no import ou script executado da
+pasta errada no terminal.
+import banco_resort sem estar dentro do diretório
+do projeto.
+IndentationError
+Espaços ou tabulações desalinhados na estrutura de blocos
+do código Python.
+Falta de indentação (4 espaços) dentro do bloco if
+ou def.
+Você está pronto para a Unidade 3!
+Com preceitos firmes em SQL na mão, sem medo de conflitos no Git e sabendo ler qualquer erro em 3 passos, você possui a base
+necessária para avançar em Arquitetura e ORM. Bom estudo e nos vemos nas aulas!
+ILP-037 · TÉCNICAS DE PROGRAMAÇÃO II — FATEC OLÍMPIA
+GUIA DE ESTUDO · NIVELAMENTO 2
+Fatec Olímpia — Material de Apoio Assíncrono ao Nivelamento 2 (2026/2)
+Página 2 de 2

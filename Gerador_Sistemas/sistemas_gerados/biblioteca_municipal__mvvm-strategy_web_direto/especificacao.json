@@ -1,0 +1,151 @@
+{
+  "atributos": [
+    {
+      "max": null,
+      "min": null,
+      "nome": "leitor",
+      "regra": "obrigatorio",
+      "tipo": "str"
+    },
+    {
+      "max": null,
+      "min": 1,
+      "nome": "exemplar",
+      "regra": "minimo",
+      "tipo": "int"
+    },
+    {
+      "max": 30,
+      "min": 1,
+      "nome": "dias",
+      "regra": "faixa",
+      "tipo": "int"
+    },
+    {
+      "max": null,
+      "min": 0,
+      "nome": "taxa_dia",
+      "regra": "minimo",
+      "tipo": "float"
+    },
+    {
+      "max": null,
+      "min": null,
+      "nome": "observacao",
+      "regra": "livre",
+      "tipo": "str"
+    }
+  ],
+  "categorias": {
+    "base": [
+      "Livro",
+      "Livro comum",
+      2.0
+    ],
+    "nova": [
+      "Ebook",
+      "E-book",
+      0.5
+    ],
+    "subtipos": [
+      [
+        "Revista",
+        "Revista",
+        1.0
+      ],
+      [
+        "LivroRaro",
+        "Livro raro",
+        10.0
+      ]
+    ],
+    "unidade": "dia"
+  },
+  "comentarios": true,
+  "django": true,
+  "entidade": "Emprestimo",
+  "estudo": false,
+  "extras": {
+    "fixos": [
+      [
+        "ReservaAntecipada",
+        5.0,
+        "reserva antecipada"
+      ],
+      [
+        "EntregaEmCasa",
+        12.0,
+        "entrega em casa"
+      ],
+      [
+        "Plastificacao",
+        3.0,
+        "plastificação"
+      ]
+    ],
+    "percentual": [
+      "Urgencia",
+      1.2,
+      "+20% urgência"
+    ]
+  },
+  "gateway": "PixRapido",
+  "ident": "leitor",
+  "nomes": [
+    "Beatriz",
+    "Caio",
+    "Denise",
+    "Eduardo"
+  ],
+  "padroes": [
+    "encapsulamento",
+    "mvvm",
+    "strategy"
+  ],
+  "painel": {
+    "acao_livre": "Emprestar",
+    "acao_ocupado": "(aguardar)",
+    "contagem": "exemplar(es) disponível(is)",
+    "livre": "disponível",
+    "ocupado": "EMPRESTADO",
+    "titulo": "Exemplar",
+    "zero": "ESGOTADO - nenhum exemplar disponível"
+  },
+  "preco": "taxa_dia",
+  "precos_exemplo": [
+    2.5,
+    1.0,
+    10.0,
+    0.0
+  ],
+  "quantidade": "dias",
+  "recurso": "exemplar",
+  "recursos": [
+    1001,
+    1002,
+    1003
+  ],
+  "sistema": "Biblioteca Municipal",
+  "unidade": "dia(s)",
+  "variantes": {
+    "conceito": "tipo de leitor",
+    "itens": [
+      [
+        "Comum",
+        1.0
+      ],
+      [
+        "Estudante",
+        0.5
+      ],
+      [
+        "Professor",
+        0.7
+      ]
+    ],
+    "nova": [
+      "Visitante",
+      1.5
+    ]
+  }
+}

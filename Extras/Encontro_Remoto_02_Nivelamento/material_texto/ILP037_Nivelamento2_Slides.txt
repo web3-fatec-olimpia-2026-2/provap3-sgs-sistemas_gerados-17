@@ -1,0 +1,137 @@
+
+===== Página 1 =====
+Nivelamento 2: firmando a base
+ILP-037 Técnicas de Programação II • Encontro Remoto 2 • 19/09/2026
+Prof. Jose Ceron Neto
+Faculdade de Tecnologia de Olímpia — Centro Paula Souza
+CST em Desenvolvimento de Software Multiplataforma
+Olímpia, SP — 2º semestre de 2026
+===== Página 2 =====
+O que é este encontro
+Sem pressa, sem presença, sem nota
+NIVELAMENTO
+Um sábado para firmar a base que a próxima unidade (arquitetura e ORM) vai pedir.
+Sem conteúdo novo, sem chamada, sem homework. Você faz no seu ritmo, em casa.
+Lab 1 — SQL
+Escrever consultas na mão, num
+banco do Resort. O que o ORM faz
+por baixo.
+Lab 2 — Git
+Branch e resolver um conflito sem
+pânico.
+Lab 3 — Erro
+Ler qualquer erro do Python em 3
+passos.
+Nada para instalar — tudo roda com o Python que você já tem. Cada lab tem um vídeo de resolução
+no Teams.
+Fatec Olímpia 1/11
+===== Página 3 =====
+LAB 1 / 3
+SQL na mão
+1. SQL na mão
+2. Git além do commit
+3. Ler um erro
+2/11
+===== Página 4 =====
+Por que SQL, se o Django faz sozinho?
+Entender o que o ORM esconde
+O ORM TRADUZ
+Quando você escreve reserva.quarto.numero no Django, ele traduz isso para uma
+consulta SQL por baixo. Se você entende o SQL, entende o que o ORM faz — e sabe
+consertar quando ele faz errado.
+SELECT quais colunas você quer
+FROM de qual tabela
+WHERE com qual condição
+JOIN juntando com outra tabela
+PARA FIXAR O ORM é o garçom que anota seu pedido em português e leva pra cozinha em SQL.
+Fatec Olímpia 3/11
+===== Página 5 =====
+O JOIN: juntar duas tabelas
+O alvo do Lab 1
+As reservas estão numa tabela; os quartos, em outra. O quarto_id da reserva aponta para o id do
+quarto — é o elo. O JOIN usa esse elo:
+SELECT r . hospede , q . numero
+FROM reserva r
+JOIN quarto q ON r . q u a r t o _ i d = q . id
+"Traga o hóspede da reserva e o número do quarto, juntando onde o quarto_id da reserva bate com o
+id do quarto."
+NO LAB 1
+Você escreve 4 consultas e roda python3 verificar.py — ele diz verde ou mostra o
+que faltou. Sem instalar nada: o SQLite já vem no Python.
+Fatec Olímpia 4/11
+===== Página 6 =====
+LAB 2 / 3
+Git além do commit
+1. SQL na mão
+2. Git além do commit
+3. Ler um erro
+5/11
+===== Página 7 =====
+O que trava todo mundo: o conflito
+E por que ele não é um bug
+BRANCH
+Uma linha de trabalho paralela. Você mexe nela sem afetar o main , até juntar (merge ).
+CONFLITO
+Quando duas branches mudam a mesma linha de formas diferentes, o Git não sabe
+qual manter — e pede que você decida. Isso não é erro seu; é o Git sendo honesto.
+No Lab 2 você CRIA um conflito de propósito e resolve. Depois disso, conflito deixa de
+assustar.
+Fatec Olímpia 6/11
+===== Página 8 =====
+Ler as marcas do conflito
+Três símbolos, uma decisão
+- comum
+< < < < < < < HEAD
+- p r e s i d e n c i a l <- o que voce tinha no main
+=======
+- suite <- o que vinha da outra branch
+> > > > > > > nova - c a t e g o r i a
+RESOLVER
+Decida o que fica, e apague as três marcas (< , === , > ). Depois: git add e git
+commit . Pronto.
+Entre < e === : um lado. Entre === e > : o outro. Você escolhe, ou junta os dois.
+Fatec Olímpia 7/11
+===== Página 9 =====
+LAB 3 / 3
+Ler um erro
+1. SQL na mão
+2. Git além do commit
+3. Ler um erro
+8/11
+===== Página 10 =====
+O erro não é seu inimigo
+É a coisa mais útil na tela
+OS TRÊS PASSOS
+Todo erro do Python, por mais assustador, se lê assim:
+1. Vá para a última linha — ela diz o que deu errado
+2. Ache o arquivo e a linha (o "line N") — é onde deu errado
+3. Leia o tipo (NameError, ValueError...) — é a pista do porquê
+O meio da mensagem é o caminho que o Python percorreu. Leia de BAIXO para cima: a
+última linha primeiro.
+Fatec Olímpia 9/11
+===== Página 11 =====
+A tabela de bolso
+Os erros mais comuns, e o que quase sempre são
+NameError digitou errado o nome de uma variável
+TypeError misturou tipos (texto com número)
+ValueError o valor não serve (ex.: int("tres") )
+IndexError pediu uma posição que a lista não tem
+KeyError pediu uma chave que o dicionário não tem
+IndentationError espaços/tabs inconsistentes
+ModuleNotFoundError import errado, ou rodou da pasta errada
+No Lab 3 você conserta três erros reais do Resort, lendo a mensagem nos três passos.
+Fatec Olímpia 10/11
+===== Página 12 =====
+Terminou os três?
+Você está pronto
+Lab 1 — SQL na mão: SELECT, WHERE, JOIN. O que o ORM faz por baixo.
+Lab 2 — Git: branch e resolver conflito sem pânico.
+Lab 3 — ler qualquer erro do Python em três passos.
+A BASE QUE A PRÓXIMA UNIDADE PEDE
+Arquitetura e ORM vêm aí. Quem fez o nivelamento chega pronto. Dúvida em qualquer
+lab? Canal de Dúvidas no Teams, e os vídeos de resolução.
+Fatec Olímpia 11/11
+===== Página 13 =====
+GOVERNO DO ESTADO
+DE SÃO PAULO
+Bom nivelamento.

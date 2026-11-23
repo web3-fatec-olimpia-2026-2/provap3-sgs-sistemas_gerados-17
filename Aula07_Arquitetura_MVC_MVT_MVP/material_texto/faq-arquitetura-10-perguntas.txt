@@ -1,0 +1,73 @@
+
+===== Página 1 =====
+ILP-037 · FATEC OLÍMPIA — ARQUITETURA DE SOFTWARE (MVC × MVT × MVP)
+Guia de Perguntas Frequentes — Primeira Vista em Arquitetura
+Página 1
+10 Perguntas sobre Arquitetura de Software
+Guia Rápido para Iniciantes · ILP-037 Técnicas de Programação II (FATEC Olímpia)
+Pergunta 1: “Qual a diferença entre MVC e MVT?”
+Em resumo: É apenas uma questão de nomenclatura: o Controller do MVC chama-se View no Django, e a View do MVC
+chama-se Template.
+Analogia do Resort: No Resort, o hóspede pede uma reserva na Recepção (Controller/View), que consulta o sistema
+(Model) e manda entregar o comprovante impresso no quarto (View/Template). O objetivo é o mesmo: a recepção não
+cozinha e a cozinha não atende o balcão.
+Fonte: FAQ Django General (Section: MVC / MTV); ILP037_Aula07_Slides.pdf, p. 5.
+Pergunta 2: “Por que no Django a 'View' não é a tela?”
+Em resumo: Porque no Django a View é a função Python que decide QUAIS dados serão exibidos, enquanto o Template
+define COMO eles aparecem.
+Analogia do Resort: A recepção do Resort (View) decide quais quartos estão livres e calcula a diária. Quem prepara
+visualmente a suíte com flores e toalhas para o hóspede ver é a equipe de governança (Template).
+Fonte: FAQ Django General; ILP037_Aula07_Slides.pdf, p. 5.
+Pergunta 3: “O que é um Service? É obrigatório?”
+Em resumo: É uma classe ou módulo Python onde moram as regras de negócio complexas, e NÃO é obrigatório para
+todas as telas.
+Analogia do Resort: O Service é como a central de tarifação do Resort: um setor especializado para calcular pacotes de alta
+temporada e descontos de fidelidade, tirando essa conta complexa da cabeça do recepcionista.
+Fonte: ILP037_Aula07_Slides.pdf, p. 6.
+Pergunta 4: “Toda view precisa de um Service?”
+Em resumo: Não! Views simples que apenas buscam dados e renderizam a página já estão ótimas sem Service (critério
+antifachada).
+Analogia do Resort: Se o cliente só quer saber o horário do café da manhã, a recepção olha o quadro e responde. Criar um
+'ServiceDeHorario' seria como chamar o gerente geral do hotel só para dizer que o café abre às 7h.
+Fonte: ILP037_Aula07_Slides.pdf, p. 8.
+===== Página 2 =====
+ILP-037 · FATEC OLÍMPIA — ARQUITETURA DE SOFTWARE (MVC × MVT × MVP)
+Guia de Perguntas Frequentes — Primeira Vista em Arquitetura
+Página 2
+Pergunta 5: “O que quer dizer 'testável sem HTTP'?”
+Em resumo: Significa testar os cálculos e decisões de negócio diretamente no Python, sem precisar simular requisições
+web ou subir servidor.
+Analogia do Resort: É a capacidade do auditor do Resort conferir a matemática da taxa de turismo à noite, com a recepção
+fechada, usando apenas uma calculadora e a regra no papel.
+Fonte: ILP037_Aula07_Slides.pdf, p. 6-7.
+Pergunta 6: “Por que é ruim a regra de negócio ficar na view?”
+Em resumo: Porque a regra fica presa à infraestrutura web, tornando os testes lentos, caros e difíceis de manter.
+Analogia do Resort: Se o cálculo do desconto do parque aquático ficar preso dentro do código do formulário da recepção,
+você terá que simular a chegada de um hóspede no balcão toda vez que quiser conferir a conta.
+Fonte: ILP037_Aula07_Slides.pdf, p. 4, 7.
+Pergunta 7: “Onde fica o Service no meu projeto Django?”
+Em resumo: Fica em um arquivo Python dedicado (ex: services.py), totalmente separado das views e das rotas web.
+Analogia do Resort: Fica na sala de gerência do Resort (services.py), longe do balcão de atendimento (views.py). A
+recepção liga para a gerência, pega o valor calculado e entrega ao cliente.
+Fonte: ILP037_Aula07_Slides.pdf, p. 6, 11.
+Pergunta 8: “Isso é a mesma coisa que o SRP?”
+Em resumo: Sim, é o Princípio da Responsabilidade Única (SRP) aplicado em escala de camadas na arquitetura do
+sistema.
+Analogia do Resort: Na Aula 06 vimos que uma classe tem um só motivo para mudar (recepção não limpa quarto). Em
+arquitetura, a camada web só cuida da web, e a camada Service só cuida da regra.
+Fonte: ILP037_Aula06_Slides.pdf, p. 4; ILP037_Aula07_Slides.pdf, p. 7.
+Pergunta 9: “MVP é usado em Django?”
+Em resumo: Não nativamente no Django, mas o conceito é útil para entender a separação total entre a regra de negócio
+e uma tela passiva.
+Analogia do Resort: No MVP, a tela é como um totem eletrônico 'burro' no saguão do Resort: ele não calcula nada, apenas
+repassa o toque do cliente para o Presenter e mostra a mensagem que recebe.
+Fonte: ILP037_Aula07_Slides.pdf, p. 5.
+===== Página 3 =====
+ILP-037 · FATEC OLÍMPIA — ARQUITETURA DE SOFTWARE (MVC × MVT × MVP)
+Guia de Perguntas Frequentes — Primeira Vista em Arquitetura
+Página 3
+Pergunta 10: “Isso cai no Marco 2?”
+Em resumo: Sim! O Marco 2 exige a declaração clara da arquitetura do projeto e a extração justificada de um Service.
+Analogia do Resort: Assim como no Marco 1 a equipe defendeu a estrutura das classes, no Marco 2 vocês vão justificar no
+Caderno de Design (ADR) por que tiraram a regra do check-out da view e criaram um Service.
+Fonte: ILP037_Aula07_Slides.pdf, p. 11, 13; ILP037_Aula06_Slides.pdf, p. 10.

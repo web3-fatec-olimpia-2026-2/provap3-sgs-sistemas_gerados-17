@@ -1,0 +1,95 @@
+
+===== Página 1 =====
+ILP-037 TÉCNICAS DE PROGRAMAÇÃO II — FATEC OLÍMPIA
+SÃO PAULO — CST EM DSM
+Guia de FAQ: Encapsulamento e @property
+Página 1
+Semestre Letivo 2026/2
+CURSO CST EM DESENVOLVIMENTO DE SOFTWARE MULTIPLATAFORMA
+Guia de FAQ: Encapsulamento & @property
+10 Perguntas Frequentes de Alunos em Recuperação da Base de OO
+Q01. O que é o sublinhado no nome do atributo (ex: self._valor)?
+Em resumo: É uma convenção visual indicando que o atributo é privado (de uso interno) e não deve ser
+acessado diretamente por fora da classe.
+Analogia do Resort: Pense no cofre do quarto do resort. A engrenagem da fechadura interna está lá, mas o sublinhado
+é o aviso na porta do cofre de que apenas funcionários autorizados ou o próprio cofre devem manipular aquele
+mecanismo por dentro. O hóspede deve interagir apenas com o teclado numérico público (a propriedade), sem enfiar
+ferramentas na tranca física.
+Fonte: Notas de Aula (FATEC Olímpia, Aula 02, Slides 9-10) e Documentação Python (property, 2026).
+Q02. Por que não deixar o atributo público e validar o valor depois?
+Em resumo: Deixar o atributo público expõe o objeto a dados inválidos e silencia erros, espalhando a
+responsabilidade de validação por todo o sistema.
+Analogia do Resort: Imagine que o resort deixa os cofres de todos os quartos destrancados e com a porta aberta,
+dependendo de que cada hóspede lembre de trancar seus próprios bens ao sair. Mais cedo ou mais tarde, alguém vai
+esquecer. Encapsular é dar ao próprio cofre a obrigação de se trancar e validar a senha automaticamente na hora do
+fechamento.
+Fonte: Notas de Aula (FATEC Olímpia, Aula 02, Slides 7-8).
+Q03. Qual a diferença entre usar @property e um método normal?
+Em resumo: Um método normal exige que você chame com parênteses (ex: reserva.valor()), enquanto a
+@property permite acessar a função como se fosse um dado comum (reserva.valor).
+Analogia do Resort: Um método normal é ligar para a recepção do resort toda vez que quiser saber o número do seu
+quarto. A @property é olhar para a chave que está na sua mão: o número está escrito diretamente nela. Parece um dado
+estático e simples, mas na hora em que você olha, há toda uma engrenagem de identificação do hotel agindo nos
+bastidores.
+Fonte: Documentação Oficial do Python (Built-in Functions: property, 2026).
+===== Página 2 =====
+ILP-037 TÉCNICAS DE PROGRAMAÇÃO II — FATEC OLÍMPIA
+SÃO PAULO — CST EM DSM
+Guia de FAQ: Encapsulamento e @property
+Página 2
+Semestre Letivo 2026/2
+Q04. Preciso colocar @property em todo e qualquer atributo do meu sistema?
+Em resumo: Não. Colocar propriedades em dados que não possuem regras de negócio é um erro comum de
+sobrecarga de design, gerando código inútil (cerimônia).
+Analogia do Resort: Trancar com chave digital de alta segurança a lixeira ou o cesto de toalhas usadas do quarto do
+resort é um desperdício de esforço e dinheiro. Tranque apenas o que tem valor real ou regras rígidas (como as diárias e
+o dinheiro). Deixe dados simples, como o nome de texto livre do hóspede, em atributos públicos normais.
+Fonte: Notas de Aula (FATEC Olímpia, Aula 02, Slide 13).
+Q05. O que significa levantar um erro (raise ValueError) no código?
+Em resumo: É a forma de o Python interromper o programa imediatamente ao detectar que uma regra de
+negócio importante foi desrespeitada.
+Analogia do Resort: É o alarme eletrônico de segurança do resort disparando estridentemente na recepção quando
+alguém digita uma senha inválida ou tenta registrar diárias menores que uma. O alarme impede que a operação continue
+com dados incorretos e força o usuário a corrigir o erro na hora.
+Fonte: Notas de Aula (FATEC Olímpia, Aula 02, Slide 10) e Documentação Python (Exceptions, 2026).
+Q06. Por que o valor total de uma reserva não deve ser guardado em um atributo comum?
+Em resumo: Guardar valores calculados cria redundância e abre margem para bugs graves, onde o total e as
+diárias ficam desatualizados e discordantes.
+Analogia do Resort: A conta do hóspede no check-out do resort nunca fica pré-impressa em um papel estático
+guardado na recepção desde o primeiro dia. O sistema sempre soma o consumo e multiplica as diárias em tempo real,
+na hora da saída. Assim, qualquer consumo de última hora é incluído, sem risco de a conta desandar.
+Fonte: Notas de Aula (FATEC Olímpia, Aula 02, Slide 14).
+Q07. Escrever getters, setters e propriedades não deixa o código mais longo e complicado?
+Em resumo: Embora exija algumas linhas extras no início, o encapsulamento simplifica o sistema ao
+centralizar todas as regras de negócio em um único lugar seguro.
+Analogia do Resort: Para o chaveiro do resort, instalar e configurar cofres eletrônicos em todos os quartos dá mais
+trabalho de montagem do que colocar caixas de papelão comuns. Porém, essa pequena complexidade inicial poupa a
+gerência de ter que investigar roubos e lidar com reclamações de hóspedes a cada check-out.
+Fonte: Notas de Aula (FATEC Olímpia, Aula 02, Slides 8-9) e Freeman & Freeman (2007).
+===== Página 3 =====
+ILP-037 TÉCNICAS DE PROGRAMAÇÃO II — FATEC OLÍMPIA
+SÃO PAULO — CST EM DSM
+Guia de FAQ: Encapsulamento e @property
+Página 3
+Semestre Letivo 2026/2
+Q08. O que acontece com o código de quem já usava a classe antes da proteção?
+Em resumo: Nada muda! Essa é a mágica da @property: quem já acessava reserva.valor continua acessando
+do mesmo jeito, sem quebrar o sistema.
+Analogia do Resort: Imagine que o resort trocou o segredo físico dos cofres por um leitor eletrônico de cartões interno,
+sem alterar a maçaneta externa. Para o hóspede, a forma de abrir a porta do cofre continua parecendo exatamente a
+mesma, mas a proteção agora é imensamente superior e automatizada.
+Fonte: Notas de Aula (FATEC Olímpia, Aula 02, Slide 11).
+Q09. Encapsulamento é um padrão de projeto GoF?
+Em resumo: Não. O encapsulamento é um princípio fundamental da Orientação a Objetos. Os padrões de
+projeto são soluções mais complexas que usam essa base.
+Analogia do Resort: O encapsulamento é a própria fundação e os tijolos de concreto que sustentam o resort. Os
+padrões de projeto (como o Decorator) são os estilos arquitetônicos das piscinas ou os sistemas de lazer da recepção.
+Você precisa dos tijolos bem assentados para poder construir os atrativos depois.
+Fonte: Notas de Aula (FATEC Olímpia, Aula 02, Slide 12) e Freeman & Freeman (2007).
+Q10. Como tudo isso se relaciona com o model do Django que usamos em Web III?
+Em resumo: A classe de model do Django representa a tabela do banco, onde cada campo é um atributo.
+Usamos propriedades para protegê-los e calculá-los.
+Analogia do Resort: O seu model no Django é a ficha cadastral impressa que o hóspede preenche na recepção do
+resort. Cada campo da ficha vira uma coluna no banco. Usar `@property` é colocar uma caneta que se apaga sozinha ou
+um validador na ficha, impedindo que o hóspede escreva 'menos dez reais' no campo do valor.
+Fonte: Plano de Ensino FATEC (ILP-037 / ISW-030, 2026) e Notas de Aula (FATEC Olímpia, Aula 02, Slide 15).

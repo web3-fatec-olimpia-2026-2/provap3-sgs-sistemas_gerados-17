@@ -1,0 +1,20 @@
+{
+  "proximo": 16,
+  "sistemas": {
+    "pet_shop__strategy_web": 1,
+    "hotel_resort__service-adapter-decorator": 2,
+    "hotel_resort__todos_web": 3,
+    "academia_fit__adapter-strategy": 4,
+    "loja_virtual__facade-decorator_exercicio": 5,
+    "cine_olimpia__comportamental_direto_sem_comentarios": 6,
+    "sistema_exemplo__prova_web": 7,
+    "academia_fit__strategy_web_direto": 8,
+    "sistema_exemplo__prova_web_direto": 9,
+    "loja_virtual__prova_web_direto": 10,
+    "biblioteca_municipal__mvvm-strategy_web_direto": 11,
+    "petshop__prova+state_web-t10tom3_exercicio": 12,
+    "pharmas__todos_web_cmd_exercicio": 13,
+    "loja_virtual__prova_web_bootstrap_direto_sem_comentarios": 14,
+    "petshop__prova_state_web_t10_tom3_exercicio": 15
+  }
+}

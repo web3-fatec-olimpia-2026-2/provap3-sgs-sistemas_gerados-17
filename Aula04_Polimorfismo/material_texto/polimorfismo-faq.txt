@@ -1,0 +1,87 @@
+
+===== Página 1 =====
+ILP-037 TÉCNICAS DE PROGRAMAÇÃO II — FATEC OLÍMPIA
+AULA 04 — POLIMORFISMO
+FAQ do Aluno: Desmistificando o Polimorfismo
+Página 1 de 2
+POLIMORFISMO: 10 PERGUNTAS FREQUENTES
+Guia Prático de Sobrevivência com a Analogia do Resort de Olímpia
+Olá, estudante! Este guia responde de forma direta e sem jargões complicados às principais dúvidas sobre o fechamento do bloco
+de Orientação a Objetos. Se você ainda confunde Herança com Polimorfismo ou tem pesadelos com múltiplos if/elif, este material
+foi feito sob medida para consolidar os fundamentos e preparar você para o próximo passo: os Padrões de Projeto. Guarde este
+guia para apoiar a resolução do seu Homework 3!
+Q1. Qual a diferença entre herdar e sobrescrever?
+Em resumo: Herdar é copiar a estrutura e comportamento padrão da classe base; sobrescrever é alterar de forma
+específica esse comportamento herdado na classe filha.
+A Analogia do Resort: Na herança, a classe Suite assume de forma automática as regras de um Quarto comum. Ao sobrescrever
+(ou fazer override), a classe Suite decide reescrever a lógica interna do método preco_noite() para dar a sua própria resposta. O
+nome do método e a sua assinatura continuam exatamente os mesmos, mas o comportamento real muda.
+Fonte: 9. Classes — Documentação Python 3.14.7
+Q2. O que quer dizer "a função não pergunta o tipo"?
+Em resumo: Significa que a recepção trata todas as acomodações de forma uniforme através de uma única interface
+genérica, sem testar classes específicas.
+A Analogia do Resort: No sistema do resort, a nossa função da recepção não precisa usar comandos como isinstance ou testar se
+um objeto é uma Suite ou um Quarto comum antes de agir. Ela apenas chama quarto.preco_noite(). O recepcionista faz a mesma
+pergunta ("qual o seu preço?") para qualquer objeto que chegue, confiando que ele saberá responder.
+Fonte: ILP037_Aula04_Slides.pdf
+Q3. Como a função sabe qual preco_noite chamar, se são várias classes diferentes?
+Em resumo: O Python resolve isso de forma dinâmica em tempo de execução, verificando qual é o tipo real do objeto que
+foi entregue naquele momento.
+A Analogia do Resort: A resolução ocorre no momento da execução. Quando um objeto é enviado para a recepção, o Python
+examina sua estrutura física interna. Se o objeto que foi entregue é de fato uma instância da classe Presidencial, ele chama
+automaticamente a implementação de preco_noite() que reside dentro da classe Presidencial, garantindo a resposta correta.
+Fonte: 9. Classes — Documentação Python 3.14.7
+Q4. Polimorfismo é a mesma coisa que herança?
+Em resumo: Não. A herança cria a relação estrutural de tipo ("é-um"), enquanto o polimorfismo aproveita esse vínculo para
+variar dinamicamente o comportamento.
+A Analogia do Resort: A herança diz que uma Suite é um Quarto, copiando seus atributos e dando passe livre para transitar na
+recepção. O polimorfismo entra em cena quando usamos esse passe livre: ele é a capacidade prática de a recepção aceitar esse
+objeto genérico e ver o comportamento variar de acordo com o tipo real da acomodação entregue.
+Fonte: Aprendendo padrões de projeto em Python (Chetan Giridhar)
+Q5. Por que o uso de if/elif é considerado ruim e frágil aqui?
+Em resumo: Porque ele gera dependência rígida, obrigando você a modificar e retestar códigos antigos e estáveis toda vez
+que uma novidade surgir.
+A Analogia do Resort: Se a recepção do resort dependesse de estruturas de if/elif para cada categoria de quarto, a inauguração de
+uma nova ala (ex: Chale) exigiria alterar o código da própria recepção para adicionar mais um ramo de condicional. Isso viola a
+extensibilidade do sistema, introduzindo riscos de novos bugs em partes que já estavam testadas e consolidadas.
+Fonte: ILP037_Aula04_Slides.pdf
+===== Página 2 =====
+ILP-037 TÉCNICAS DE PROGRAMAÇÃO II — FATEC OLÍMPIA
+AULA 04 — POLIMORFISMO
+FAQ do Aluno: Desmistificando o Polimorfismo
+Página 2 de 2
+Q6. O que acontece se um subtipo NÃO sobrescrever o método herdado?
+Em resumo: O subtipo simplesmente herda e executa de forma automática o método padrão que foi definido na classe
+base.
+A Analogia do Resort: Se criarmos uma classe chamada QuartoStandard herdando diretamente de Quarto e optarmos por não
+reescrever o método preco_noite(), quando a recepção solicitar o cálculo do valor, o Python buscará o método na classe filha, não o
+encontrará e subirá para a classe mãe, executando a lógica básica lá definida. O sistema continua estável.
+Fonte: 9. Classes — Documentação Python 3.14.7
+Q7. Preciso sobrescrever todos os métodos herdados da classe mãe?
+Em resumo: Não, você deve sobrescrever de forma estritamente seletiva, alterando apenas os comportamentos que
+requerem especialização.
+A Analogia do Resort: A classe base Quarto pode fornecer múltiplos métodos funcionais como fazer_checkin(), solicitar_limpeza()
+ou preco_noite(). Se as regras de limpeza de uma Suite são idênticas às de um quarto comum, não toque nesse método.
+Sobrescreva exclusivamente a diária, mantendo o reuso saudável do código existente.
+Fonte: 9. Classes — Documentação Python 3.14.7
+Q8. O que significa dizer que um código é "aberto ao novo"?
+Em resumo: Significa criar funções estáveis que aceitam novos tipos de dados ou classes sem precisar passar por
+nenhuma modificação estrutural futura.
+A Analogia do Resort: Utilizando polimorfismo, a nossa recepção está blindada ("fechada para modificação"). Se no próximo verão
+o resort lançar um Bangalo, nós codificamos apenas a classe nova herdando de Quarto. A função de cálculo da diária da recepção
+aceitará e processará o Bangalo imediatamente, sem alterarmos sequer uma única linha de código da recepção.
+Fonte: ILP037_Aula04_Slides.pdf
+Q9. Onde ou como posso identificar oportunidades para aplicar isso no meu projeto?
+Em resumo: Procure em seu código por tomada de decisões (if/elif) baseadas em "categorias" ou "tipos" de coisas que
+executam uma mesma ação genérica.
+A Analogia do Resort: Para o seu Homework 3, analise onde o sistema precisa agir de formas distintas sob uma mesma ação
+abstrata. Se você encontrar condicionais controlando descontos por tipo de cliente, processamento por método de pagamento ou
+cálculo de frete por categoria de envio, ali reside a oportunidade perfeita de trocar condicionais por classes polimórficas.
+Fonte: ILP037_Aula04_Slides.pdf
+Q10. Qual a real relação do polimorfismo com os Padrões de Projeto?
+Em resumo: O polimorfismo é o pilar estrutural que viabiliza a flexibilidade e o baixo acoplamento exigidos por quase
+todos os padrões clássicos.
+A Analogia do Resort: Padrões fundamentais de criação e comportamento, como Factory Method (usado para fabricar tipos de
+objetos de forma desacoplada) e Strategy (usado para alterar algoritmos dinamicamente), baseiam-se na premissa de que o
+chamador depende apenas de uma interface abstrata comum, delegando as especificidades ao polimorfismo das classes filhas.
+Fonte: Aprendendo padrões de projeto em Python (Chetan Giridhar)

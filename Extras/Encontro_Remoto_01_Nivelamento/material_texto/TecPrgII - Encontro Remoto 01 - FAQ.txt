@@ -1,0 +1,98 @@
+
+===== Página 1 =====
+FATEC OLÍMPIA
+CST EM DESENVOLVIMENTO DE SOFTWARE MULTIPLATAFORMA
+ILP-037 Técnicas de Programação II
+Página 1 de 2
+Nivelamento Assíncrono • Sem nota e sem prazo
+ GUIA DE ESTUDOS: ORIENTAÇÃO A OBJETOS
+ (NIVELAMENTO)
+ Componente: ILP-037 Técnicas de Programação II — FATEC Olímpia — 2026/2
+Bem-vindo à nossa jornada de nivelamento! Este guia de estudos prático foi projetado para firmar a base de
+programação orientada a objetos antes de avançarmos para novos conceitos. Não há prazos, notas ou cobranças de
+presença: o objetivo é que você faça no seu próprio ritmo, do seu jeito, garantindo que os conceitos fundamentais
+estejam consolidados. Abaixo, revisamos os três laboratórios fundamentais utilizando a mesma entidade do seu
+projeto: o Hóspede do Resort de Olímpia. Estude os conceitos, analise os códigos e use as analogias para fixar o
+conteúdo na mente de forma indestrutível!
+LAB 1 — OBJETOS: CONSTRUINDO A CLASSE DO ZERO
+O Conceito: Uma classe funciona como um molde abstrato (projeto) que define o comportamento e os dados de
+uma entidade, enquanto um objeto é uma instância concreta gerada em memória a partir desse molde, possuindo
+seu próprio estado e dados independentes dos outros objetos.
+O Código em Python:
+class Hospede: def __init__(self, nome, documento): self.nome = nome # Atributo de instância para
+guardar o nome self.documento = documento # Atributo de instância para o documento self.hospedado =
+False # Estado inicial: não hospedado def fazer_check_in(self): self.hospedado = True # Método: altera
+o estado do objeto específico
+Analogia do Resort de Olímpia: Imagine a planta arquitetônica de um quarto padrão do resort. A planta em si existe
+apenas uma vez no papel (isso é a classe). Já cada apartamento físico construído no resort (como o Quarto 101 e o
+Quarto 102) é um objeto concreto. Se o hóspede do Quarto 101 acende a luz (fazer_check_in), apenas a luz daquele
+apartamento acende (o estado do objeto Quarto 101 muda para True); o Quarto 102 permanece intacto no escuro
+(False), pois cada objeto carrega seu estado independente!
+LAB 2 — ENCAPSULAMENTO: A FECHADURA DE SEGURANÇA
+O Conceito: Atributos públicos estão expostos a modificações indevidas (como idades negativas). O
+encapsulamento protege os dados internos (usando um sublinhado como _idade por convenção) e expõe uma
+interface segura usando decoradores @property e .setter, validando os dados antes de aceitar qualquer alteração de
+estado.
+O Código em Python:
+class Hospede: def __init__(self, nome, documento, idade): self.nome = nome self.documento = documento
+self.idade = idade # Ativa o @idade.setter automaticamente! @property def idade(self): return
+self._idade # Getter: permite ler a idade de forma segura @idade.setter def idade(self, valor): if
+valor < 0: raise ValueError("Idade nao pode ser negativa") self._idade = valor # Setter: valida o valor
+antes de gravar
+Analogia do Resort de Olímpia: Pense no cofre digital instalado dentro do quarto do resort. O hóspede não tem acesso
+direto à fiação ou ao circuito mecânico da fechadura do cofre (isso é o atributo privado _idade). Ele precisa digitar a
+senha no teclado externo digital (a interface pública protegida pelo setter). Se o hóspede digita uma senha inválida ou
+tenta fazer algo proibido, o sistema rejeita a operação. Um atributo público seria como deixar a porta do cofre aberta e a
+fiação exposta; o encapsulamento com @property e setter garante que o dado só seja alterado de forma válida!
+===== Página 2 =====
+GUIA DE ESTUDOS: ORIENTAÇÃO A OBJETOS (ILP-037)
+FATEC OLÍMPIA
+ILP-037 Técnicas de Programação II
+Página 2 de 2
+Nivelamento Assíncrono • Sem nota e sem prazo
+LAB 3 — HERANÇA: QUARTOS DA CATEGORIA VIP
+O Conceito: A herança permite criar novos tipos mais específicos a partir de classes gerais que já existem,
+reaproveitando dados e comportamentos sem duplicar código (relação 'é-um'). A função super() chama o construtor
+da classe mãe, herdando os atributos básicos e seus validadores de graça.
+O Código em Python:
+class HospedeVIP(Hospede): # HospedeVIP herda (E-UM) Hospede def __init__(self, nome, documento, idade,
+pontos): # super() chama o construtor do Hospede convencional super().__init__(nome, documento, idade)
+self.pontos = pontos # Atributo especifico exclusivo do VIP # Uso: vip = HospedeVIP("Ana", "123", 30,
+500) # vip herda 'fazer_check_in()' e a validacao de 'idade' automaticamente!
+Analogia do Resort de Olímpia: No resort, temos categorias de quartos. Uma 'Suíte VIP' é um quarto convencional,
+mas com uma banheira de hidromassagem e uma varanda a mais. O arquiteto não precisa desenhar toda a planta básica
+de quarto do zero (com teto, paredes, fiação, porta). Ele simplesmente herda o projeto do Quarto Comum (relação 'Suíte
+é-um Quarto') e acrescenta na planta apenas as especificidades VIPs (a jacuzzi e a varanda). Isso economiza tempo e
+centraliza as regras de infraestrutura básica em um único molde principal!
+SINAIS DE QUE VOCÊ FIRMOU O CONTEÚDO (AUTOAVALIAÇÃO)
+Use o quadro abaixo para avaliar o seu próprio progresso. Se você for capaz de explicar estes conceitos com suas
+próprias palavras e entender por que seus testes do pytest ficaram verdes, sua base em orientação a objetos está
+consolidada!
+Conceito Chave
+O que você deve conseguir explicar
+O Teste Prático (pytest)
+Classe vs Objeto
+A classe é o molde estático que existe uma vez no seu código. O
+objeto é a instância em execução que guarda o estado na
+memória de forma única (ex.: check-in da Ana não altera o do
+Bruno).
+Você conseguiu instanciar a classe
+Hospede e rodar os testes do Lab 1, vendo
+4 testes passarem para o verde.
+Encapsulamento
+Por que não devemos expor atributos sensíveis de forma direta. O
+papel do sublinhado (_idade) como convenção de segurança e o
+uso de @property e .setter para validar os dados.
+Ao tentar atribuir uma idade negativa (ex:
+idade = -5), o pytest verifica que o seu
+código levantou uma exceção do tipo
+ValueError com sucesso.
+Herança e super()
+Como reaproveitar código de uma classe geral para uma mais
+específica. O teste do ouvido: 'HospedeVIP é um Hóspede?' (Sim:
+Herança). A chamada super().__init__() evita reescrever todo o
+construtor básico.
+A classe HospedeVIP consegue herdar e
+executar o método fazer_check_in() sem
+precisar duplicar ou reescrever nenhuma
+linha de código dele.

@@ -1,0 +1,37 @@
+# =============================================================================
+# .gitignore do Gerador_Sistemas (o gerador + a tela SGS).
+# Conjunto mínimo das Instruções de desenvolvimento DJANGO (§4.7) — repetido aqui para valer também
+# quando esta pasta for usada sozinha — + o estado LOCAL da tela.
+# =============================================================================
+
+# --- conjunto mínimo global (Instruções §4.7) + SQLite local ---
+.venv/
+.env
+*.pyc
+__pycache__/
+*.log
+.DS_Store
+media/
+staticfiles/
+db.sqlite3
+.env.*
+!.env.example
+
+# --- caches ---
+.pytest_cache/
+
+# --- marcas do Windows ao baixar/copiar ("Zone.Identifier") ---
+*Zone.Identifier
+*.identifier
+*.Identifier
+
+# --- estado LOCAL da tela (sgs) — recriado sozinho na primeira execução ---
+# sgs_config.json: configuração desta máquina, com a senha do superusuário (admin_senha);
+#                  sem ele, a tela usa os valores padrão do tela_prompt.py.
+sgs_config.json
+# histórico de comandos digitados na tela e sites que ela subiu (pid/porta desta máquina)
+.sgs_historico
+.sgs_servidores.json
+
+# sistemas_gerados/.sgs_registro.json SOBE (de propósito): guarda o número fixo de cada sistema
+# (01, 02…), e a porta de cada um depende dele.

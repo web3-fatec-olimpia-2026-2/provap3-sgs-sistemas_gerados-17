@@ -1,0 +1,63 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 960 512' width='960' height='512' role='img' aria-labelledby='t'>
+<title id='t'>Espaço amostral comparado</title>
+<rect width='100%' height='100%' fill='#FFFFFF'/>
+<text x='40' y='40' font-size='20' fill='#111827' font-weight='700' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >Espaço amostral em bits (escala logarítmica: cada bit dobra o espaço)</text>
+<text x='40' y='66' font-size='13' fill='#4B5563' font-weight='400' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >Entre parênteses à direita: tamanho do texto que um humano lê, dita ou digita.</text>
+<line x1='250.0' x2='250.0' y1='88' y2='402' stroke='#D1D5DB'/>
+<text x='250.0' y='418' font-size='11' fill='#4B5563' font-weight='400' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >0</text>
+<line x1='307.84615384615387' x2='307.84615384615387' y1='88' y2='402' stroke='#D1D5DB'/>
+<text x='307.84615384615387' y='418' font-size='11' fill='#4B5563' font-weight='400' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >16</text>
+<line x1='365.6923076923077' x2='365.6923076923077' y1='88' y2='402' stroke='#D1D5DB'/>
+<text x='365.6923076923077' y='418' font-size='11' fill='#4B5563' font-weight='400' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >32</text>
+<line x1='423.53846153846155' x2='423.53846153846155' y1='88' y2='402' stroke='#D1D5DB'/>
+<text x='423.53846153846155' y='418' font-size='11' fill='#4B5563' font-weight='400' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >48</text>
+<line x1='481.38461538461536' x2='481.38461538461536' y1='88' y2='402' stroke='#D1D5DB'/>
+<text x='481.38461538461536' y='418' font-size='11' fill='#4B5563' font-weight='400' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >64</text>
+<line x1='539.2307692307693' x2='539.2307692307693' y1='88' y2='402' stroke='#D1D5DB'/>
+<text x='539.2307692307693' y='418' font-size='11' fill='#4B5563' font-weight='400' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >80</text>
+<line x1='597.0769230769231' x2='597.0769230769231' y1='88' y2='402' stroke='#D1D5DB'/>
+<text x='597.0769230769231' y='418' font-size='11' fill='#4B5563' font-weight='400' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >96</text>
+<line x1='654.9230769230769' x2='654.9230769230769' y1='88' y2='402' stroke='#D1D5DB'/>
+<text x='654.9230769230769' y='418' font-size='11' fill='#4B5563' font-weight='400' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >112</text>
+<line x1='712.7692307692307' x2='712.7692307692307' y1='88' y2='402' stroke='#D1D5DB'/>
+<text x='712.7692307692307' y='418' font-size='11' fill='#4B5563' font-weight='400' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >128</text>
+<text x='240' y='111' font-size='13' fill='#111827' font-weight='600' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >LNNL, por tipo</text>
+<rect x='250' y='98' width='158.872175704356' height='18' rx='3' fill='#047857' stroke='none' stroke-width='1' />
+<text x='416.872175704356' y='111' font-size='12' fill='#047857' font-weight='700' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >43,9 bits</text>
+<text x='930' y='111' font-size='12' fill='#4B5563' font-weight='400' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >14 (17 com hífens)</text>
+<text x='240' y='145' font-size='13' fill='#111827' font-weight='600' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >LNNL, 80 tipos</text>
+<rect x='250' y='132' width='181.72837727817955' height='18' rx='3' fill='#047857' stroke='none' stroke-width='1' />
+<text x='439.72837727817955' y='145' font-size='12' fill='#047857' font-weight='700' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >50,3 bits</text>
+<text x='930' y='145' font-size='12' fill='#4B5563' font-weight='400' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >14 (17 com hífens)</text>
+<text x='240' y='179' font-size='13' fill='#111827' font-weight='600' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >Snowflake ID (63 bits úteis)</text>
+<rect x='250' y='166' width='227.76923076923077' height='18' rx='3' fill='#6B7280' stroke='none' stroke-width='1' />
+<text x='485.7692307692308' y='179' font-size='12' fill='#6B7280' font-weight='700' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >63,0 bits</text>
+<text x='930' y='179' font-size='12' fill='#4B5563' font-weight='400' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >≤ 19 dígitos decimais</text>
+<text x='240' y='213' font-size='13' fill='#111827' font-weight='600' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >TSID (64 bits totais)</text>
+<rect x='250' y='200' width='231.3846153846154' height='18' rx='3' fill='#6B7280' stroke='none' stroke-width='1' />
+<text x='489.38461538461536' y='213' font-size='12' fill='#6B7280' font-weight='700' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >64,0 bits</text>
+<text x='930' y='213' font-size='12' fill='#4B5563' font-weight='400' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >13 (Crockford Base32)</text>
+<text x='240' y='247' font-size='13' fill='#111827' font-weight='600' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >UUID v7 (parte aleatória)</text>
+<rect x='250' y='234' width='267.53846153846155' height='18' rx='3' fill='#2563EB' stroke='none' stroke-width='1' />
+<text x='525.5384615384615' y='247' font-size='12' fill='#2563EB' font-weight='700' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >74,0 bits</text>
+<text x='930' y='247' font-size='12' fill='#4B5563' font-weight='400' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >36 (32 hex + 4 hífens)</text>
+<text x='240' y='281' font-size='13' fill='#111827' font-weight='600' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >ULID (parte aleatória)</text>
+<rect x='250' y='268' width='289.2307692307692' height='18' rx='3' fill='#6B7280' stroke='none' stroke-width='1' />
+<text x='547.2307692307693' y='281' font-size='12' fill='#6B7280' font-weight='700' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >80,0 bits</text>
+<text x='930' y='281' font-size='12' fill='#4B5563' font-weight='400' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >26 (Crockford Base32)</text>
+<text x='240' y='315' font-size='13' fill='#111827' font-weight='600' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >UUID v4</text>
+<rect x='250' y='302' width='441.0769230769231' height='18' rx='3' fill='#2563EB' stroke='none' stroke-width='1' />
+<text x='699.0769230769231' y='315' font-size='12' fill='#2563EB' font-weight='700' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >122,0 bits</text>
+<text x='930' y='315' font-size='12' fill='#4B5563' font-weight='400' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >36 (32 hex + 4 hífens)</text>
+<text x='240' y='349' font-size='13' fill='#111827' font-weight='600' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >NanoID (21 car.)</text>
+<rect x='250' y='336' width='455.53846153846155' height='18' rx='3' fill='#6B7280' stroke='none' stroke-width='1' />
+<text x='713.5384615384615' y='349' font-size='12' fill='#6B7280' font-weight='700' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >126,0 bits</text>
+<text x='930' y='349' font-size='12' fill='#4B5563' font-weight='400' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >21 (A–Z a–z 0–9 _-)</text>
+<text x='240' y='383' font-size='13' fill='#111827' font-weight='600' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >KSUID (parte aleatória)</text>
+<rect x='250' y='370' width='462.7692307692308' height='18' rx='3' fill='#6B7280' stroke='none' stroke-width='1' />
+<text x='720.7692307692307' y='383' font-size='12' fill='#6B7280' font-weight='700' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >128,0 bits</text>
+<text x='930' y='383' font-size='12' fill='#4B5563' font-weight='400' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >27 (Base62)</text>
+<text x='40' y='442' font-size='13' fill='#111827' font-weight='600' text-anchor='start' font-family='JetBrains Mono, Consolas, Menlo, monospace' >LNNL por tipo: 26⁸ × 9² = 16.914.992.230.656 ≈ 1,69 × 10¹³</text>
+<text x='40' y='464' font-size='13' fill='#111827' font-weight='600' text-anchor='start' font-family='JetBrains Mono, Consolas, Menlo, monospace' >LNNL total:   80 × 26⁸ × 9² = 1.353.199.378.452.480 ≈ 1,35 × 10¹⁵</text>
+<text x='40' y='486' font-size='13' fill='#111827' font-weight='600' text-anchor='start' font-family='JetBrains Mono, Consolas, Menlo, monospace' >UUID v4:      2¹²² ≈ 5,32 × 10³⁶  (≈ 3,9 × 10²¹ vezes o LNNL total)</text>
+</svg>

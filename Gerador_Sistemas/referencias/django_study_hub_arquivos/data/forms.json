@@ -1,0 +1,101 @@
+[
+  {
+    "id": "modelform",
+    "category": "forms",
+    "title": "Criar um ModelForm",
+    "code": "from django import forms\nfrom .models import Quarto\n\nclass QuartoForm(forms.ModelForm):\n    class Meta:\n        model = Quarto\n        fields = [\"numero\", \"tipo\", \"disponivel\"]",
+    "description": "ModelForm cria campos de formulário a partir de um model; Meta.fields define os campos expostos.",
+    "explanation": "ModelForm cria campos de formulário a partir de um model; Meta.fields define os campos expostos.",
+    "when": "Em forms.py, para cadastro e edição.",
+    "keywords": [
+      "criar modelform",
+      "formulario",
+      "forms.modelform",
+      "meta",
+      "fields",
+      "widgets"
+    ],
+    "synonyms": [
+      "criar modelform",
+      "formulario",
+      "forms.modelform",
+      "meta",
+      "fields",
+      "widgets"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "from django import forms\nfrom .models import Quarto\n\nclass QuartoForm(forms.ModelForm):\n    class Meta:\n        model = Quarto\n        fields = [\"numero\", \"tipo\", \"disponivel\"]",
+    "source": "https://docs.djangoproject.com/en/5.2/topics/forms/modelforms/",
+    "version": "Django 5.2",
+    "syntax": "from django import forms\nfrom .models import Quarto\n\nclass QuartoForm(forms.ModelForm):\n    class Meta:\n        model = Quarto\n        fields = [\"numero\", \"tipo\", \"disponivel\"]",
+    "kind": "Classe",
+    "related": [
+      "clean",
+      "validar",
+      "model"
+    ]
+  },
+  {
+    "id": "validar",
+    "category": "forms",
+    "title": "Validar formulário",
+    "code": "form = QuartoForm(request.POST)\nif form.is_valid():\n    quarto = form.save()\nelse:\n    print(form.errors)",
+    "description": "is_valid executa a validação e disponibiliza cleaned_data quando bem-sucedida. form.save salva a instância de um ModelForm válido.",
+    "explanation": "is_valid executa a validação e disponibiliza cleaned_data quando bem-sucedida. form.save salva a instância de um ModelForm válido.",
+    "when": "Após receber POST na view.",
+    "keywords": [
+      "validar formulario",
+      "form.is_valid",
+      "cleaned_data",
+      "form.save",
+      "erros"
+    ],
+    "synonyms": [
+      "validar formulario",
+      "form.is_valid",
+      "cleaned_data",
+      "form.save",
+      "erros"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "form = QuartoForm(request.POST)\nif form.is_valid():\n    quarto = form.save()\nelse:\n    print(form.errors)",
+    "source": "https://docs.djangoproject.com/en/5.2/topics/forms/#the-view",
+    "version": "Django 5.2",
+    "syntax": "form = QuartoForm(request.POST)\nif form.is_valid():\n    quarto = form.save()\nelse:\n    print(form.errors)",
+    "kind": "Método",
+    "related": []
+  },
+  {
+    "id": "clean",
+    "category": "forms",
+    "title": "Validação customizada clean_campo()",
+    "code": "def clean_numero(self):\n    numero = self.cleaned_data[\"numero\"]\n    if numero < 1:\n        raise forms.ValidationError(\"Número deve ser maior que zero.\")\n    return numero",
+    "description": "clean_numero valida e retorna o valor de numero. Form.is_valid executa essa validação; Model.save não executa automaticamente a validação do Form nem full_clean.",
+    "explanation": "clean_numero valida e retorna o valor de numero. Form.is_valid executa essa validação; Model.save não executa automaticamente a validação do Form nem full_clean.",
+    "when": "Dentro de QuartoForm, para regras do formulário.",
+    "keywords": [
+      "clean_campo",
+      "clean_numero",
+      "validationerror",
+      "validacao customizada",
+      "clean"
+    ],
+    "synonyms": [
+      "clean_campo",
+      "clean_numero",
+      "validationerror",
+      "validacao customizada",
+      "clean"
+    ],
+    "error": "A validação no Form não protege automaticamente gravações via API ou ORM. Defina e aplique regras também nas outras entradas quando necessário.",
+    "example": "def clean_numero(self):\n    numero = self.cleaned_data[\"numero\"]\n    if numero < 1:\n        raise forms.ValidationError(\"Número deve ser maior que zero.\")\n    return numero",
+    "source": "https://docs.djangoproject.com/en/5.2/ref/forms/validation/",
+    "version": "Django 5.2",
+    "syntax": "def clean_numero(self):\n    numero = self.cleaned_data[\"numero\"]\n    if numero < 1:\n        raise forms.ValidationError(\"Número deve ser maior que zero.\")\n    return numero",
+    "kind": "Conceito",
+    "related": [
+      "modelform",
+      "validar"
+    ]
+  }
+]

@@ -1,0 +1,3 @@
+/* Ajustes do SGS sobre o Bootstrap (sem estilo inline nas páginas). */
+.apresentacao { margin-bottom: 1rem; }
+.tabela-vazia { color: var(--bs-secondary-color); }

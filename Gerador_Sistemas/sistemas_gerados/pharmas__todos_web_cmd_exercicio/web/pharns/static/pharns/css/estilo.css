@@ -1,0 +1,21 @@
+/* Estilo CMD: tela preta de terminal (gerado pelo SGS). */
+:root { --fundo: #0c0c0c; --texto: #cccccc; --verde: #16c60c; --ciano: #61d6d6; --amarelo: #e5c07b; --borda: #2c2c2c; }
+html, body { margin: 0; background: var(--fundo); color: var(--texto);
+             font: 15px/1.55 "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace; }
+.cmd-topo { color: var(--verde); font-weight: 700; padding: 14px 18px 0; }
+.cmd-topo a { color: var(--verde); text-decoration: none; }
+main { padding: 6px 18px 40px; max-width: 1000px; }
+h1 { font-size: 1.1rem; color: var(--amarelo); margin: 10px 0; }
+h1::before { content: "$ "; color: var(--verde); }
+a { color: var(--ciano); }
+.lista { list-style: none; padding: 0; }
+.lista li::before { content: "> "; color: var(--verde); }
+.acoes { display: flex; gap: 18px; margin: 8px 0 14px; }
+input, select, textarea { background: #151515; color: var(--texto); border: 1px solid var(--verde); font: inherit; padding: 3px 6px; }
+button { background: transparent; color: var(--verde); border: 1px solid var(--verde); font: inherit; padding: 3px 14px; cursor: pointer; }
+button:hover { background: var(--verde); color: var(--fundo); }
+.errorlist { color: #f14c4c; list-style: none; padding: 0; }
+.apresentacao { border: 1px dashed var(--amarelo); color: var(--amarelo); padding: 6px 10px; margin: 8px 0; }
+dt { color: var(--ciano); }
+dd { margin: 0 0 6px 18px; }
+.rodape { color: #7c7c7c; }

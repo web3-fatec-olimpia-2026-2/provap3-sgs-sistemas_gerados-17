@@ -1,0 +1,67 @@
+
+===== Página 1 =====
+ILP-037 Técnicas de Programação II · FATEC Olímpia · Prof. Jose Ceron Neto
+Guia de Estudo: Padrão Facade (e o Contraste com Adapter)
+1. O Smell do Facade & Solução com RecepcaoFacade
+Code Smell: O cliente orquestra manualmente múltiplos subsistemas na ordem (ex: verificar disponibilidade, calcular tarifa, gravar reserva e
+enviar notificação). Cada tela repete essa sequência e conhece todas as regras internas.
+Solução Facade: A RecepcaoFacade oferece um balcão único (método reservar()) que esconde a complexidade e delega as chamadas para os
+bastidores.
+ class RecepcaoFacade:
+    def __init__(self, disp, tar, rep, notif):
+        self._disp, self._tar = disp, tar
+        self._rep, self._notif = rep, notif
+    def reservar(self, quarto, hospede, noites):
+        if not self._disp.esta_livre(quarto):
+            return {'ok': False, 'motivo': 'indisponivel'}
+        total = self._tar.calcular(quarto, noites)
+        rid = self._rep.gravar(quarto, hospede, noites, total)
+        self._notif.enviar(hospede, f'Reserva {rid} confirmada')
+        return {'ok': True, 'reserva_id': rid, 'total': total}
+2. Quadro Comparativo Central: Adapter × Facade
+ Critério
+ Adapter (Aula 08)
+ Facade (Aula 09)
+Quantos Objetos
+UM objeto (ex: driver incompatível ClienteNeon)
+VÁRIOS subsistemas (disponibilidade, tarifa,
+repositório, notificação)
+Ação na Interface
+TRADUZ uma interface para outra que a app já espera
+CRIA uma interface nova e simplificada na frente dos
+bastidores
+Intenção Central
+Fazer a peça CABER (resolver incompatibilidade)
+ESCONDER a complexidade/bagunça atrás de um
+balcão único
+Exemplo no Resort
+NeonReservaAdapter (adapta tomada do banco de
+dados)
+RecepcaoFacade (balcão único de atendimento ao
+hóspede)
+3. Critérios Antifachada & Cuidados de Design
+ • Função de módulo basta às vezes: Se a orquestração for simples e sem estado a guardar, uma função de módulo em Python já é a
+fachada. Não crie classes sem necessidade.
+• Não é uma prisão: O Facade oferece o caminho fácil para os casos comuns, mas não impede o acesso direto aos subsistemas para
+clientes que precisem de customização avançada.
+• Cuidado com o God Object: A fachada delega chamadas para os subsistemas na ordem certa. Ela NUNCA reimplementa as regras de
+negócio internas dos bastidores.
+4. Glossário Rápido de Conceitos
+ Facade
+Ponto de entrada simplificado que encapsula a
+orquestração de um subsistema complexo.
+God Object
+Anti-padrão de classe inflada que tenta fazer
+tudo e acumula responsabilidades demais.
+Adapter
+Padrão que envolve um objeto incompatível para
+traduzir sua interface e fazê-lo caber.
+Delegar
+Ato de repassar a execução do trabalho real para
+o objeto/subsistema responsável.
+Subsistema
+Conjunto de classes especializadas que realizam
+tarefas específicas dos bastidores.
+Orquestração
+Ação de chamar múltiplos subsistemas na
+ordem correta para concluir um fluxo.

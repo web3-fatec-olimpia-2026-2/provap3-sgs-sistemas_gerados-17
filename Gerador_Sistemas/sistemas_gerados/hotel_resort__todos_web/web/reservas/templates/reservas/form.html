@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="pt-br">
+<head><meta charset="utf-8"><title>Cadastrar Reserva — Hotel Resort</title></head>
+<body>
+  <h1>Cadastrar Reserva</h1>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Salvar</button>
+  </form>
+  <p><a href="{% url 'reservas:lista' %}">Voltar</a></p>
+</body>
+</html>

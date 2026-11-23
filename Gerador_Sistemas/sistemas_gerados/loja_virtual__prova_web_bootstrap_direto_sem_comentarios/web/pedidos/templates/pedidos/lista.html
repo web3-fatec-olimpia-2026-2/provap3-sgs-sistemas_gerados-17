@@ -1,0 +1,24 @@
+{% extends "pedidos/base.html" %}
+{% block toolbar_actions %}<p class="d-flex gap-2 my-3"><a class="btn btn-primary" href="{% url 'pedidos:criar' %}">Cadastrar Pedido</a> <a class="btn btn-outline-primary" href="{% url 'pedidos:api' %}">API (JSON)</a></p>{% endblock %}
+{% block content %}
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr><th>Registro</th><th>Tipo de cliente</th><th class="text-end">Valor</th><th></th><th></th></tr></thead>
+      <tbody>
+      {% for item in painel.itens %}
+        <tr><td><a href="{% url 'pedidos:detalhe' item.id %}">{{ item.titulo }}</a></td><td>{{ item.tipo_label }}</td>
+          <td class="text-end">{{ item.valor_formatado }}</td>
+          <td><span class="badge text-bg-primary">{{ item.selo }}</span></td>
+          <td class="text-end text-nowrap">
+            <a class="btn btn-sm btn-outline-primary" href="{% url 'pedidos:editar' item.id %}">Editar</a>
+            <a class="btn btn-sm btn-outline-danger" href="{% url 'pedidos:excluir' item.id %}">Excluir</a>
+          </td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-footer text-body-secondary small">{{ painel.rodape }}</div>
+</div>
+{% endblock %}

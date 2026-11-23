@@ -1,0 +1,69 @@
+{
+  "exato": {
+    "A": {
+      "nome": "1 verificador, mód. 9",
+      "substituicao": {
+        "letra": 0.07692307692307693,
+        "digito": 0.0,
+        "qualquer": 0.0728862973760933
+      },
+      "transposicao_adjacente": 0.07418397626112759,
+      "transposicao_qualquer": 0.24903392013739803,
+      "substituicao_dupla": 0.1127869889174878,
+      "cadeia_aleatoria": 0.1111111111111111
+    },
+    "B": {
+      "nome": "2 verificadores mód. 9 (pesos distintos)",
+      "substituicao": {
+        "letra": 0.07692307692307693,
+        "digito": 0.0,
+        "qualquer": 0.0728862973760933
+      },
+      "transposicao_adjacente": 0.07418397626112759,
+      "transposicao_qualquer": 0.1163589523400601,
+      "substituicao_dupla": 0.03313734625754115,
+      "cadeia_aleatoria": 0.012345679012345678
+    },
+    "C": {
+      "nome": "2 verificadores, mód. 79 (LNNL)",
+      "substituicao": {
+        "letra": 0.0,
+        "digito": 0.0,
+        "qualquer": 0.0
+      },
+      "transposicao_adjacente": 0.0,
+      "transposicao_qualquer": 0.0,
+      "substituicao_dupla": 0.012495224087606104,
+      "cadeia_aleatoria": 0.012345679012345678
+    }
+  },
+  "monte_carlo": {
+    "substituicao_14": 0.0,
+    "substituicao_dupla_14": 0.003334999999999977,
+    "substituicao_dupla_mesma_classe_14": 0.01212000000000002,
+    "transposicao_adjacente_14": 0.0,
+    "cadeia_aleatoria_14": 0.012214999999999976,
+    "amostras": 200000
+  },
+  "espacos": {
+    "lnnl_por_tipo": 16914992230656,
+    "lnnl_por_tipo_bits": 43.943367748013365,
+    "lnnl_tipos_teoricos": 81,
+    "lnnl_tipos_atribuiveis": 80,
+    "lnnl_total": 1353199378452480,
+    "lnnl_total_bits": 50.26529584290073,
+    "lnnl_grade_14": 110979264025334016,
+    "lnnl_aniversario_50pct_por_tipo": 4842433.102041284,
+    "lnnl_colisao_por_insercao_com_1M": 5.91191521913704e-08,
+    "uuid_v4_bits_aleatorios": 122,
+    "uuid_v4_espaco": 5316911983139663491615228241121378304,
+    "uuid_v4_aniversario_50pct": 2.714922669395445e+18,
+    "uuid_v7_bits_aleatorios": 74,
+    "snowflake_bits": 64,
+    "snowflake_por_ms_por_no": 4096,
+    "ulid_bits": 128,
+    "ulid_bits_aleatorios": 80,
+    "ksuid_bits": 160,
+    "nanoid_21_bits": 126
+  }
+}

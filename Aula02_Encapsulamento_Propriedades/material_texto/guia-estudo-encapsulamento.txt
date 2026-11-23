@@ -1,0 +1,86 @@
+
+===== Página 1 =====
+FATEC OLÍMPIA  CST EM DESENVOLVIMENTO DE SOFTWARE MULTIPLATAFORMA
+GUIA DE ESTUDO: ENCAPSULAMENTO & @PROPERTY EM
+PYTHON
+Componente: ILP-037 Técnicas de Programação II  Prof. Jose Ceron Neto  Aula 02
+1. O PROBLEMA QUE A FERRAMENTA RESOLVE
+Sem encapsulamento, atributos públicos ficam totalmente expostos a valores inválidos (como valor negativo ou zero diárias) [384,
+385].
+O objeto aceita o erro silenciosamente, espalhando a validação pelo código e gerando bugs e inconsistências no banco [384, 386].
+2. A ESTRUTURA DO ENCAPSULAMENTO EM PYTHON
+ Atributo Interno com Sublinhado (ex: _valor_diaria): Convenção padrão em Python para indicar acesso privado ('não mexa
+direto') [386, 387].
+ O Getter (decorado com @property): Transforma a leitura de um atributo em uma chamada de método de forma transparente
+[387].
+ O Setter (decorado com @atributo.setter): Intercepta a escrita de dados para realizar a validação e impedir valores inválidos
+[387].
+ A @property Calculada: Propriedade somente leitura (sem setter) que calcula o valor na hora, eliminando dados
+dessincronizados [391].
+3. CÓDIGO DA CLASSE RESERVA (MOLDE DE RESORT DE OLÍMPIA)
+ class Reserva:
+    def __init__(self, valor_diaria, diarias):
+        self.diarias = diarias               # Ativa o setter para validar na criacao
+        self.valor_diaria = valor_diaria     # Ativa o setter para evitar valores invalidos
+    @property
+    def valor_diaria(self):                  # GETTER: Permite ler o valor como se fosse publico
+        return self._valor_diaria
+    @valor_diaria.setter
+    def valor_diaria(self, novo):            # SETTER: Blinda o valor contra numeros negativos [387]
+        if novo < 0:
+            raise ValueError("valor_diaria nao pode ser negativo")
+        self._valor_diaria = novo
+    @property
+    def diarias(self):                       # GETTER: Retorna a quantidade de diarias
+        return self._diarias
+    @diarias.setter
+    def diarias(self, novo):                 # SETTER: Garante regra de negocio da reserva [390]
+        if novo < 1:
+            raise ValueError("diarias deve ser no minimo 1")
+        self._diarias = novo
+    @property
+    def total(self):                         # @PROPERTY CALCULADA: Sempre atualizada sob demanda [391]
+        return self.diarias * self.valor_diaria
+4. REGRA DE OURO DA DISCIPLINA: QUANDO APLICAR O @PROPERTY?
+ MERECE @PROPERTY: Atributos que possuem regras de validação claras (como valor >= 0 ou diárias >= 1) [390]; dados que
+dependem de outros para serem computados (ex: `total`) [390]; ou quando o dado deve ser somente leitura após criado [390].
+ NÃO PRECISA: Campos de texto livre sem validações específicas ou dados simples nos quais qualquer valor serve [390].
+"Proteção sem um problema que a justifique é mera cerimônia e peso desnecessário" (Critério Antifachada da Disciplina) [390].
+===== Página 2 =====
+5. GLOSSÁRIO TÉCNICO & ANALOGIAS DO RESORT
+Termo Técnico
+Definição Formal no Contexto do Python
+Analogia Prática do Resort de Olímpia
+Encapsulamento
+Princípio de OO no qual o objeto controla o acesso e
+protege o seu próprio estado interno [385].
+O Cofre do Quarto: O hóspede usa o cofre por fora, mas
+não altera os mecanismos da fechadura [385].
+Atributo Público
+Variável interna de uma classe que pode ser lida e
+alterada diretamente por qualquer código de fora [384,
+386].
+Cofre sem Fechadura: Porta encostada. Qualquer um
+abre, mexe e adultera o conteúdo [384, 385].
+Getter / Setter
+Métodos que controlam, respectivamente, a leitura (get) e
+validação/gravação (set) de dados [387].
+O Segredo do Cofre: A combinação e a trava física que
+barram valores incorretos por fora [387].
+@property
+Decorador Python que embrulha métodos para serem
+acessados de fora como atributos normais [386, 388].
+A Maçaneta Inteligente: Parece um trinco comum por fora,
+mas valida as credenciais por dentro [387].
+Atributo Calculado
+Propriedade que não armazena dados físicos, mas calcula
+o valor sob demanda ao ser lida [391].
+A Conta no Check-out: Não fica guardada num papel
+velho; soma-se na hora com os consumos reais [391, 392].
+Refatoração
+Mudar o código interno de um software para torná-lo mais
+seguro sem alterar o seu uso externo [388].
+Blindagem Invisível: Instalar a tranca digital no cofre sem
+precisar remover o móvel do quarto [387].
+ Fontes: Documentação Oficial do Python 3.14 (property) [396]  Eric & Elisabeth Freeman (Use a Cabeça! Padrões de Projetos) [178]  FATEC Olímpia Aula 02 [378].
+ Qualquer dúvida ou cenário fora deste escopo: consultar o professor. [396]

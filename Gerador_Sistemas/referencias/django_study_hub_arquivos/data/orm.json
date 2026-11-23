@@ -1,0 +1,204 @@
+[
+  {
+    "id": "all",
+    "category": "orm",
+    "title": "Buscar todos os registros",
+    "code": "Quarto.objects.all()",
+    "description": "Retorna um QuerySet com todos os quartos. A consulta costuma ser avaliada quando os dados são necessários.",
+    "explanation": "Retorna um QuerySet com todos os quartos. A consulta costuma ser avaliada quando os dados são necessários.",
+    "when": "Ao listar dados sem filtro.",
+    "keywords": [
+      "buscar todos os registros",
+      "listar tudo",
+      "objects.all",
+      "queryset",
+      "orm"
+    ],
+    "synonyms": [
+      "buscar todos os registros",
+      "listar tudo",
+      "objects.all",
+      "queryset",
+      "orm"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "Quarto.objects.all()",
+    "source": "https://docs.djangoproject.com/en/5.2/topics/db/queries/#retrieving-all-objects",
+    "version": "Django 5.2",
+    "syntax": "Quarto.objects.all()",
+    "kind": "Método",
+    "related": []
+  },
+  {
+    "id": "filter",
+    "category": "orm",
+    "title": "Filtrar registros com ORM",
+    "code": "Quarto.objects.filter(disponivel=True)",
+    "description": "filter retorna um QuerySet, que pode estar vazio; aceita encadeamento e lookups, como numero__gt=100.",
+    "explanation": "filter retorna um QuerySet, que pode estar vazio; aceita encadeamento e lookups, como numero__gt=100.",
+    "when": "Dentro da view, para listar apenas dados que atendam uma condição.",
+    "keywords": [
+      "filtrar registros",
+      "buscar disponiveis",
+      "consulta filtro",
+      "objects.filter",
+      "where",
+      "orm"
+    ],
+    "synonyms": [
+      "filtrar registros",
+      "buscar disponiveis",
+      "consulta filtro",
+      "objects.filter",
+      "where",
+      "orm"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "Quarto.objects.filter(disponivel=True).order_by(\"numero\")",
+    "source": "https://docs.djangoproject.com/en/5.2/topics/db/queries/#retrieving-specific-objects-with-filters",
+    "version": "Django 5.2",
+    "syntax": "Quarto.objects.filter(disponivel=True)",
+    "kind": "Método",
+    "related": [
+      "all",
+      "lookups",
+      "for"
+    ]
+  },
+  {
+    "id": "get",
+    "category": "orm",
+    "title": "Buscar um único registro com get()",
+    "code": "Quarto.objects.get(pk=1)",
+    "description": "get exige exatamente um resultado: lança DoesNotExist se não houver e MultipleObjectsReturned se houver mais de um.",
+    "explanation": "get exige exatamente um resultado: lança DoesNotExist se não houver e MultipleObjectsReturned se houver mais de um.",
+    "when": "Quando a unicidade é garantida; em views, considere get_object_or_404.",
+    "keywords": [
+      "objects.get",
+      "buscar um",
+      "objeto unico",
+      "doesnotexist"
+    ],
+    "synonyms": [
+      "objects.get",
+      "buscar um",
+      "objeto unico",
+      "doesnotexist"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "Quarto.objects.get(pk=1)",
+    "source": "https://docs.djangoproject.com/en/5.2/ref/models/querysets/#get",
+    "version": "Django 5.2",
+    "syntax": "Quarto.objects.get(pk=1)",
+    "kind": "Método",
+    "related": []
+  },
+  {
+    "id": "lookups",
+    "category": "orm",
+    "title": "Lookups e filtros encadeados",
+    "code": "Quarto.objects.filter(tipo__icontains=\"luxo\", numero__gte=100).exclude(disponivel=False)",
+    "description": "Lookups comparam campos: exact, contains, icontains, gt, gte, lt e lte. exclude nega as condições fornecidas.",
+    "explanation": "Lookups comparam campos: exact, contains, icontains, gt, gte, lt e lte. exclude nega as condições fornecidas.",
+    "when": "Para pesquisar e combinar condições.",
+    "keywords": [
+      "exact",
+      "icontains",
+      "contains",
+      "gt",
+      "lt",
+      "gte",
+      "lte",
+      "exclude",
+      "relacionamentos",
+      "encadeamento"
+    ],
+    "synonyms": [
+      "exact",
+      "icontains",
+      "contains",
+      "gt",
+      "lt",
+      "gte",
+      "lte",
+      "exclude",
+      "relacionamentos",
+      "encadeamento"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "Quarto.objects.filter(tipo__icontains=\"luxo\", numero__gte=100).exclude(disponivel=False)",
+    "source": "https://docs.djangoproject.com/en/5.2/ref/models/querysets/#field-lookups",
+    "version": "Django 5.2",
+    "syntax": "Quarto.objects.filter(tipo__icontains=\"luxo\", numero__gte=100).exclude(disponivel=False)",
+    "kind": "Conceito",
+    "related": []
+  },
+  {
+    "id": "queryset",
+    "category": "orm",
+    "title": "Métodos úteis de QuerySet",
+    "code": "Quarto.objects.order_by(\"numero\").first()\nQuarto.objects.count()\nQuarto.objects.filter(disponivel=True).exists()\nQuarto.objects.create(numero=101, tipo=\"Padrão\")",
+    "description": "order_by ordena; first e last retornam um objeto ou None; count conta; exists verifica existência; create cria e salva.",
+    "explanation": "order_by ordena; first e last retornam um objeto ou None; count conta; exists verifica existência; create cria e salva.",
+    "when": "Ao consultar, ordenar e criar dados.",
+    "keywords": [
+      "order_by",
+      "first",
+      "last",
+      "count",
+      "exists",
+      "create",
+      "ordenar",
+      "contar"
+    ],
+    "synonyms": [
+      "order_by",
+      "first",
+      "last",
+      "count",
+      "exists",
+      "create",
+      "ordenar",
+      "contar"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "Quarto.objects.order_by(\"numero\").first()\nQuarto.objects.count()\nQuarto.objects.filter(disponivel=True).exists()\nQuarto.objects.create(numero=101, tipo=\"Padrão\")",
+    "source": "https://docs.djangoproject.com/en/5.2/ref/models/querysets/",
+    "version": "Django 5.2",
+    "syntax": "Quarto.objects.order_by(\"numero\").first()\nQuarto.objects.count()\nQuarto.objects.filter(disponivel=True).exists()\nQuarto.objects.create(numero=101, tipo=\"Padrão\")",
+    "kind": "Conceito",
+    "related": []
+  },
+  {
+    "id": "save",
+    "category": "orm",
+    "title": "Salvar, atualizar e excluir",
+    "code": "quarto.save()\nQuarto.objects.filter(disponivel=False).update(tipo=\"Manutenção\")\nquarto.delete()",
+    "description": "save grava uma instância; update altera diretamente linhas de um QuerySet; delete exclui. save não chama full_clean automaticamente.",
+    "explanation": "save grava uma instância; update altera diretamente linhas de um QuerySet; delete exclui. save não chama full_clean automaticamente.",
+    "when": "Depois de alterar dados, com validação apropriada.",
+    "keywords": [
+      "save",
+      "delete",
+      "update",
+      "salvar",
+      "excluir",
+      "validacao"
+    ],
+    "synonyms": [
+      "save",
+      "delete",
+      "update",
+      "salvar",
+      "excluir",
+      "validacao"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "quarto.save()\nQuarto.objects.filter(disponivel=False).update(tipo=\"Manutenção\")\nquarto.delete()",
+    "source": "https://docs.djangoproject.com/en/5.2/ref/models/instances/#validating-objects",
+    "version": "Django 5.2",
+    "syntax": "quarto.save()\nQuarto.objects.filter(disponivel=False).update(tipo=\"Manutenção\")\nquarto.delete()",
+    "kind": "Conceito",
+    "related": []
+  }
+]

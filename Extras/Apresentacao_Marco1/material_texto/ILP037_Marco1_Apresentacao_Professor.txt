@@ -1,0 +1,134 @@
+
+===== Página 1 =====
+Marco 1 — Apresentações
+ILP-037 Técnicas de Programação II • Caderno de Design • 11/09/2026
+Prof. Jose Ceron Neto
+Faculdade de Tecnologia de Olímpia — Centro Paula Souza
+CST em Desenvolvimento de Software Multiplataforma
+Olímpia, SP — 2º semestre de 2026
+===== Página 2 =====
+Bem-vindos ao primeiro marco
+O que vai acontecer hoje
+Hoje cada equipe apresenta o Marco 1 do projeto — o primeiro dos quatro momentos em que a gente
+olha o produto de vocês pela ótica do design.
+A ordem de cada apresentação
+1. Pitch do projeto (2–3 min)
+2. O Caderno de Design e os ADRs
+3. Perguntas do professor
+O tempo
+10 a 20 minutos por equipe
+6 equipes
+Podem usar a TV para projetar
+Todos participam da apresentação — a defesa é da equipe, mas cada um responde pelo que fez.
+Fatec Olímpia 1/9
+===== Página 3 =====
+Primeiro: um pedido de desculpas
+Sobre o GitHub
+O COMBINADO ERA ENTREGAR PELO GITHUB
+O Caderno de Design deveria estar versionado no repositório de cada equipe — e a
+rastreabilidade por commit faz parte do que a gente valoriza no design.
+O QUE ACONTECEU
+A configuração do GitHub das equipes não ficou pronta a tempo para este marco. A
+responsabilidade por isso é minha, não de vocês. Por isso, só neste Marco 1, eu
+recebi os Cadernos pelo Teams.
+A rastreabilidade por commit não será cobrada HOJE. Mas volta no Marco 2 — então usem
+essa semana para deixar o GitHub pronto.
+Fatec Olímpia 2/9
+===== Página 4 =====
+O que é um pitch?
+A primeira parte da sua apresentação
+PITCH
+Uma apresentação curta e direta — 2 a 3 minutos — que explica o essencial do projeto
+para quem nunca ouviu falar dele. O nome vem do inglês, do "arremesso" rápido: você
+tem pouco tempo para fisgar quem ouve.
+Um bom pitch responde quatro perguntas:
+1. Que problema vocês resolvem? (para quem, e por que importa)
+2. Qual é a solução de vocês? (o produto, em uma frase)
+3. Para quem é? (o cliente, o usuário — de Olímpia e região)
+4. O que já funciona hoje? (o estado atual, honesto)
+PARA FIXAR Imagine que vocês têm o tempo de uma viagem de elevador para convencer alguém. É isso.
+Fatec Olímpia 3/9
+===== Página 5 =====
+O pitch NÃO é...
+Para não cair nas armadilhas
+Um bom pitch
+Diz o problema em linguagem simples
+Cabe em 2–3 minutos
+Deixa claro para quem serve
+É honesto sobre o que já roda
+Um pitch fraco
+Começa pela tecnologia ("usamos Django...")
+Se perde em detalhe técnico
+Não diz quem é o cliente
+Promete o que não existe
+O pitch é sobre o PRODUTO e o problema. A parte técnica vem depois, no Caderno de
+Design.
+Fatec Olímpia 4/9
+===== Página 6 =====
+Depois do pitch: o Caderno de Design
+O coração da avaliação
+Terminado o pitch, vocês entram no que este marco realmente avalia: as decisões de design
+registradas no Caderno. Apresentem, do Caderno:
+O modelo de domínio justificado — as classes principais e por que assim
+Ao menos uma interface abstrata (ou ponto de extensão) que vocês desenharam
+3 smells que vocês identificaram no próprio código
+Os ADRs: as decisões, com a alternativa que descartaram
+O QUE EU VOU PERGUNTAR
+Para cada equipe, eu escolho uma decisão do Caderno e peço que expliquem por quê.
+A defesa é oral e sem consulta — quem não explica o próprio código não pontua nele.
+Fatec Olímpia 5/9
+===== Página 7 =====
+Como eu vou avaliar
+Os critérios, decididos desde o primeiro dia
+Este é o Marco 1, que compõe o P2 (avaliação formativa dos marcos — 30% da média final). A
+rubrica é a que está no Plano de Ensino desde agosto:
+Critério (P2) Peso
+Incremento de design entregue 30%
+Qualidade dos commits e do histórico (hoje: orga-
+nização do Caderno)
+25%
+Defesa oral do design 25%
+Contribuição individual 20%
+Dentro do Caderno, o que mais pesa: decisões que justificam, não só descrevem. "Escolhemos X em
+vez de Y porque..." — não "usamos X".
+Fatec Olímpia 6/9
+===== Página 8 =====
+O critério que vale ouro
+Justificar, não descrever
+Descrever (fraco)
+"Usamos @property para proteger o preço."
+Diz o o quê. Qualquer um copia.
+Justificar (forte)
+"Escolhemos @property em vez de validar só na tela,
+porque a tela não protege quem cria pelo shell."
+Diz o porquê. Mostra que vocês decidiram.
+A SEÇÃO QUE MAIS CONTA
+A alternativa descartada de cada ADR. É ela que prova que houve uma escolha entre
+caminhos — não a primeira ideia que apareceu.
+Fatec Olímpia 7/9
+===== Página 9 =====
+A defesa é sem consulta
+E a IA tem lugar certo
+L.D.P.A. NESTE MARCO
+A IA pode ter ajudado a redigir o Caderno (nível 2 — com declaração). Mas a decisão é
+da equipe, e a defesa é sem consulta (nível 3).
+POR QUE ISSO IMPORTA
+Um Caderno bonito que vocês não sabem defender não vale. O que eu avalio não é o
+texto — é se vocês entenderam a própria decisão. Por isso a pergunta oral pesa 25%.
+Uso de IA não declarado no Caderno zera a entrega. Foi combinado desde o primeiro dia.
+Fatec Olímpia 8/9
+===== Página 10 =====
+Vamos começar
+A ordem das equipes
+Cada equipe, na vez:
+1. Montam a projeção na TV (1 min)
+2. Pitch do projeto — 2 a 3 min
+3. Caderno de Design — modelo, interface, smells, ADRs
+4. Perguntas do professor — respondem em equipe
+Respirem. Vocês construíram isso.
+Não é sobre estar perfeito — é sobre mostrar que vocês sabem por que fizeram cada escolha.
+Fatec Olímpia 9/9
+===== Página 11 =====
+GOVERNO DO ESTADO
+DE SÃO PAULO
+Primeira equipe, a mesa é de vocês.

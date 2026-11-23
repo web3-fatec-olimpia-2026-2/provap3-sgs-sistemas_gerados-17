@@ -1,0 +1,105 @@
+[
+  {
+    "id": "template",
+    "category": "templates",
+    "title": "Renderizar HTML e contexto",
+    "code": "return render(request, \"quartos/lista.html\", {\"quartos\": quartos})",
+    "description": "render localiza o template e disponibiliza as chaves do contexto como variáveis. Com APP_DIRS=True, o Django procura templates nos apps instalados.",
+    "explanation": "render localiza o template e disponibiliza as chaves do contexto como variáveis. Com APP_DIRS=True, o Django procura templates nos apps instalados.",
+    "when": "Na view que precisa apresentar uma página.",
+    "keywords": [
+      "templates",
+      "renderizar html",
+      "passar dados",
+      "contexto",
+      "configuracao"
+    ],
+    "synonyms": [
+      "templates",
+      "renderizar html",
+      "passar dados",
+      "contexto",
+      "configuracao"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "return render(request, \"quartos/lista.html\", {\"quartos\": quartos})",
+    "source": "https://docs.djangoproject.com/en/5.2/topics/templates/",
+    "version": "Django 5.2",
+    "syntax": "return render(request, \"quartos/lista.html\", {\"quartos\": quartos})",
+    "kind": "Conceito",
+    "related": []
+  },
+  {
+    "id": "for",
+    "category": "templates",
+    "title": "Listar registros no template",
+    "code": "<ul>\n{% for quarto in quartos %}\n  <li>{{ quarto.numero }} — {{ quarto.tipo }}</li>\n{% empty %}\n  <li>Nenhum quarto disponível.</li>\n{% endfor %}\n</ul>",
+    "description": "A tag for percorre a variável enviada pela view; empty aparece quando a sequência está vazia. O nome quartos deve corresponder à chave do contexto.",
+    "explanation": "A tag for percorre a variável enviada pela view; empty aparece quando a sequência está vazia. O nome quartos deve corresponder à chave do contexto.",
+    "when": "Em quartos/templates/quartos/lista.html.",
+    "keywords": [
+      "for",
+      "empty",
+      "listar registros",
+      "tabela vazia",
+      "loop",
+      "html"
+    ],
+    "synonyms": [
+      "for",
+      "empty",
+      "listar registros",
+      "tabela vazia",
+      "loop",
+      "html"
+    ],
+    "error": "Se a lista aparecer vazia apesar de haver dados, confira o nome do contexto e o filtro; isso pode ter outras causas, não apenas migrações.",
+    "example": "<ul>\n{% for quarto in quartos %}\n  <li>{{ quarto.numero }} — {{ quarto.tipo }}</li>\n{% empty %}\n  <li>Nenhum quarto disponível.</li>\n{% endfor %}\n</ul>",
+    "source": "https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#for",
+    "version": "Django 5.2",
+    "syntax": "<ul>\n{% for quarto in quartos %}\n  <li>{{ quarto.numero }} — {{ quarto.tipo }}</li>\n{% empty %}\n  <li>Nenhum quarto disponível.</li>\n{% endfor %}\n</ul>",
+    "kind": "Conceito",
+    "related": [
+      "template",
+      "filter"
+    ]
+  },
+  {
+    "id": "tags",
+    "category": "templates",
+    "title": "Tags e herança de templates",
+    "code": "{% extends \"base.html\" %}\n{% block conteudo %}\n  {% if quartos %}Há quartos{% else %}Sem quartos{% endif %}\n  {% include \"rodape.html\" %}\n{% endblock %}",
+    "description": "Variáveis usam {{ }} e tags usam {% %}. extends e block organizam herança; include insere outro template. Filtros transformam valores, por exemplo {{ nome|lower }}.",
+    "explanation": "Variáveis usam {{ }} e tags usam {% %}. extends e block organizam herança; include insere outro template. Filtros transformam valores, por exemplo {{ nome|lower }}.",
+    "when": "Ao compartilhar a estrutura entre páginas.",
+    "keywords": [
+      "if",
+      "else",
+      "url",
+      "extends",
+      "block",
+      "include",
+      "filtros",
+      "heranca",
+      "variaveis"
+    ],
+    "synonyms": [
+      "if",
+      "else",
+      "url",
+      "extends",
+      "block",
+      "include",
+      "filtros",
+      "heranca",
+      "variaveis"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "{% extends \"base.html\" %}\n{% block conteudo %}\n  {% if quartos %}Há quartos{% else %}Sem quartos{% endif %}\n  {% include \"rodape.html\" %}\n{% endblock %}",
+    "source": "https://docs.djangoproject.com/en/5.2/ref/templates/builtins/",
+    "version": "Django 5.2",
+    "syntax": "{% extends \"base.html\" %}\n{% block conteudo %}\n  {% if quartos %}Há quartos{% else %}Sem quartos{% endif %}\n  {% include \"rodape.html\" %}\n{% endblock %}",
+    "kind": "Conceito",
+    "related": []
+  }
+]

@@ -1,0 +1,173 @@
+{
+  "1/O que desenvolver": {
+    "location": {
+      "file": "exemplo/quartos/models.py",
+      "folder": "exemplo/quartos/",
+      "action": "Adicione ou adapte o trecho dentro do app; mantenha os imports necessários.",
+      "responsibility": "Define os models e campos que descrevem os dados do aplicativo."
+    },
+    "breakdown": "O import fornece os tipos; a classe define os campos; __str__ produz texto legível. O banco só muda após as migrações."
+  },
+  "1/Comandos necessários": {
+    "location": {
+      "file": "Não é arquivo: terminal",
+      "folder": "exemplo/",
+      "action": "Execute no terminal, na pasta de manage.py; não cole no Python.",
+      "responsibility": "Invoca os comandos do projeto Django."
+    },
+    "breakdown": "makemigrations gera o arquivo; migrate aplica a alteração no banco configurado."
+  },
+  "1/Admin opcional": {
+    "location": {
+      "file": "exemplo/quartos/admin.py",
+      "folder": "exemplo/quartos/",
+      "action": "Adicione o import e o registro ao arquivo existente.",
+      "responsibility": "Conecta os models do app ao site administrativo do Django."
+    },
+    "breakdown": "O import acessa o model; admin.site.register conecta-o ao painel administrativo."
+  },
+  "2/URLs do aplicativo": {
+    "location": {
+      "file": "exemplo/quartos/urls.py",
+      "folder": "exemplo/quartos/",
+      "action": "Crie o arquivo se ainda não existir; adicione imports e padrões a urlpatterns, sem duplicá-lo.",
+      "responsibility": "Associa rotas da aplicação às views. Precisa ser incluído no URLconf do projeto."
+    },
+    "breakdown": "app_name cria o namespace; path liga padrões às views; <int:pk> fornece pk para o detalhe."
+  },
+  "2/Conexão no projeto": {
+    "location": {
+      "file": "exemplo/resort/urls.py",
+      "folder": "exemplo/resort/",
+      "action": "Edite o URLconf do projeto e complemente urlpatterns.",
+      "responsibility": "Encaminha prefixos para as URLs do app e inclui rotas de API e admin."
+    },
+    "breakdown": "include delega os caminhos ao app; admin.site.urls disponibiliza o painel. Esta versão ainda não contém o router da etapa 7."
+  },
+  "3/Como funciona": {
+    "location": {
+      "file": "exemplo/quartos/views.py",
+      "folder": "exemplo/quartos/",
+      "action": "Complemente a view existente; trechos de corpo precisam ficar indentados dentro de uma função.",
+      "responsibility": "Recebe requisições, coordena consultas e prepara respostas."
+    },
+    "breakdown": "A lista consulta e envia quartos; o detalhe recebe pk, busca um objeto ou retorna 404 e envia quarto ao template."
+  },
+  "4/Consulta com filtro": {
+    "location": {
+      "file": "exemplo/quartos/views.py",
+      "folder": "exemplo/quartos/",
+      "action": "Complemente a view existente; trechos de corpo precisam ficar indentados dentro de uma função. Este é um trecho de uso; não é um arquivo completo nem deve ser colado isoladamente.",
+      "responsibility": "Recebe requisições, coordena consultas e prepara respostas."
+    },
+    "breakdown": "objects.filter(disponivel=True) restringe a consulta e order_by(\"numero\") ordena. A atribuição deve ficar dentro da view de listagem."
+  },
+  "5/Listagem HTML": {
+    "location": {
+      "file": "exemplo/quartos/templates/quartos/lista.html",
+      "folder": "exemplo/quartos/templates/quartos/",
+      "action": "Crie ou complemente o HTML. A pasta de templates pertence ao app neste exemplo.",
+      "responsibility": "Define a apresentação do HTML com variáveis e tags recebidas pela view."
+    },
+    "breakdown": "A view envia quartos; for percorre a coleção; empty trata lista vazia; url gera o caminho de detalhe pelo nome."
+  },
+  "5/Template de detalhe": {
+    "location": {
+      "file": "exemplo/quartos/templates/quartos/detalhe.html",
+      "folder": "exemplo/quartos/templates/quartos/",
+      "action": "Crie o arquivo de detalhe dentro do app.",
+      "responsibility": "Renderiza o objeto enviado pela view de detalhe."
+    },
+    "breakdown": "{{ quarto.numero }} e {{ quarto.tipo }} acessam a chave quarto do contexto; a tag url gera o link de volta."
+  },
+  "6/Formulário": {
+    "location": {
+      "file": "exemplo/quartos/forms.py",
+      "folder": "exemplo/quartos/",
+      "action": "Crie o arquivo se necessário; adicione a classe ou complemente o método nela.",
+      "responsibility": "Define campos e validações executadas quando o formulário é validado."
+    },
+    "breakdown": "ModelForm define os campos; clean_numero usa cleaned_data, lança ValidationError se necessário e retorna o valor válido."
+  },
+  "6/View completa de cadastro": {
+    "location": {
+      "file": "exemplo/quartos/views.py",
+      "folder": "exemplo/quartos/",
+      "action": "Complemente a view existente; trechos de corpo precisam ficar indentados dentro de uma função.",
+      "responsibility": "Recebe requisições, coordena consultas e prepara respostas."
+    },
+    "breakdown": "As três funções estão juntas; criar_quarto vincula POST ao form, valida e salva, ou renderiza o form com erros."
+  },
+  "6/URL completa": {
+    "location": {
+      "file": "exemplo/quartos/urls.py",
+      "folder": "exemplo/quartos/",
+      "action": "Crie o arquivo se ainda não existir; adicione imports e padrões a urlpatterns, sem duplicá-lo.",
+      "responsibility": "Associa rotas da aplicação às views. Precisa ser incluído no URLconf do projeto."
+    },
+    "breakdown": "O arquivo agora inclui a rota nomeada criar, usada pelo template e pelo namespace quartos."
+  },
+  "6/HTML e CSRF": {
+    "location": {
+      "file": "exemplo/quartos/templates/quartos/form.html",
+      "folder": "exemplo/quartos/templates/quartos/",
+      "action": "Crie o arquivo do formulário dentro do app.",
+      "responsibility": "Exibe o ModelForm e envia seus dados por POST."
+    },
+    "breakdown": "csrf_token insere a proteção CSRF; form.as_p apresenta campos e erros; o botão envia a requisição à view."
+  },
+  "7/Serializer e ViewSet": {
+    "location": {
+      "file": "exemplo/quartos/api.py",
+      "folder": "exemplo/quartos/",
+      "action": "Crie ou complemente este arquivo; nesta arquitetura serializer e ViewSet ficam juntos.",
+      "responsibility": "Define a representação e as operações da API do app; a rota é registrada no URLconf do projeto."
+    },
+    "breakdown": "O serializer expõe os campos e valida a entrada; o ViewSet usa queryset e serializer_class para fornecer as ações."
+  },
+  "7/Router": {
+    "location": {
+      "file": "exemplo/resort/urls.py",
+      "folder": "exemplo/resort/",
+      "action": "Substitua o URLconf inicial ou integre imports, router e padrões ao arquivo existente.",
+      "responsibility": "Conecta as URLs HTML, o admin e as rotas da API."
+    },
+    "breakdown": "router.register vincula quartos ao ViewSet; include(router.urls) sob api/ produz /api/quartos/."
+  },
+  "7/Requisições de exemplo": {
+    "location": {
+      "file": "Não é arquivo: terminal / cliente HTTP",
+      "folder": "Qualquer pasta; com o servidor de exemplo ativo",
+      "action": "Execute curl no terminal; o JSON é enviado no corpo da requisição, não salvo como arquivo.",
+      "responsibility": "O cliente faz requisições HTTP ao endpoint."
+    },
+    "breakdown": "GET consulta a lista. POST envia JSON com Content-Type e deve retornar 201 se os dados forem válidos; o id é gerado e pode variar."
+  },
+  "8/Configuração": {
+    "location": {
+      "file": "exemplo/pytest.ini",
+      "folder": "exemplo/",
+      "action": "Crie pytest.ini na raiz do projeto ou edite a seção existente.",
+      "responsibility": "Configura descoberta de testes e o módulo de settings para pytest-django."
+    },
+    "breakdown": "DJANGO_SETTINGS_MODULE aponta para resort.settings; python_files especifica a descoberta de testes."
+  },
+  "8/Testes integrados": {
+    "location": {
+      "file": "exemplo/quartos/tests/test_quartos.py",
+      "folder": "exemplo/quartos/tests/",
+      "action": "Crie o diretório de testes e o arquivo, ou adicione uma função test_ ao existente.",
+      "responsibility": "Guarda testes automatizados; pytest os descobre pelo padrão configurado."
+    },
+    "breakdown": "django_db permite banco de teste; client simula GET/POST; asserts conferem representação, status e persistência."
+  },
+  "8/Executar e verificar": {
+    "location": {
+      "file": "Não é arquivo: terminal",
+      "folder": "exemplo/",
+      "action": "Execute no terminal, na pasta de manage.py; não cole no Python.",
+      "responsibility": "Invoca os comandos do projeto Django."
+    },
+    "breakdown": "pytest -v descobre os testes e apresenta o resultado detalhado no terminal."
+  }
+}

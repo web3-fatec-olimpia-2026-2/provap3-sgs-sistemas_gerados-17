@@ -1,0 +1,151 @@
+{
+  "atributos": [
+    {
+      "max": null,
+      "min": null,
+      "nome": "cliente",
+      "regra": "obrigatorio",
+      "tipo": "str"
+    },
+    {
+      "max": null,
+      "min": 1,
+      "nome": "produto",
+      "regra": "minimo",
+      "tipo": "int"
+    },
+    {
+      "max": 50,
+      "min": 1,
+      "nome": "quantidade",
+      "regra": "faixa",
+      "tipo": "int"
+    },
+    {
+      "max": null,
+      "min": 0,
+      "nome": "preco_unitario",
+      "regra": "minimo",
+      "tipo": "float"
+    },
+    {
+      "max": null,
+      "min": null,
+      "nome": "observacao",
+      "regra": "livre",
+      "tipo": "str"
+    }
+  ],
+  "categorias": {
+    "base": [
+      "Produto",
+      "Produto comum",
+      50.0
+    ],
+    "nova": [
+      "Alimento",
+      "Alimento",
+      20.0
+    ],
+    "subtipos": [
+      [
+        "Eletronico",
+        "Eletrônico",
+        300.0
+      ],
+      [
+        "Livro",
+        "Livro",
+        40.0
+      ]
+    ],
+    "unidade": "unidade"
+  },
+  "comentarios": true,
+  "django": false,
+  "entidade": "Pedido",
+  "estudo": true,
+  "extras": {
+    "fixos": [
+      [
+        "Embrulho",
+        15.0,
+        "embrulho para presente"
+      ],
+      [
+        "Cartao",
+        5.0,
+        "cartão"
+      ],
+      [
+        "EntregaExpressa",
+        25.0,
+        "entrega expressa"
+      ]
+    ],
+    "percentual": [
+      "Cupom10",
+      0.9,
+      "-10% cupom"
+    ]
+  },
+  "gateway": "PagueMais",
+  "ident": "cliente",
+  "nomes": [
+    "Juliana",
+    "Kleber",
+    "Larissa",
+    "Marcos"
+  ],
+  "padroes": [
+    "encapsulamento",
+    "decorator",
+    "facade"
+  ],
+  "painel": {
+    "acao_livre": "Comprar",
+    "acao_ocupado": "(avise-me)",
+    "contagem": "produto(s) em estoque",
+    "livre": "em estoque",
+    "ocupado": "ESGOTADO",
+    "titulo": "Produto",
+    "zero": "SEM ESTOQUE - nenhum produto disponível"
+  },
+  "preco": "preco_unitario",
+  "precos_exemplo": [
+    50.0,
+    19.9,
+    300.0,
+    0.0
+  ],
+  "quantidade": "quantidade",
+  "recurso": "produto",
+  "recursos": [
+    501,
+    502,
+    503
+  ],
+  "sistema": "Loja Virtual",
+  "unidade": "unidade(s)",
+  "variantes": {
+    "conceito": "tipo de cliente",
+    "itens": [
+      [
+        "Comum",
+        1.0
+      ],
+      [
+        "Fidelidade",
+        0.9
+      ],
+      [
+        "Atacado",
+        0.85
+      ]
+    ],
+    "nova": [
+      "Funcionario",
+      0.7
+    ]
+  }
+}

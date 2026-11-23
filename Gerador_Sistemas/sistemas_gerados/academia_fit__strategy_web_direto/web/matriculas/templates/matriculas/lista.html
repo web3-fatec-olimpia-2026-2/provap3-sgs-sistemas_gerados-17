@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="pt-br">
+<head><meta charset="utf-8"><title>Academia Fit</title></head>
+<body>
+  <h1>Academia Fit</h1>
+  <p><a href="{% url 'matriculas:criar' %}">Cadastrar Matricula</a> · <a href="{% url 'matriculas:api' %}">API (JSON)</a></p>
+  <ul>
+  {% for item in painel.itens %}
+    <li>{{ item.titulo }} · {{ item.tipo_label }} · {{ item.valor_formatado }} ({{ item.selo }})</li>
+  {% endfor %}
+  </ul>
+  <p>{{ painel.rodape }}</p>
+</body>
+</html>

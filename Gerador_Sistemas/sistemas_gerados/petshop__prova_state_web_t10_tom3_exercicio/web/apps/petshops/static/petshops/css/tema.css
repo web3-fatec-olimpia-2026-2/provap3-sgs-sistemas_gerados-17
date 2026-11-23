@@ -1,0 +1,42 @@
+/* Tema T10 Personalizado · Tom 3 · paleta P01 Oceano — gerado pelo SGS (temas_web.py), sem edição manual.
+   Contraste WCAG: escrita × fundo 8.15:1 · destaque × fundo 3.25:1 */
+:root, [data-bs-theme] {
+  --sgs-fundo: #B3B7B7;
+  --sgs-superficie: #C2C5C5;
+  --sgs-escrita: #191F2B;
+  --sgs-destaque: #0B5FA5;
+  --sgs-destaque-hover: #09518C;
+  --sgs-sobre-destaque: #FFFFFF;
+  --sgs-borda: #919698;
+  --sgs-atenuado: #4F545C;
+  --bs-body-bg: var(--sgs-fundo);
+  --bs-body-color: var(--sgs-escrita);
+  --bs-emphasis-color: var(--sgs-escrita);
+  --bs-secondary-color: var(--sgs-atenuado);
+  --bs-secondary-bg: var(--sgs-superficie);
+  --bs-tertiary-bg: var(--sgs-superficie);
+  --bs-border-color: var(--sgs-borda);
+  --bs-primary: var(--sgs-destaque);
+  --bs-primary-rgb: 11, 95, 165;
+  --bs-link-color: var(--sgs-destaque);
+  --bs-link-color-rgb: 11, 95, 165;
+  --bs-link-hover-color: var(--sgs-destaque-hover);
+  --bs-focus-ring-color: rgba(11, 95, 165, .35);
+}
+.navbar-sgs { background-color: var(--sgs-destaque); color: var(--sgs-sobre-destaque); }
+.navbar-sgs .navbar-brand, .navbar-sgs .nav-link { color: var(--sgs-sobre-destaque); }
+.btn-primary {
+  --bs-btn-bg: var(--sgs-destaque); --bs-btn-border-color: var(--sgs-destaque);
+  --bs-btn-color: var(--sgs-sobre-destaque); --bs-btn-hover-color: var(--sgs-sobre-destaque);
+  --bs-btn-hover-bg: var(--sgs-destaque-hover); --bs-btn-hover-border-color: var(--sgs-destaque-hover);
+  --bs-btn-active-bg: var(--sgs-destaque-hover); --bs-btn-active-color: var(--sgs-sobre-destaque);
+}
+.btn-outline-primary {
+  --bs-btn-color: var(--sgs-destaque); --bs-btn-border-color: var(--sgs-destaque);
+  --bs-btn-hover-bg: var(--sgs-destaque); --bs-btn-hover-color: var(--sgs-sobre-destaque);
+}
+.card { --bs-card-bg: var(--sgs-superficie); --bs-card-color: var(--sgs-escrita); --bs-card-border-color: var(--sgs-borda); }
+.table { --bs-table-bg: var(--sgs-superficie); --bs-table-color: var(--sgs-escrita); --bs-table-border-color: var(--sgs-borda);
+          --bs-table-hover-bg: rgba(11, 95, 165, .08); --bs-table-hover-color: var(--sgs-escrita); }
+.form-control, .form-select { background-color: var(--sgs-superficie); color: var(--sgs-escrita); border-color: var(--sgs-borda); }
+.badge-destaque { background-color: var(--sgs-destaque); color: var(--sgs-sobre-destaque); }

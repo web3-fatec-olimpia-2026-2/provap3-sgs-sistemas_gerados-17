@@ -1,0 +1,60 @@
+# =============================================================================
+# .gitignore da pasta mãe "Tecnicas de Programacao II" (o repositório inteiro vai para o GitHub).
+#
+# Base: o conjunto mínimo global das Instruções de desenvolvimento DJANGO
+#   (Gerador_Sistemas/Instruçõs de desenvolvimento DJANGO/AGENT_INSTRUCTIONS_DJANGO.md §4.7
+#    e DEV_ENVIRONMENT_GUIDELINES.txt, passo 10) + db.sqlite3 (os sites gerados usam SQLite local).
+# Padrão sem "/" no começo vale em QUALQUER subpasta (aulas, Treino_Prova, Gerador_Sistemas,
+# sistemas_gerados…). Gerador_Sistemas/ e cada sistema gerado têm também o próprio .gitignore.
+# =============================================================================
+
+# --- conjunto mínimo global (Instruções §4.7) ---
+.venv/
+.env
+*.pyc
+__pycache__/
+*.log
+.DS_Store
+media/
+staticfiles/
+
+# --- SQLite local (§4.7: "se o projeto utilizar SQLite local") ---
+db.sqlite3
+
+# --- variações do .env (o MODELO .env.example é versionado — §4.6) ---
+.env.*
+!.env.example
+
+# --- ambientes e caches de ferramentas Python ---
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- marcas que o Windows grava ao baixar/copiar arquivos (fluxo "Zone.Identifier") ---
+*Zone.Identifier
+*.identifier
+*.Identifier
+
+# --- lixo de sistema operacional e de editor ---
+Thumbs.db
+desktop.ini
+*.swp
+*~
+
+# --- estado LOCAL da tela do gerador (SGS): senha do admin, histórico de comandos, sites no ar ---
+Gerador_Sistemas/sgs_config.json
+.sgs_historico
+.sgs_servidores.json
+
+# --- mídia das aulas (31 arquivos, ~560 MB em */material_original/midia/): SOBE junto ---
+#     Nenhum arquivo passa de 100 MB (limite do GitHub); 2 áudios da Aula 03 passam de 50 MB (o GitHub só avisa).
+#     Para deixar a mídia de fora, tire o "#" da linha abaixo:
+# **/material_original/midia/
+
+# --- Extras/repo_ilp_referencia/ é um CLONE (tem .git próprio) do repositório público do professor:
+#     https://github.com/web3-fatec-olimpia-2026-2/ilp-referencia
+#     O git não sobe os arquivos de um repositório dentro de outro. Ao criar o repositório, registre-o
+#     como submódulo:  git submodule add https://github.com/web3-fatec-olimpia-2026-2/ilp-referencia.git Extras/repo_ilp_referencia

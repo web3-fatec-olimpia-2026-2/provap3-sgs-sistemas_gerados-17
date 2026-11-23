@@ -1,0 +1,260 @@
+[
+  {
+    "id": "django",
+    "category": "intro",
+    "title": "O que é Django?",
+    "code": "python -m django --version",
+    "description": "Django é um framework web Python que oferece componentes para construir aplicações, como ORM, rotas, templates e formulários.",
+    "explanation": "Django é um framework web Python que oferece componentes para construir aplicações, como ORM, rotas, templates e formulários.",
+    "when": "Antes de iniciar o projeto.",
+    "keywords": [
+      "framework",
+      "web",
+      "python",
+      "mvt"
+    ],
+    "synonyms": [
+      "framework",
+      "web",
+      "python",
+      "mvt"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "python -m django --version",
+    "source": "https://docs.djangoproject.com/en/5.2/intro/tutorial01/",
+    "version": "Django 5.2",
+    "syntax": "python -m django --version",
+    "kind": "Fundamento",
+    "related": []
+  },
+  {
+    "id": "mvt",
+    "category": "intro",
+    "title": "Arquitetura MVT",
+    "code": "Model → View → Template",
+    "description": "O Model representa dados; a View recebe a requisição e organiza a resposta; o Template apresenta dados. As URLs encaminham a requisição à view.",
+    "explanation": "O Model representa dados; a View recebe a requisição e organiza a resposta; o Template apresenta dados. As URLs encaminham a requisição à view.",
+    "when": "Ao planejar como as peças se conectam.",
+    "keywords": [
+      "arquitetura",
+      "model view template",
+      "componentes"
+    ],
+    "synonyms": [
+      "arquitetura",
+      "model view template",
+      "componentes"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "Model → View → Template",
+    "source": "https://docs.djangoproject.com/en/5.2/intro/tutorial01/",
+    "version": "Django 5.2",
+    "syntax": "Model → View → Template",
+    "kind": "Conceito",
+    "related": []
+  },
+  {
+    "id": "venv",
+    "category": "intro",
+    "title": "Criar e ativar ambiente virtual",
+    "code": "python -m venv .venv\n# macOS / Linux\nsource .venv/bin/activate\n# Windows PowerShell\n.venv\\Scripts\\Activate.ps1",
+    "description": "O ambiente virtual isola as dependências do projeto. A ativação é específica do sistema e do shell.",
+    "explanation": "O ambiente virtual isola as dependências do projeto. A ativação é específica do sistema e do shell.",
+    "when": "Antes de instalar dependências.",
+    "keywords": [
+      "ambiente virtual",
+      "venv",
+      "ativar",
+      "instalar"
+    ],
+    "synonyms": [
+      "ambiente virtual",
+      "venv",
+      "ativar",
+      "instalar"
+    ],
+    "error": "No PowerShell, uma política de execução pode bloquear o script; consulte a documentação do Python. Use python -m pip para garantir o interpretador correto.",
+    "example": "python -m venv .venv\n# macOS / Linux\nsource .venv/bin/activate\n# Windows PowerShell\n.venv\\Scripts\\Activate.ps1",
+    "source": "https://docs.python.org/3/library/venv.html",
+    "version": "Django 5.2",
+    "syntax": "python -m venv .venv\n# macOS / Linux\nsource .venv/bin/activate\n# Windows PowerShell\n.venv\\Scripts\\Activate.ps1",
+    "kind": "Terminal",
+    "related": []
+  },
+  {
+    "id": "instalar",
+    "category": "intro",
+    "title": "Instalar Django",
+    "code": "python -m pip install \"Django>=5.2,<5.3\"",
+    "description": "Instala a série Django 5.2 no ambiente Python ativo. Consulte os requisitos de Python da versão escolhida.",
+    "explanation": "Instala a série Django 5.2 no ambiente Python ativo. Consulte os requisitos de Python da versão escolhida.",
+    "when": "Depois de ativar o ambiente virtual.",
+    "keywords": [
+      "instalacao",
+      "pip",
+      "instalar django"
+    ],
+    "synonyms": [
+      "instalacao",
+      "pip",
+      "instalar django"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "python -m pip install \"Django>=5.2,<5.3\"",
+    "source": "https://docs.djangoproject.com/en/5.2/topics/install/",
+    "version": "Django 5.2",
+    "syntax": "python -m pip install \"Django>=5.2,<5.3\"",
+    "kind": "Terminal",
+    "related": []
+  },
+  {
+    "id": "startproject",
+    "category": "intro",
+    "title": "Criar projeto Django",
+    "code": "django-admin startproject resort",
+    "description": "Cria o diretório do projeto e a configuração inicial, incluindo manage.py e settings.py.",
+    "explanation": "Cria o diretório do projeto e a configuração inicial, incluindo manage.py e settings.py.",
+    "when": "No início de um projeto novo.",
+    "keywords": [
+      "criar projeto",
+      "iniciar projeto",
+      "startproject",
+      "django admin"
+    ],
+    "synonyms": [
+      "criar projeto",
+      "iniciar projeto",
+      "startproject",
+      "django admin"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "django-admin startproject resort",
+    "source": "https://docs.djangoproject.com/en/5.2/intro/tutorial01/",
+    "version": "Django 5.2",
+    "syntax": "django-admin startproject resort",
+    "kind": "Terminal",
+    "related": []
+  },
+  {
+    "id": "startapp",
+    "category": "intro",
+    "title": "Criar aplicação",
+    "code": "python manage.py startapp quartos",
+    "description": "Cria a estrutura inicial de um aplicativo Django. Depois registre-o em INSTALLED_APPS.",
+    "explanation": "Cria a estrutura inicial de um aplicativo Django. Depois registre-o em INSTALLED_APPS.",
+    "when": "Dentro do projeto, ao separar uma funcionalidade.",
+    "keywords": [
+      "criar app",
+      "aplicativo",
+      "aplicacao",
+      "startapp"
+    ],
+    "synonyms": [
+      "criar app",
+      "aplicativo",
+      "aplicacao",
+      "startapp"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "python manage.py startapp quartos",
+    "source": "https://docs.djangoproject.com/en/5.2/intro/tutorial01/",
+    "version": "Django 5.2",
+    "syntax": "python manage.py startapp quartos",
+    "kind": "Terminal",
+    "related": []
+  },
+  {
+    "id": "runserver",
+    "category": "intro",
+    "title": "Executar servidor de desenvolvimento",
+    "code": "python manage.py runserver",
+    "description": "Inicia o servidor de desenvolvimento local; por padrão ele atende em 127.0.0.1:8000. Não é apropriado para produção.",
+    "explanation": "Inicia o servidor de desenvolvimento local; por padrão ele atende em 127.0.0.1:8000. Não é apropriado para produção.",
+    "when": "No terminal, na pasta de manage.py, durante o desenvolvimento.",
+    "keywords": [
+      "rodar servidor",
+      "iniciar servidor",
+      "executar servidor",
+      "ligar sistema",
+      "servidor local",
+      "runserver"
+    ],
+    "synonyms": [
+      "rodar servidor",
+      "iniciar servidor",
+      "executar servidor",
+      "ligar sistema",
+      "servidor local",
+      "runserver"
+    ],
+    "error": "Se a porta estiver ocupada, escolha outra, como 8001. Se manage.py não for encontrado, entre na pasta do projeto.",
+    "example": "python manage.py runserver",
+    "source": "https://docs.djangoproject.com/en/5.2/intro/tutorial01/",
+    "version": "Django 5.2",
+    "syntax": "python manage.py runserver [endereço:porta]\n# exemplo: python manage.py runserver 8001",
+    "kind": "Terminal",
+    "related": []
+  },
+  {
+    "id": "settings",
+    "category": "intro",
+    "title": "settings.py e aplicativos",
+    "code": "INSTALLED_APPS += [\"quartos\"]",
+    "description": "settings.py configura o projeto; INSTALLED_APPS informa quais aplicativos estão ativos. O projeto gerado já configura SQLite por padrão.",
+    "explanation": "settings.py configura o projeto; INSTALLED_APPS informa quais aplicativos estão ativos. O projeto gerado já configura SQLite por padrão.",
+    "when": "Após criar um app ou instalar uma extensão.",
+    "keywords": [
+      "configuracao",
+      "registrar aplicacao",
+      "sqlite",
+      "settings",
+      "diretorios",
+      "manage.py"
+    ],
+    "synonyms": [
+      "configuracao",
+      "registrar aplicacao",
+      "sqlite",
+      "settings",
+      "diretorios",
+      "manage.py"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "INSTALLED_APPS += [\"quartos\"]",
+    "source": "https://docs.djangoproject.com/en/5.2/ref/settings/",
+    "version": "Django 5.2",
+    "syntax": "INSTALLED_APPS += [\"quartos\"]",
+    "kind": "Conceito",
+    "related": []
+  },
+  {
+    "id": "admin",
+    "category": "intro",
+    "title": "Painel administrativo",
+    "code": "python manage.py createsuperuser\n# depois acesse /admin/",
+    "description": "Cria um usuário administrador; para gerenciar um model, registre-o em admin.py. A rota admin deve estar configurada.",
+    "explanation": "Cria um usuário administrador; para gerenciar um model, registre-o em admin.py. A rota admin deve estar configurada.",
+    "when": "Após aplicar as migrações.",
+    "keywords": [
+      "admin",
+      "administrador",
+      "criar usuario",
+      "superusuario",
+      "abrir painel"
+    ],
+    "synonyms": [
+      "admin",
+      "administrador",
+      "criar usuario",
+      "superusuario",
+      "abrir painel"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "python manage.py createsuperuser\n# depois acesse /admin/",
+    "source": "https://docs.djangoproject.com/en/5.2/intro/tutorial02/",
+    "version": "Django 5.2",
+    "syntax": "python manage.py createsuperuser\n# depois acesse /admin/",
+    "kind": "Terminal",
+    "related": []
+  }
+]

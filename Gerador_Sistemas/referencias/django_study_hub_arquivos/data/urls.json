@@ -1,0 +1,96 @@
+[
+  {
+    "id": "path",
+    "category": "urls",
+    "title": "Criar uma rota com path()",
+    "code": "from django.urls import path\nfrom . import views\n\nurlpatterns = [\n    path(\"quartos/\", views.lista_quartos, name=\"lista\"),\n    path(\"quartos/<int:pk>/\", views.detalhe_quarto, name=\"detalhe\"),\n]",
+    "description": "path associa um padrão de URL a uma view. O conversor int extrai pk e o envia à view como argumento.",
+    "explanation": "path associa um padrão de URL a uma view. O conversor int extrai pk e o envia à view como argumento.",
+    "when": "No urls.py do aplicativo.",
+    "keywords": [
+      "criar rota",
+      "urlconf",
+      "rota listagem",
+      "rota detalhe",
+      "parametro",
+      "path"
+    ],
+    "synonyms": [
+      "criar rota",
+      "urlconf",
+      "rota listagem",
+      "rota detalhe",
+      "parametro",
+      "path"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "from django.urls import path\nfrom . import views\n\nurlpatterns = [\n    path(\"quartos/\", views.lista_quartos, name=\"lista\"),\n    path(\"quartos/<int:pk>/\", views.detalhe_quarto, name=\"detalhe\"),\n]",
+    "source": "https://docs.djangoproject.com/en/5.2/topics/http/urls/",
+    "version": "Django 5.2",
+    "syntax": "from django.urls import path\nfrom . import views\n\nurlpatterns = [\n    path(\"quartos/\", views.lista_quartos, name=\"lista\"),\n    path(\"quartos/<int:pk>/\", views.detalhe_quarto, name=\"detalhe\"),\n]",
+    "kind": "Função",
+    "related": [
+      "include",
+      "view",
+      "detail"
+    ]
+  },
+  {
+    "id": "include",
+    "category": "urls",
+    "title": "Incluir URLs de um aplicativo",
+    "code": "from django.urls import include, path\nurlpatterns = [\n    path(\"\", include(\"quartos.urls\")),\n]",
+    "description": "include encaminha um prefixo de URL para outro URLconf; app_name e namespace organizam nomes de rotas.",
+    "explanation": "include encaminha um prefixo de URL para outro URLconf; app_name e namespace organizam nomes de rotas.",
+    "when": "No urls.py do projeto, para conectar as rotas do app.",
+    "keywords": [
+      "include",
+      "app_name",
+      "namespace",
+      "incluir rotas",
+      "urls.py"
+    ],
+    "synonyms": [
+      "include",
+      "app_name",
+      "namespace",
+      "incluir rotas",
+      "urls.py"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "from django.urls import include, path\nurlpatterns = [\n    path(\"\", include(\"quartos.urls\")),\n]",
+    "source": "https://docs.djangoproject.com/en/5.2/topics/http/urls/#including-other-urlconfs",
+    "version": "Django 5.2",
+    "syntax": "from django.urls import include, path\nurlpatterns = [\n    path(\"\", include(\"quartos.urls\")),\n]",
+    "kind": "Função",
+    "related": []
+  },
+  {
+    "id": "reverse",
+    "category": "urls",
+    "title": "Reverter nome de rota",
+    "code": "from django.urls import reverse\nurl = reverse(\"quartos:detalhe\", args=[1])",
+    "description": "reverse obtém a URL a partir do nome e argumentos, evitando caminhos fixos. O namespace deve estar configurado.",
+    "explanation": "reverse obtém a URL a partir do nome e argumentos, evitando caminhos fixos. O namespace deve estar configurado.",
+    "when": "Em código Python e testes; no template use a tag url.",
+    "keywords": [
+      "reverse",
+      "name",
+      "nome rota",
+      "gerar endereco"
+    ],
+    "synonyms": [
+      "reverse",
+      "name",
+      "nome rota",
+      "gerar endereco"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "from django.urls import reverse\nurl = reverse(\"quartos:detalhe\", args=[1])",
+    "source": "https://docs.djangoproject.com/en/5.2/ref/urlresolvers/#reverse",
+    "version": "Django 5.2",
+    "syntax": "from django.urls import reverse\nurl = reverse(\"quartos:detalhe\", args=[1])",
+    "kind": "Função",
+    "related": []
+  }
+]

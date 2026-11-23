@@ -1,0 +1,85 @@
+
+===== Página 1 =====
+ILP-037 · TÉCNICAS DE PROGRAMAÇÃO II — FATEC OLÍMPIA (2026/2)
+ RETA FINAL · SPRINT 3
+STUDY GUIDE: DECORATOR & O TRIO ESTRUTURAL
+ AULA 10
+1. O QUADRO CENTRAL DO TRIO ESTRUTURAL (ADAPTER X FACADE X DECORATOR)
+ Padrão
+ Objetos
+Envolvidos
+ O que faz com a Interface?
+ Intenção Principal
+ Analogia do Resort
+Adapter
+1 objeto
+(incompatível)
+Muda a interface (traduz para o
+padrão esperado)
+CABER
+(fazer integrar)
+Adaptador de tomada europeia para o hóspede
+conectar seu aparelho.
+Facade
+Vários subsistemas
+Cria nova interface simples
+(esconde os bastidores)
+ESCONDER
+(simplificar acesso)
+O balcão da Recepção que coordena cozinha,
+governança e financeiro.
+Decorator
+1 objeto (dinâmico)
+Mantém a mesma interface
+(transparente, soma
+responsabilidade)
+ACRESCENTAR
+(empilhar extras)
+Camadas de papel de presente colocadas em volta
+da caixa de reserva.
+2. O SMELL (CÓDIGO RUIM) VS. A SOLUÇÃO DECORATOR (CÓDIGO LIMPO)
+# CÓDIGO RUIM (Smell: Pilha de flags/ifs)
+def calcular_preco(diaria, noites,
+cafe=False, transfer=False):
+total = diaria * noites
+if cafe: total += 40.0 # +1 if por extra
+if transfer: total += 80.0
+return total
+# Problema: Mexe na função e nos chamadores;
+# subclasses causariam explosão combinatória!
+# CÓDIGO LIMPO (Decorator GoF em Python)
+class ServicoExtra: # Embrulho base (delega)
+def __init__(self, reserva): self._res = reserva
+def preco(self): return self._res.preco()
+class ComCafe(ServicoExtra): # Soma comportamento
+def preco(self):
+return self._res.preco() + 40.0 # soma 40
+# Uso: ComTransfer(ComCafe(ReservaBase(200, 2)))
+3. DECORATOR X ADAPTER: POR QUE O DECORATOR EMPILHA?
+ Contraste Central: Tanto o Adapter quanto o Decorator embrulham UM único objeto. A diferença crítica é que o Adapter MUDA a interface para
+fazer duas peças incompatíveis se conectarem, enquanto o Decorator MANTÉM exatamente a mesma interface do objeto decorado.
+ Por que empilha? Como a camada externa (ex: ComTransfer) implementa a mesma interface da reserva-base (preco() e descricao()), ela pode
+embrulhar outro decorador (ex: ComCafe), que por sua vez embrulha a reserva. Ao chamar preco(), a requisição flui em cadeia de fora para dentro
+(camada por camada de papel de presente) até o objeto base e retorna acumulando os resultados.
+4. DELIMITAÇÃO & CRITÉRIO ANTIFACHADA: QUANDO NÃO USAR DECORATOR
+1. O @decorator do Python NÃO é o padrão Decorator (GoF): O recurso @ do Python embrulha funções (callables). O padrão Decorator do GoF
+embrulha objetos em tempo de execução para somar estado e comportamento.
+2. Critério Antifachada (Soma Ficha vs. Comportamento): Se o serviço extra do Resort apenas adiciona um valor numérico fixo ao total (ex: R$ 40
+do café), NÃO use Decorator — uma simples lista_extras com um laço sum() é suficiente! O Decorator só se justifica quando o extra adiciona
+comportamento dinâmico (ex: acionar um serviço de bordo, alterar regras de check-out).
+3. Cuidado com Cadeias Profundas: Criar dezenas de camadas de embrulho torna o sistema difícil de depurar (*lots of little objects*).
+5. GLOSSÁRIO RÁPIDO DE TERMOS TÉCNICOS (PARA A PROVA P3 & ADR)
+ Termo
+ Definição Clara em PT-BR (Sem Jargão)
+Decorator
+Padrão estrutural que embrulha um objeto para adicionar responsabilidades dinamicamente em tempo de execução.
+Componente
+A interface ou classe base comum que garante a assinatura idêntica entre o objeto original e os seus decoradores.
+Wrapper (Embrulho)
+O objeto transparente que envolve o componente interno e repassa chamadas adicionando seu próprio comportamento.
+Interface
+O contrato de métodos (ex: preco()) mantido intacto para que o cliente não perceba se fala com o objeto original ou decorado.
+Empilhar
+Aninhar múltiplos decoradores recursivamente (ex: Transfer(Cafe(Reserva))), executando requisições em camada.
+Fontes: Slides ILP-037 Aulas 08, 09, 10 (FATEC Olímpia) & Cap. 4 GoF (Decorator.pdf). Material de apoio para elaboração dos ADRs no Caderno de Design (P1) e defesa na
+ Prova Prática P3 (27/11).

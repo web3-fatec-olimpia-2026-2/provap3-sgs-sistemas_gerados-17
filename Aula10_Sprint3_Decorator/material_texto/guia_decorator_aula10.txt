@@ -1,0 +1,80 @@
+
+===== Página 1 =====
+Página 1
+Guia de Estudo: Padrão Decorator (GoF)
+ILP-037 Técnicas de Programação II — FATEC Olímpia · Aula 10 · Fecho dos Estruturais
+1. O que é um Decorator, em uma frase?
+Em resumo: É um padrão estrutural que embrulha um objeto para acrescentar novas responsabilidades
+dinamicamente em tempo de execução, mantendo sua interface original intacta.
+Analogia do Resort: Pense na reserva-base do Resort como um presente já embalado. O Decorator não troca o
+presente de dentro nem rasga o pacote; ele apenas adiciona uma nova camada de papel de embrulho decorativo por
+cima (como o serviço de café da manhã), acrescentando valor sem alterar a essência original da reserva.
+Fonte: Decorator.pdf (págs. 175-177); ILP037_Aula10_Slides.pdf (slides 7-8).
+2. Qual a diferença entre Decorator e Adapter?
+Em resumo: O Adapter muda a interface de um objeto para fazê-lo caber onde não encaixava, enquanto o
+Decorator mantém exatamente a mesma interface e apenas soma responsabilidades.
+Analogia do Resort: O Adapter é como colocar um adaptador de tomada num plugue estrangeiro do hóspede para
+encaixar na parede do Resort (modifica a interface). O Decorator é adicionar mais uma camada de papel de presente
+sobre a caixa original: a embalagem continua tendo o mesmo formato externo para quem recebe, mas ganha novos
+efeitos a cada camada acumulada.
+Fonte: Decorator.pdf (pág. 184); ILP037_Aula08_Slides.pdf (slide 12); ILP037_Aula10_Slides.pdf (slide 9).
+3. O @decorator do Python é o padrão Decorator?
+Em resumo: Não. O sintaxe @ do Python decora funções (callables), enquanto o padrão Decorator do GoF
+embrulha objetos para somar responsabilidades em tempo de execução.
+Analogia do Resort: O @ do Python é como aplicar uma regra de etiqueta sobre a função de entrega do presente no
+balcão. O padrão GoF é envolver a própria caixa física da reserva do Resort em camadas sucessivas de papel de
+presente, agregando estado e comportamento ao objeto.
+Fonte: ILP037_Aula10_Slides.pdf (slide 10); Decorator.pdf (pág. 175).
+4. Por que dá para empilhar decoradores?
+Em resumo: Porque todo decorador implementa a mesma interface do objeto decorado, permitindo que um
+embrulho envolva outro embrulho de forma transparente e recursiva.
+Analogia do Resort: Como a camada de papel externa tem o mesmo formato do pacote original, você pode
+embrulhar papel sobre papel (café da manhã sobre transfer sobre a reserva). Ao abrir o presente, a camada mais
+externa chama a camada interna sucessivamente até chegar à reserva-base.
+Fonte: Decorator.pdf (págs. 175-176); ILP037_Aula10_Slides.pdf (slides 7-8).
+===== Página 2 =====
+Página 2
+5. Preciso de Decorator para somar um extra fixo?
+Em resumo: Não. Se o extra apenas adiciona um valor numérico fixo ao total, uma simples lista de extras com
+um laço de soma (for) é suficiente e evita complexidade.
+Analogia do Resort: Se você só quer somar R$ 40 do café no balcão do Resort, basta anotar o item em uma lista
+dentro do envelope da reserva. Você só precisa embrulhar o presente em uma nova camada de papel se essa
+camada executar um comportamento dinâmico ao ser acionada.
+Fonte: ILP037_Aula10_Slides.pdf (slide 10).
+6. Quando o Decorator vale a pena?
+Em resumo: Vale a pena quando os extras adicionam ou modificam comportamento dinâmico (não só valor) e
+as combinações explodiriam o número de subclasses se fossem estáticas.
+Analogia do Resort: Vale a pena quando cada nova camada de papel faz algo especial — como acionar um serviço
+de bordo ou alterar a rotina de check-out ao abrir a reserva —, evitando criar uma subclasse de reserva diferente para
+cada combinação possível de hóspede.
+Fonte: Decorator.pdf (págs. 175-178); ILP037_Aula10_Slides.pdf (slides 7, 10).
+7. Decorator e Facade são parecidos?
+Em resumo: Não. O Decorator embrulha um único objeto mantendo a interface para somar comportamento; a
+Facade inventa uma interface nova para esconder múltiplos subsistemas.
+Analogia do Resort: A Facade é a recepção do Resort — um único balcão de atendimento que simplifica o acesso a
+múltiplos setores (cozinha, governança, financeiro). O Decorator é a camada de papel de presente colocada em volta
+da caixa individual da reserva de um único hóspede.
+Fonte: ILP037_Aula09_Slides.pdf (slide 8); ILP037_Aula10_Slides.pdf (slide 9).
+8. Qual a ordem dos decoradores?
+Em resumo: Se os decoradores apenas acumulam somas independentes, a ordem não altera o resultado final;
+se houver dependência de comportamento entre camadas, a ordem importa.
+Analogia do Resort: Se colocar a camada de papel 'Café da Manhã' antes do 'Transfer' apenas soma os custos na
+reserva do Resort, a ordem das embalagens não altera o valor final. Mas se a camada externa aplicar um desconto
+percentual sobre tudo o que estiver dentro dela, a sequência do embrulho altera o resultado final.
+Fonte: Decorator.pdf (págs. 175-176); ILP037_Aula10_Slides.pdf (slide 8).
+9. Isso cai na prova prática (P3)?
+Em resumo: Sim. A P3 ocorrerá em 27/11 (Semana de Avaliações), e cada aluno defenderá individualmente o
+seu próprio código e as decisões de design adotadas.
+Analogia do Resort: Na P3, você terá que explicar se a sua reserva no Resort precisa de uma simples lista de extras
+ou se a aplicação de camadas de embrulho (Decorator) foi uma decisão arquitetural legítima no código que você
+mesmo desenvolveu.
+Fonte: ILP037_Aula10_Slides.pdf (slides 5, 14).
+===== Página 3 =====
+Página 3
+10. Como registro isso no Caderno?
+Em resumo: Elaborando um ADR (Architectural Decision Record) justificando a escolha de aplicar ou recusar o
+Decorator, encerrando o catálogo de padrões do Sprint 3.
+Analogia do Resort: O Caderno de Design (P1) é o livro de decisões do Resort. Você deve escrever um ADR
+registrando se usou camadas de papel (Decorator) ou uma lista simples para os extras, lembrando que uma recusa
+bem fundamentada ('não aplicamos porque...') tem valor acadêmico igual ao da aplicação.
+Fonte: ILP037_Aula08_Slides.pdf (slide 17); ILP037_Aula09_Slides.pdf (slide 13); ILP037_Aula10_Slides.pdf (slides 11, 13).

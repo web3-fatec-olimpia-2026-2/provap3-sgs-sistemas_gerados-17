@@ -1,0 +1,296 @@
+
+===== Página 1 =====
+MVVM e Adapter
+ILP-037 Técnicas de Programação II • Aula 08 (dupla) • 09/10/2026
+Prof. Jose Ceron Neto
+Faculdade de Tecnologia de Olímpia — Centro Paula Souza
+CST em Desenvolvimento de Software Multiplataforma
+Olímpia, SP — 2º semestre de 2026
+===== Página 2 =====
+Roteiro
+Aula dupla: fechamos arquitetura e abrimos os estruturais
+1. MVVM — a 4ª arquitetura — e a comparação
+das quatro
+2. Adapter — quando a peça certa tem o
+encaixe errado
+— intervalo
+3. Dois laboratórios + no projeto de vocês
+POR QUE AULA DUPLA HOJE
+Vamos ganhar tempo no calendário. Então fechamos a unidade de arquitetura (MVVM) e
+damos o primeiro passo nos padrões estruturais (Adapter) — dois temas, uma noite.
+Fatec Olímpia 1/22
+===== Página 3 =====
+PARTE 1 / 3
+MVVM e as 4 arquiteturas
+1. MVVM e as 4 arquiteturas
+2. Adapter: o banco mudou
+3. Laboratórios e o projeto
+2/22
+===== Página 4 =====
+De onde viemos
+A mesma frase, repetida em quatro sotaques
+O QUE MVC, MVT E MVP JÁ NOS DISSERAM
+Separe o dado, a regra e a apresentação. E a regra de negócio não deve saber o que
+é web.
+Na Aula 07 extraímos um Service: a regra ganhou vida própria, testável sem HTTP.
+Faltou um detalhe teimoso: mesmo com o Service, ainda sobra lógica na tela.
+Não a regra de negócio — mas a lógica de como mostrar: o texto do status, o rótulo do
+botão, o "LOTADO".
+É dessa última sobra que o MVVM cuida. Ele é a quarta arquitetura — e é a que a segunda-feira de
+vocês acabou de tocar com o Alpine.
+Fatec Olímpia 3/22
+===== Página 5 =====
+O smell de hoje
+A tela que decide como mostrar
+def t e l a _ q u a r t o s ( quartos ) :
+for q in quartos :
+if q [ " ocupado " ]:
+status = " I N D I S P O N I V E L " ; botao = " ( ocupado ) " # <-
+a p r e s e n t a c a o
+else :
+status = " livre " ; botao = " R ese rva r " # <-
+a p r e s e n t a c a o
+preco = f " R$ { q [ ' diaria ']:.2 f } " # <-
+a p r e s e n t a c a o
+...
+rodape = " LOTADO ... " if not livres else f " { livres } ... " # <- decisao
+presa na tela
+▲ para testar "quando aparece LOTADO?" eu preciso ler a string da tela
+A decisão de como mostrar está grudada no desenho. Não dá para verificar uma sem renderizar o
+outro.
+Fatec Olímpia 4/22
+===== Página 6 =====
+A ideia do MVVM
+Uma camada que prepara a vitrine
+VIEWMODEL
+Uma camada que pega o dado cru e devolve o dado já pronto para a tela — o texto do
+status, o rótulo do botão, o preço formatado — sem saber que é uma tela. A View então
+só exibe o que o ViewModel preparou.
+Model
+o dado cru: {numero, diaria, ocupado}
+View
+só desenha. Burra de propósito.
+ViewModel
+traduz dado cru em dado-pronto: status_label ,
+botao_label , preco_formatado , disponivel .
+PARA FIXAR O copeiro monta a bandeja; o garçom só serve. O garçom não cozinha.
+Fatec Olímpia 5/22
+===== Página 7 =====
+O ViewModel no código
+A lógica de exibição sai da tela
+class Q u a r t o V i e w M o d e l : # prepara UM quarto . Nao sabe de sen har .
+def __i ni t__ ( self , q ) :
+self . d i s p o n i v e l = not q [ " ocupado " ]
+self . s t a t u s _ l a b e l = " livre " if self . d i s p o n i v e l else " I N D I S P O N I V E L "
+self . b o t a o _ l a b e l = " Re ser var " if self . d i s p o n i v e l else " ( ocupado ) "
+self . p r e c o _ f o r m a t a d o = f " R$ { q [ ' diaria ']:.2 f } "
+# a View agora so le o que o V i e w M o d e l p rep aro u -- zero decisao aqui
+✓ testo a decisao direto: QuartoViewModel(q).disponivel — sem renderizar nada
+O teste pergunta ao ViewModel, não à tela. A regra de exibição ganhou vida própria — igual o Service
+fez com a regra de negócio.
+Fatec Olímpia 6/22
+===== Página 8 =====
+A analogia que amarra tudo
+A brigada do Resort, agora completa
+Model — o estoque: a ficha crua do quarto, do jeito que está no sistema.
+Regra/Service — a governança: decide tarifa, se pode reservar.
+ViewModel — o maître: pega o prato pronto e emprata — decide o que o hóspede vê,
+como o nome aparece no cardápio.
+View — o garçom: leva à mesa. Não cozinha, não emprata. Só serve.
+POR QUE SEPARAR O MAÎTRE DO GARÇOM
+Se o garçom empratar no caminho, cada garçom emprata de um jeito. Centralize no
+maître: um lugar só decide a aparência — e dá para conferir o emprato sem precisar
+servir a mesa.
+Fatec Olímpia 7/22
+===== Página 9 =====
+As quatro arquiteturas, lado a lado
+Quatro nomes, um princípio
+dado regra quem prepara a tela apresentação
+MVC Model Controller — View
+MVT (Django) Model View — Template
+MVP Model Presenter Presenter View (passiva)
+MVVM Model (Service) ViewModel View
+O QUE O MVVM ACRESCENTA
+Uma camada dedicada a preparar o que a tela mostra — o ViewModel. MVP tem algo
+parecido (o Presenter empurra para a View); MVVM inverte: a View puxa do ViewModel.
+Não decorem as siglas. A pergunta é sempre a mesma: onde mora a decisão de como
+mostrar?
+Fatec Olímpia 8/22
+===== Página 10 =====
+A ponte com a segunda-feira
+Alpine.js é MVVM rodando no navegador
+O QUE O X-MODEL FAZ
+Na segunda, vocês ligaram um campo da tela a um dado com x-model . Mudou o dado,
+mudou a tela; mudou a tela, mudou o dado. Isso é data binding — o coração do MVVM
+clássico.
+No navegador (Alpine), o ViewModel é reativo: o binding atualiza a tela sozinho.
+No servidor (Python/Django), não há binding automático — o ViewModel vira uma
+camada de preparação que você chama antes de renderizar.
+PARA FIXAR Mesmo padrão, dois endereços: reativo no front (Alpine), de preparação no back (Python).
+Fatec Olímpia 9/22
+===== Página 11 =====
+Delimitação em Python
+Onde o MVVM encolhe — e onde não cabe
+NO SERVIDOR, MVVM ENCOLHE
+Sem binding, o ViewModel é só uma função ou uma classe que monta um dicionário
+pronto para o template. Não invente "observables" no Django — isso é cerimônia que o
+servidor não pede. (GIRIDHAR)
+QUANDO NÃO CRIAR UM VIEWMODEL
+Se a tela só mostra o dado como ele é — {nome} , {preço} — não há o que preparar.
+ViewModel só se justifica quando há decisão de exibição: rótulo condicional,
+formatação, estado derivado.
+Antifachada de novo: a competência não é escrever o ViewModel. É decidir se há exibição a
+preparar.
+Fatec Olímpia 10/22
+===== Página 12 =====
+PARTE 2 / 3
+Adapter: o banco mudou
+1. MVVM e as 4 arquiteturas
+2. Adapter: o banco mudou
+3. Laboratórios e o projeto
+11/22
+===== Página 13 =====
+Mudamos de assunto: padrões estruturais
+Do comportamento para a forma
+Até aqui vimos padrões de comportamento (Strategy) e de arquitetura (as camadas).
+Adapter é o primeiro padrão estrutural: ele não muda o que o código faz — muda
+como as peças se encaixam.
+O gatilho veio da segunda-feira: vocês migraram o banco de SQLite para PostgreSQL
+na nuvem (Neon).
+O PROBLEMA CONCRETO
+O driver novo resolve a mesma coisa que o antigo — gravar e buscar reserva — mas com
+outros nomes de método e outros formatos. A peça é a certa; o encaixe é o errado.
+Fatec Olímpia 12/22
+===== Página 14 =====
+O smell: dois dialetos de banco no serviço
+O if que vai se multiplicar
+class R e s e r v a S e r v i c e :
+def c o n f i r m a r ( self , reserva ) :
+if self . u sa_ ne on : # <- detalhe de banco
+resp = self . c l i e n t e _ n e o n . execute ( " I N S E R T _ R E S E R V A " , reserva )
+return resp [ " ticket " ] # <- formato do Neon
+else :
+return self . r e p o _ l o c a l . salvar ( reserva ) # <- formato antigo
+▲ cada metodo novo repete o if; a regra passa a conhecer dois bancos
+O detalhe do banco vazou para dentro da regra de negócio. Trocar de banco virou mexer no serviço.
+Fatec Olímpia 13/22
+===== Página 15 =====
+A ideia do Adapter
+O adaptador de tomada
+ADAPTER
+Uma peça que veste um objeto com a interface que o cliente já espera, traduzindo as
+chamadas por dentro. O cliente não muda; o objeto adaptado não muda; o adaptador
+fica no meio.
+O hóspede estrangeiro chega com plugue europeu — o ClienteNeon .
+A parede do Resort tem tomada brasileira — a interface salvar/buscar .
+O adaptador encaixa os dois. Ninguém troca o aparelho; ninguém quebra a parede.
+PARA FIXAR Adapter não conserta a peça. Ele faz a peça caber.
+Fatec Olímpia 14/22
+===== Página 16 =====
+O Adapter no código
+Fala a língua da app; traduz para o Neon
+class N e o n R e s e r v a A d a p t e r ( R e s e r v a R e p o s i t o r y ) : # a i n t e r f a c e que a app
+espera
+def __i ni t__ ( self , cliente ) :
+self . _ cl ien te = cliente
+def salvar ( self , reserva ) : # a app chama ' salvar '...
+resp = self . _c li ent e . execute ( " I N S E R T _ R E S E R V A " , reserva )
+return int ( resp [ " ticket " ]) # ... e por dentro traduz p /
+Neon
+def buscar ( self , id ) :
+resp = self . _c li ent e . f e t c h _ o n e ( id )
+return resp [ " row " ] if resp else None
+✓ agora o servico recebe UM repository so — sumiu o if de banco
+Fatec Olímpia 15/22
+===== Página 17 =====
+Por que isso vale a pena
+A prova é a substituibilidade
+O TESTE QUE FECHA A QUESTÃO
+O mesmo teste roda contra o armazenamento antigo e contra o Neon adaptado. Para o
+serviço, viraram o mesmo tipo de coisa: um ReservaRepository .
+Trocar de banco = trocar qual objeto você injeta. Uma linha.
+A regra de negócio volta a conhecer uma interface. Nunca mais o if .
+É o OCP da Aula 06 de novo: aberto para um banco novo, fechado para mexer no
+serviço.
+Fatec Olímpia 16/22
+===== Página 18 =====
+Delimitação em Python
+Quando o Adapter é cerimônia inútil
+DUCK TYPING DISPENSA O ADAPTER FORMAL
+Se você controla as duas pontas e as interfaces já são parecidas, o Python aceita
+qualquer objeto com os métodos certos — não precisa de classe Adapter. (GIRIDHAR)
+QUANDO ELE SE JUSTIFICA
+Quando o objeto adaptado é código de terceiro cuja assinatura você não pode mudar
+— um driver de banco, uma biblioteca de pagamento, uma API externa. É exatamente o
+caso do Neon.
+Não envelope o que você mesmo escreveu só para "ficar bonito". Adapte o que você não
+controla.
+Fatec Olímpia 17/22
+===== Página 19 =====
+PARTE 3 / 3
+Laboratórios e o projeto
+1. MVVM e as 4 arquiteturas
+2. Adapter: o banco mudou
+3. Laboratórios e o projeto
+18/22
+===== Página 20 =====
+Dois laboratórios, Python puro
+Cada um com testes — alguns vermelhos
+Lab 1 — MVVM
+Você recebe a tela que decide como mostrar. Move a
+exibição para um QuartoViewModel /
+PainelQuartosVM . 8 testes ficam verdes — nenhum lê
+a tela.
+Lab 2 — Adapter
+Você recebe o ClienteNeon incompatível. Constrói o
+NeonReservaAdapter . O mesmo teste passa a valer
+para os dois bancos.
+Rode sempre
+python3 -m pytest -v — Regra do Interlocutor: leia o erro em voz alta antes de me chamar.
+Fatec Olímpia 19/22
+===== Página 21 =====
+Agora no projeto de vocês
+Identificar e decidir — não implementar à força
+1. MVVM: achem na tela do projeto uma decisão de exibição (rótulo, formatação, estado
+derivado). Vale extrair um ViewModel? Ou é exibição trivial?
+2. Adapter: vocês migraram para o Neon na segunda. Há um ponto onde o código
+conhece o banco direto? Um Adapter cabe ali — ou duck typing já resolve?
+3. Em ambos: a resposta pode ser "não cabe". Isso também é decisão de design.
+4. Registrem a decisão no Caderno de Design (ADR). Isso alimenta o Marco 2.
+A TAREFA DE CASA É DECIDIR, NÃO APLICAR
+Aplicar ou não aplicar — com a justificativa. Um "não aplicamos porque..." bem
+argumentado vale tanto quanto um "aplicamos porque...".
+Fatec Olímpia 20/22
+===== Página 22 =====
+Homework
+Entrega até quarta, 15/10
+1. Individual
+Termine os dois laboratórios:
+ViewModel verde e Adapter verde.
+Entregue os .py .
+2. Individual
+Em 3–5 linhas: qual a diferença
+entre o que o Service separa e o
+que o ViewModel separa? (IA
+vedada.)
+3. Da equipe
+Dois ADRs: aplicar-ou-não MVVM
+e aplicar-ou-não Adapter no
+projeto. (Marco 2.)
+CALENDÁRIO
+Sexta 30/10 entra no arranjo do semestre — por isso adiantamos hoje. Confiram no
+Teams a data da próxima aula presencial.
+Fatec Olímpia 21/22
+===== Página 23 =====
+Antes de sair
+Encaminhamentos
+Chamada nominal
+Relatores: confirmem no Teams os dois laboratórios e os dois ADRs
+Fecha-se a unidade de arquitetura; abrem-se os padrões estruturais
+Próxima aula: seguimos nos estruturais — a partir do que a segunda entregar
+Fatec Olímpia 22/22
+===== Página 24 =====
+GOVERNO DO ESTADO
+DE SÃO PAULO
+O ViewModel prepara o que se vê. O Adapter faz a peça
+caber.

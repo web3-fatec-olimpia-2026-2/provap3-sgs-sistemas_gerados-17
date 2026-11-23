@@ -1,0 +1,62 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 960 602' width='960' height='602' role='img' aria-labelledby='t'>
+<title id='t'>Mitigação de códigos digitados incorretamente</title>
+<rect width='100%' height='100%' fill='#FFFFFF'/>
+<text x='40' y='40' font-size='20' fill='#111827' font-weight='700' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >Mitigação de códigos digitados incorretamente</text>
+<text x='40' y='66' font-size='13' fill='#4B5563' font-weight='400' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >Fração de erros que seriam aceitos como válidos. &quot;Sem verificador&quot; = só o formato (o erro mantém a classe L/N).</text>
+<text x='40' y='114' font-size='14' fill='#111827' font-weight='700' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >1 caractere digitado errado</text>
+<text x='920' y='114' font-size='14' fill='#047857' font-weight='700' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >redução 100,00%</text>
+<text x='320' y='138' font-size='12' fill='#4B5563' font-weight='400' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >Sem verificador</text>
+<rect x='330' y='126' width='470' height='16' rx='3' fill='#F3F4F6' stroke='none' stroke-width='1' />
+<rect x='330' y='126' width='470.0' height='16' rx='3' fill='#B91C1C' stroke='none' stroke-width='1' />
+<text x='808.0' y='138' font-size='12' fill='#B91C1C' font-weight='700' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >100,00%</text>
+<text x='320' y='160' font-size='12' fill='#4B5563' font-weight='400' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >1 verificador mód. 9</text>
+<rect x='330' y='148' width='470' height='16' rx='3' fill='#F3F4F6' stroke='none' stroke-width='1' />
+<rect x='330' y='148' width='34.25655976676385' height='16' rx='3' fill='#6B7280' stroke='none' stroke-width='1' />
+<text x='372.25655976676387' y='160' font-size='12' fill='#6B7280' font-weight='700' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >7,29%</text>
+<text x='320' y='182' font-size='12' fill='#4B5563' font-weight='400' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >LNNL (2 verif. mód. 79)</text>
+<rect x='330' y='170' width='470' height='16' rx='3' fill='#F3F4F6' stroke='none' stroke-width='1' />
+<text x='340' y='182' font-size='12' fill='#047857' font-weight='700' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >0,00%</text>
+<text x='40' y='226' font-size='14' fill='#111827' font-weight='700' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >2 vizinhos trocados de lugar</text>
+<text x='920' y='226' font-size='14' fill='#047857' font-weight='700' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >redução 100,00%</text>
+<text x='320' y='250' font-size='12' fill='#4B5563' font-weight='400' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >Sem verificador</text>
+<rect x='330' y='238' width='470' height='16' rx='3' fill='#F3F4F6' stroke='none' stroke-width='1' />
+<rect x='330' y='238' width='470.0' height='16' rx='3' fill='#B91C1C' stroke='none' stroke-width='1' />
+<text x='808.0' y='250' font-size='12' fill='#B91C1C' font-weight='700' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >100,00%</text>
+<text x='320' y='272' font-size='12' fill='#4B5563' font-weight='400' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >1 verificador mód. 9</text>
+<rect x='330' y='260' width='470' height='16' rx='3' fill='#F3F4F6' stroke='none' stroke-width='1' />
+<rect x='330' y='260' width='34.866468842729965' height='16' rx='3' fill='#6B7280' stroke='none' stroke-width='1' />
+<text x='372.86646884272994' y='272' font-size='12' fill='#6B7280' font-weight='700' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >7,42%</text>
+<text x='320' y='294' font-size='12' fill='#4B5563' font-weight='400' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >LNNL (2 verif. mód. 79)</text>
+<rect x='330' y='282' width='470' height='16' rx='3' fill='#F3F4F6' stroke='none' stroke-width='1' />
+<text x='340' y='294' font-size='12' fill='#047857' font-weight='700' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >0,00%</text>
+<text x='40' y='338' font-size='14' fill='#111827' font-weight='700' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >2 caracteres errados (mesma classe)</text>
+<text x='920' y='338' font-size='14' fill='#047857' font-weight='700' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >redução 98,79%</text>
+<text x='320' y='362' font-size='12' fill='#4B5563' font-weight='400' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >Sem verificador</text>
+<rect x='330' y='350' width='470' height='16' rx='3' fill='#F3F4F6' stroke='none' stroke-width='1' />
+<rect x='330' y='350' width='470.0' height='16' rx='3' fill='#B91C1C' stroke='none' stroke-width='1' />
+<text x='808.0' y='362' font-size='12' fill='#B91C1C' font-weight='700' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >100,00%</text>
+<text x='320' y='384' font-size='12' fill='#4B5563' font-weight='400' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >1 verificador mód. 9</text>
+<rect x='330' y='372' width='470' height='16' rx='3' fill='#F3F4F6' stroke='none' stroke-width='1' />
+<rect x='330' y='372' width='53.009884791219264' height='16' rx='3' fill='#6B7280' stroke='none' stroke-width='1' />
+<text x='391.0098847912193' y='384' font-size='12' fill='#6B7280' font-weight='700' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >11,28%</text>
+<text x='320' y='406' font-size='12' fill='#4B5563' font-weight='400' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >LNNL (2 verif. mód. 79)</text>
+<rect x='330' y='394' width='470' height='16' rx='3' fill='#F3F4F6' stroke='none' stroke-width='1' />
+<rect x='330' y='394' width='5.6964000000000095' height='16' rx='3' fill='#047857' stroke='none' stroke-width='1' />
+<text x='343.6964' y='406' font-size='12' fill='#047857' font-weight='700' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >1,21%</text>
+<text x='40' y='450' font-size='14' fill='#111827' font-weight='700' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >Código inventado, no formato certo</text>
+<text x='920' y='450' font-size='14' fill='#047857' font-weight='700' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >redução 98,78%</text>
+<text x='320' y='474' font-size='12' fill='#4B5563' font-weight='400' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >Sem verificador</text>
+<rect x='330' y='462' width='470' height='16' rx='3' fill='#F3F4F6' stroke='none' stroke-width='1' />
+<rect x='330' y='462' width='470.0' height='16' rx='3' fill='#B91C1C' stroke='none' stroke-width='1' />
+<text x='808.0' y='474' font-size='12' fill='#B91C1C' font-weight='700' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >100,00%</text>
+<text x='320' y='496' font-size='12' fill='#4B5563' font-weight='400' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >1 verificador mód. 9</text>
+<rect x='330' y='484' width='470' height='16' rx='3' fill='#F3F4F6' stroke='none' stroke-width='1' />
+<rect x='330' y='484' width='52.22222222222222' height='16' rx='3' fill='#6B7280' stroke='none' stroke-width='1' />
+<text x='390.22222222222223' y='496' font-size='12' fill='#6B7280' font-weight='700' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >11,11%</text>
+<text x='320' y='518' font-size='12' fill='#4B5563' font-weight='400' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >LNNL (2 verif. mód. 79)</text>
+<rect x='330' y='506' width='470' height='16' rx='3' fill='#F3F4F6' stroke='none' stroke-width='1' />
+<rect x='330' y='506' width='5.741049999999989' height='16' rx='3' fill='#047857' stroke='none' stroke-width='1' />
+<text x='343.74105' y='518' font-size='12' fill='#047857' font-weight='700' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >1,22%</text>
+<text x='40' y='560' font-size='12' fill='#4B5563' font-weight='400' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >LNNL medido na implementação de referência sobre os 14 caracteres (Monte Carlo, 200.000 amostras por caso); mód. 9 pelo cálculo exato.</text>
+<text x='40' y='580' font-size='12' fill='#4B5563' font-weight='400' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >O verificador é filtro de digitação, não segurança: todo ID aceito ainda deve ser conferido no armazenamento.</text>
+</svg>

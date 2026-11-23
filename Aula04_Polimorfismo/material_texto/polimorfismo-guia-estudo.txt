@@ -1,0 +1,89 @@
+
+===== Página 1 =====
+Guia de Estudos: Polimorfismo na Prática
+ILP-037 Técnicas de Programação II • CST em Desenvolvimento de Software Multiplataforma (FATEC Olímpia)
+Docente: Prof. Jose Ceron Neto | Público: 3º Semestre (Alunos Trabalhadores)
+1. Recuperação da Base: Herança e a Relação "É-Um"
+Antes de compreendermos o polimorfismo, precisamos consolidar que ele se apoia na herança e no uso de métodos de
+instância. A herança representa uma relação de especialização do tipo "é-um": uma subclasse deriva de uma superclasse
+ancestral, herdando todos os seus dados e comportamentos, permitindo estendê-la. (Fonte: Slides da Aula 04, Slide 4 /
+Documentação Python, Seção 9.5)
+RECAP: RELAÇÃO É-UM
+No Resort de Olímpia: Uma Suíte é-um Quarto. Logo, a classe Suite herda os atributos (como número) e métodos de
+Quarto. Hoje, usamos essa base para aprender como alterar comportamentos específicos. (Fonte: Slides da Aula 04,
+Slide 4)
+2. O Problema Fundamental: A Rigidez das Árvores Condicionais
+A recepção do resort precisa calcular e exibir o preço da diária de qualquer quarto de forma genérica. Sem o
+polimorfismo, somos forçados a usar uma árvore de condicionais (if/elif) baseada em tipos: (Fonte: Slides da Aula
+04, Slide 5)
+def imprimir_diaria(quarto):
+    if quarto.tipo == "comum": return 200
+    elif quarto.tipo == "suite": return 500
+    elif quarto.tipo == "presidencial": return 1200
+    # Cada tipo novo (ex: Chale) exige alterar esta função, arriscando quebrar o código existente...
+▲ Problema (2 linhas): Sem polimorfismo, criamos um bloco condicional centralizado que precisa ser alterado a cada
+novo tipo de quarto. Isso gera um código altamente rígido que viola o Princípio do Aberto/Fechado. (Fonte: Slides da Aula
+04, Slide 5 / Aprendendo padrões de projeto em Python, Cap. 1)
+FATEC OLÍMPIA  •  ILP-037 TÉCNICAS DE PROGRAMAÇÃO II
+AULA 04: POLIMORFISMO
+Guia de Estudos  |  Foco em Polimorfismo por Sobrescrita
+Página 1 de 2
+===== Página 2 =====
+3. Sobrescrita de Método (Method Override)
+Uma classe derivada pode sobrescrever (override) quaisquer métodos de sua classe ancestral. Isso ocorre quando o
+subtipo reescreve o método herdado, mantendo a assinatura idêntica, mas alterando o comportamento interno para
+responder à sua própria verdade. (Fonte: Documentação Python, Seções 9.3.4 e 9.5 / Slides da Aula 04, Slide 6)
+4. A Função Polimórfica e a Interface Unificada
+O polimorfismo possibilita tratar múltiplos tipos diferentes através de uma mesma interface. A recepção faz apenas uma
+pergunta genérica (chama o método comum) e cada objeto responde conforme a sua classe. O chamador não pergunta o
+tipo físico; ele apenas confia na interface de Quarto. (Fonte: Slides da Aula 04, Slide 7)
+class Quarto:
+    def __init__(self, numero): self.numero = numero
+    def descricao(self): return f"Quarto Standard No {self.numero}"
+    def preco_noite(self): return 200.0
+class Suite(Quarto):
+    def descricao(self): return f"Suite Executiva No {self.numero}"
+    def preco_noite(self): return 500.0  # Override / Sobrescrita
+class Presidencial(Quarto):
+    def descricao(self): return f"Suite Presidencial No {self.numero}"
+    def preco_noite(self): return 1200.0  # Override / Sobrescrita
+# FUNÇÃO POLIMÓRFICA: Trata múltiplos tipos sem estruturas condicionais (if)
+def imprimir_diaria(quarto):
+    print(f"{quarto.descricao()} - Diaria: R$ {quarto.preco_noite():.2f}")
+Aberto ao Novo na Prática: Se adicionarmos uma nova categoria, como Chale(Quarto), com seu próprio preço, a função
+imprimir_diaria() funcionará perfeitamente com ela sem alterarmos uma única linha de código na recepção. O sistema
+fica aberto para expansão (novas classes), mas fechado para modificações destrutivas. (Fonte: Slides da Aula 04, Slide 8 /
+Aprendendo padrões de projeto em Python, Cap. 1)
+ Critério de Análise
+ Abordagem Condicional (if/elif)
+ Abordagem Polimórfica (Interface)
+Local do Conhecimento
+Centralizado na função da recepção.
+Distribuído de forma coesa em cada classe de quarto.
+Adição de Novo Tipo (Chalé)
+Ruim: Exige modificar a recepção (alto risco).
+Excelente: Cria-se nova classe. Recepção intacta.
+Princípio Aberto/Fechado
+Violado: Código centralizado precisa ser aberto.
+Respeitado: Código existente permanece fechado.
+Acoplamento de Código
+Alto. Função depende de detalhes de todas as
+categorias.
+Baixo. Função depende apenas da interface genérica.
+5. Glossário Essencial de Orientação a Objetos
+• Herança: Mecanismo que permite herdar dados e métodos de outra classe (classe base), definindo a relação 'é-um'.
+(Seção 9.5)
+• Sobrescrita (Override): Técnica onde a subclasse reescreve um método herdado da superclasse para personalizar o
+comportamento. (Seção 9.5)
+• Método: Função definida dentro de uma classe que é invocada sobre uma instância (com argumento explícito 'self').
+(Seção 9.3.4)
+• Interface (Informal): Assinatura dos métodos que um objeto expõe. Permite tratar tipos diferentes de forma comum.
+(Capítulo 1)
+• Função Polimórfica: Função que trata múltiplos tipos pela mesma interface genérica, sem estruturas 'if' de verificação de
+tipo. (Slide 7)
+• Aberto ao Novo: Sistema expansível onde novos comportamentos são adicionados via novas classes, mantendo o
+código antigo intacto. (Capítulo 1)
+FATEC OLÍMPIA  •  ILP-037 TÉCNICAS DE PROGRAMAÇÃO II
+AULA 04: POLIMORFISMO
+Guia de Estudos  |  Foco em Polimorfismo por Sobrescrita
+Página 2 de 2

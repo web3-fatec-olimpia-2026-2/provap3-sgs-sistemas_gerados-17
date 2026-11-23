@@ -1,0 +1,12 @@
+{% extends "pharns/base.html" %}
+{% block title %}Excluir Pharm — Pharmas{% endblock %}
+{% block page_title %}Excluir Pharm{% endblock %}
+{% block content %}
+<aside class="apresentacao" data-apresentacao><strong>Apresentação ·</strong> Excluir: o GET só mostra esta confirmação; apagar exige POST com o token CSRF — um link aberto por engano (ou por um robô) nunca apaga nada.</aside>
+<p>Excluir “{{ obj }}”? Esta ação não pode ser desfeita.</p>
+<form method="post">
+  {% csrf_token %}
+  <button type="submit">Excluir</button>
+</form>
+<p><a href="{% url 'pharns:detalhe' obj.pk %}">Cancelar</a></p>
+{% endblock %}

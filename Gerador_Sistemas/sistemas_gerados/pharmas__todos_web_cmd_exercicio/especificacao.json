@@ -1,0 +1,223 @@
+{
+  "atributos": [
+    {
+      "max": null,
+      "min": null,
+      "nome": "cliente",
+      "regra": "obrigatorio",
+      "tipo": "str"
+    },
+    {
+      "max": null,
+      "min": 1,
+      "nome": "codigo",
+      "regra": "minimo",
+      "tipo": "int"
+    },
+    {
+      "max": 100,
+      "min": 1,
+      "nome": "quantidade",
+      "regra": "faixa",
+      "tipo": "int"
+    },
+    {
+      "max": null,
+      "min": 0,
+      "nome": "valor_unitario",
+      "regra": "minimo",
+      "tipo": "float"
+    },
+    {
+      "max": null,
+      "min": null,
+      "nome": "produto",
+      "regra": "obrigatorio",
+      "tipo": "str"
+    },
+    {
+      "max": 130,
+      "min": 0,
+      "nome": "idade",
+      "regra": "faixa",
+      "tipo": "int"
+    },
+    {
+      "max": null,
+      "min": null,
+      "nome": "categoria",
+      "regra": "obrigatorio",
+      "tipo": "str"
+    },
+    {
+      "max": null,
+      "min": null,
+      "nome": "cosmeticos",
+      "regra": "obrigatorio",
+      "tipo": "str"
+    },
+    {
+      "max": null,
+      "min": null,
+      "nome": "medicamentos",
+      "regra": "obrigatorio",
+      "tipo": "str"
+    },
+    {
+      "max": null,
+      "min": null,
+      "nome": "observacao",
+      "regra": "livre",
+      "tipo": "str"
+    }
+  ],
+  "categorias": {
+    "base": [
+      "Basico",
+      "Básico",
+      100.0
+    ],
+    "nova": [
+      "Personalizado",
+      "Personalizado",
+      300.0
+    ],
+    "subtipos": [
+      [
+        "Intermediario",
+        "Intermediário",
+        200.0
+      ],
+      [
+        "Premium",
+        "Premium",
+        400.0
+      ]
+    ],
+    "unidade": "unidade"
+  },
+  "comentarios": true,
+  "django": true,
+  "entidade": "Pharm",
+  "estudo": true,
+  "extras": {
+    "fixos": [
+      [
+        "Urgente",
+        30.0,
+        "urgente"
+      ],
+      [
+        "Embalagem",
+        10.0,
+        "embalagem"
+      ],
+      [
+        "Seguro",
+        15.0,
+        "seguro"
+      ]
+    ],
+    "percentual": [
+      "Desconto10",
+      0.9,
+      "-10% desconto"
+    ]
+  },
+  "gateway": "PagaJa",
+  "ident": "cliente",
+  "nomes": [
+    "Ana",
+    "Bruno",
+    "Carla",
+    "Diego"
+  ],
+  "padroes": [
+    "encapsulamento",
+    "polimorfismo",
+    "srp",
+    "service",
+    "mvvm",
+    "singleton",
+    "factory_method",
+    "abstract_factory",
+    "builder",
+    "prototype",
+    "adapter",
+    "bridge",
+    "composite",
+    "decorator",
+    "facade",
+    "flyweight",
+    "proxy",
+    "chain",
+    "command",
+    "interpreter",
+    "iterator",
+    "mediator",
+    "memento",
+    "observer",
+    "state",
+    "strategy",
+    "template_method",
+    "visitor"
+  ],
+  "painel": {
+    "acao_livre": "Solicitar",
+    "acao_ocupado": "(indisponível)",
+    "contagem": "recurso(s) disponível(is)",
+    "livre": "disponível",
+    "ocupado": "INDISPONÍVEL",
+    "titulo": "Recurso",
+    "zero": "SEM DISPONIBILIDADE"
+  },
+  "preco": "valor_unitario",
+  "precos_exemplo": [
+    100.0,
+    49.9,
+    250.0,
+    0.0
+  ],
+  "quantidade": "quantidade",
+  "recurso": "recurso",
+  "recursos": [
+    1,
+    2,
+    3
+  ],
+  "sistema": "Pharmas",
+  "unidade": "unidade(s)",
+  "variantes": {
+    "conceito": "tipo de cliente",
+    "itens": [
+      [
+        "Comum",
+        1.0
+      ],
+      [
+        "Especial",
+        0.9
+      ],
+      [
+        "Parceiro",
+        0.8
+      ]
+    ],
+    "nova": [
+      "Vip",
+      0.5
+    ]
+  },
+  "web": {
+    "comentarios_web": true,
+    "estilo": "cmd",
+    "estrutura": "plana",
+    "id_interno": true,
+    "id_publico": "uuid",
+    "lnnl_tipo": "26",
+    "paleta": "P02",
+    "seguranca": "basica",
+    "tema": "T01",
+    "tom": "tom3"
+  }
+}

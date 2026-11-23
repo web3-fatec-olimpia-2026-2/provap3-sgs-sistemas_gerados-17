@@ -1,0 +1,246 @@
+[
+  {
+    "id": "p3-1",
+    "number": 1,
+    "title": "Model + migração",
+    "description": "Defina a entidade e os campos; se o enunciado pedir, inclua relacionamento. Gere e aplique as migrações.",
+    "files": "quartos/models.py",
+    "sections": [
+      {
+        "label": "O que desenvolver",
+        "text": "A classe Quarto representa uma tabela; numero é único, tipo é texto e disponivel tem valor padrão.",
+        "code": "from django.db import models\n\nclass Quarto(models.Model):\n    numero = models.PositiveIntegerField(unique=True)\n    tipo = models.CharField(max_length=80)\n    disponivel = models.BooleanField(default=True)\n\n    def __str__(self):\n        return f'Quarto {self.numero} — {self.tipo}'\n",
+        "language": "python"
+      },
+      {
+        "label": "Comandos necessários",
+        "text": "Execute na pasta que contém manage.py. O primeiro comando cria o arquivo de migração; o segundo aplica as alterações.",
+        "code": "python manage.py makemigrations\npython manage.py migrate",
+        "language": "bash"
+      },
+      {
+        "label": "Admin opcional",
+        "text": "Para cadastrar dados no painel, registre o model em quartos/admin.py e crie um superusuário após migrar.",
+        "code": "from django.contrib import admin\nfrom .models import Quarto\n\nadmin.site.register(Quarto)\n",
+        "language": "python"
+      },
+      {
+        "label": "Como verificar",
+        "text": "Execute python manage.py showmigrations e confirme [X] para a migração do app. Crie o usuário com python manage.py createsuperuser e acesse /admin/.",
+        "code": "",
+        "language": "python"
+      }
+    ],
+    "source": "https://docs.djangoproject.com/en/5.2/topics/migrations/",
+    "related": "model"
+  },
+  {
+    "id": "p3-2",
+    "number": 2,
+    "title": "URLs",
+    "description": "Crie uma rota para a listagem e outra para o detalhe.",
+    "files": "quartos/urls.py e resort/urls.py",
+    "sections": [
+      {
+        "label": "URLs do aplicativo",
+        "text": "O conversor int captura pk; name permite gerar a URL sem fixar caminhos.",
+        "code": "from django.urls import path\nfrom . import views\n\napp_name = \"quartos\"\nurlpatterns = [\n    path(\"quartos/\", views.lista_quartos, name=\"lista\"),\n    path(\"quartos/<int:pk>/\", views.detalhe_quarto, name=\"detalhe\"),\n]",
+        "language": "python"
+      },
+      {
+        "label": "Conexão no projeto",
+        "text": "O projeto inclui as rotas do app. A API será conectada na etapa 7.",
+        "code": "from django.contrib import admin\nfrom django.urls import include, path\n\nurlpatterns = [\n    path(\"admin/\", admin.site.urls),\n    path(\"\", include(\"quartos.urls\")),\n]",
+        "language": "python"
+      },
+      {
+        "label": "Como verificar",
+        "text": "Após criar as views e templates nas próximas etapas, abra /quartos/ e /quartos/1/. O detalhe retorna 404 se o quarto não existir.",
+        "code": "",
+        "language": "python"
+      }
+    ],
+    "source": "https://docs.djangoproject.com/en/5.2/topics/http/urls/",
+    "related": "path"
+  },
+  {
+    "id": "p3-3",
+    "number": 3,
+    "title": "Views",
+    "description": "Implemente listagem e detalhe usando get_object_or_404 para um objeto ausente.",
+    "files": "quartos/views.py",
+    "sections": [
+      {
+        "label": "Como funciona",
+        "text": "A view de listagem envia a chave quartos ao template; a de detalhe recebe pk da rota. A rota de cadastro será adicionada na etapa 6.",
+        "code": "from django.shortcuts import get_object_or_404, render\nfrom .models import Quarto\n\ndef lista_quartos(request):\n    quartos = Quarto.objects.filter(disponivel=True).order_by(\"numero\")\n    return render(request, \"quartos/lista.html\", {\"quartos\": quartos})\n\ndef detalhe_quarto(request, pk):\n    quarto = get_object_or_404(Quarto, pk=pk)\n    return render(request, \"quartos/detalhe.html\", {\"quarto\": quarto})",
+        "language": "python"
+      },
+      {
+        "label": "Como verificar",
+        "text": "Registre o model no admin e crie um superusuário como na etapa 1; após criar os templates na etapa 5, visite a lista e o detalhe. Um pk inexistente deve responder 404.",
+        "code": "",
+        "language": "python"
+      }
+    ],
+    "source": "https://docs.djangoproject.com/en/5.2/topics/http/views/",
+    "related": "view"
+  },
+  {
+    "id": "p3-4",
+    "number": 4,
+    "title": "ORM",
+    "description": "Faça uma consulta com .filter() dentro da view.",
+    "files": "quartos/views.py",
+    "sections": [
+      {
+        "label": "Consulta com filtro",
+        "text": "Aqui somente quartos disponíveis chegam à lista. filter retorna um QuerySet, mesmo quando não há resultados; order_by ordena pelo número.",
+        "code": "quartos = Quarto.objects.filter(disponivel=True).order_by(\"numero\")",
+        "language": "python"
+      },
+      {
+        "label": "Como verificar",
+        "text": "Crie um quarto disponível e outro indisponível. Apenas o primeiro deve aparecer na listagem; o detalhe ainda pode ser acessado pelo seu id.",
+        "code": "",
+        "language": "python"
+      }
+    ],
+    "source": "https://docs.djangoproject.com/en/5.2/topics/db/queries/",
+    "related": "filter"
+  },
+  {
+    "id": "p3-5",
+    "number": 5,
+    "title": "Template",
+    "description": "Apresente os dados da view em HTML usando {% for %}.",
+    "files": "quartos/templates/quartos/lista.html",
+    "sections": [
+      {
+        "label": "Listagem HTML",
+        "text": "A view envia {\"quartos\": quartos}; o for usa exatamente quartos. empty cobre lista vazia.",
+        "code": "<!doctype html><html lang=\"pt-br\"><meta charset=\"utf-8\"><title>Quartos disponíveis</title>\n<h1>Quartos disponíveis</h1>\n<ul>\n{% for quarto in quartos %}\n  <li><a href=\"{% url 'quartos:detalhe' quarto.pk %}\">{{ quarto.numero }} — {{ quarto.tipo }}</a></li>\n{% empty %}\n  <li>Nenhum quarto disponível.</li>\n{% endfor %}\n</ul></html>",
+        "language": "html"
+      },
+      {
+        "label": "Template de detalhe",
+        "text": "A view também precisa deste arquivo para a rota de detalhe.",
+        "code": "<!doctype html><html lang=\"pt-br\"><meta charset=\"utf-8\"><title>Detalhe do quarto</title>\n<h1>Quarto {{ quarto.numero }}</h1><p>Tipo: {{ quarto.tipo }}</p>\n<a href=\"{% url 'quartos:lista' %}\">Voltar</a></html>\n",
+        "language": "html"
+      },
+      {
+        "label": "Como verificar",
+        "text": "Abra /quartos/. Se faltarem dados, confira filtro, registros e nome do contexto. Uma lista vazia não é, por si só, prova de falta de migração.",
+        "code": "",
+        "language": "python"
+      }
+    ],
+    "source": "https://docs.djangoproject.com/en/5.2/topics/templates/",
+    "related": "for"
+  },
+  {
+    "id": "p3-6",
+    "number": 6,
+    "title": "Forms + validação",
+    "description": "Crie ModelForm e validação customizada clean_campo.",
+    "files": "quartos/forms.py e quartos/templates/quartos/form.html",
+    "sections": [
+      {
+        "label": "Formulário",
+        "text": "clean_numero devolve o valor validado ou lança ValidationError. A regra vale ao validar este formulário; não é aplicada automaticamente por save() nem pelo serializer.",
+        "code": "from django import forms\nfrom .models import Quarto\n\nclass QuartoForm(forms.ModelForm):\n    class Meta:\n        model = Quarto\n        fields = ['numero', 'tipo', 'disponivel']\n\n    def clean_numero(self):\n        numero = self.cleaned_data['numero']\n        if numero < 1:\n            raise forms.ValidationError('O número deve ser maior que zero.')\n        return numero\n",
+        "language": "python"
+      },
+      {
+        "label": "View completa de cadastro",
+        "text": "Atualize views.py para incluir QuartoForm e criar_quarto. Reative a rota quartos/novo/ da etapa 2.",
+        "code": "from django.shortcuts import get_object_or_404, redirect, render\nfrom .forms import QuartoForm\nfrom .models import Quarto\n\ndef lista_quartos(request):\n    quartos = Quarto.objects.filter(disponivel=True).order_by('numero')\n    return render(request, 'quartos/lista.html', {'quartos': quartos})\n\ndef detalhe_quarto(request, pk):\n    quarto = get_object_or_404(Quarto, pk=pk)\n    return render(request, 'quartos/detalhe.html', {'quarto': quarto})\n\ndef criar_quarto(request):\n    form = QuartoForm(request.POST if request.method == 'POST' else None)\n    if request.method == 'POST' and form.is_valid():\n        form.save()\n        return redirect('quartos:lista')\n    return render(request, 'quartos/form.html', {'form': form})\n",
+        "language": "python"
+      },
+      {
+        "label": "URL completa",
+        "text": "Adicione a rota de cadastro e mantenha as rotas anteriores.",
+        "code": "from django.urls import path\nfrom . import views\n\napp_name = 'quartos'\nurlpatterns = [\n    path('quartos/', views.lista_quartos, name='lista'),\n    path('quartos/novo/', views.criar_quarto, name='criar'),\n    path('quartos/<int:pk>/', views.detalhe_quarto, name='detalhe'),\n]\n",
+        "language": "python"
+      },
+      {
+        "label": "HTML e CSRF",
+        "text": "O formulário envia POST com proteção CSRF. Opcional: adicione na lista um link com {% url 'quartos:criar' %}.",
+        "code": "<!doctype html><html lang=\"pt-br\"><meta charset=\"utf-8\"><title>Novo quarto</title>\n<h1>Novo quarto</h1>\n<form method=\"post\">{% csrf_token %}{{ form.as_p }}<button type=\"submit\">Salvar</button></form>\n</html>\n",
+        "language": "html"
+      },
+      {
+        "label": "Como verificar",
+        "text": "Acesse /quartos/novo/, tente número 0 e observe o erro; depois envie um número positivo único. O modelo também tem unique=True.",
+        "code": "",
+        "language": "python"
+      }
+    ],
+    "source": "https://docs.djangoproject.com/en/5.2/ref/forms/validation/",
+    "related": "modelform"
+  },
+  {
+    "id": "p3-7",
+    "number": 7,
+    "title": "API REST",
+    "description": "Exponha serializer, viewset e router e apresente GET e POST com JSON.",
+    "files": "quartos/api.py e resort/urls.py",
+    "sections": [
+      {
+        "label": "Serializer e ViewSet",
+        "text": "ModelSerializer transforma e valida os dados da API; ModelViewSet fornece operações. A validação específica do Form não é automaticamente compartilhada com a API.",
+        "code": "from rest_framework import serializers, viewsets\nfrom .models import Quarto\n\nclass QuartoSerializer(serializers.ModelSerializer):\n    class Meta:\n        model = Quarto\n        fields = ['id', 'numero', 'tipo', 'disponivel']\n\nclass QuartoViewSet(viewsets.ModelViewSet):\n    queryset = Quarto.objects.all().order_by('numero')\n    serializer_class = QuartoSerializer\n",
+        "language": "python"
+      },
+      {
+        "label": "Router",
+        "text": "Atualize o arquivo do projeto. DefaultRouter gera a rota /api/quartos/.",
+        "code": "from django.contrib import admin\nfrom django.urls import include, path\nfrom rest_framework.routers import DefaultRouter\nfrom quartos.api import QuartoViewSet\n\nrouter = DefaultRouter()\nrouter.register('quartos', QuartoViewSet)\nurlpatterns = [\n    path('admin/', admin.site.urls),\n    path('', include('quartos.urls')),\n    path('api/', include(router.urls)),\n]\n",
+        "language": "python"
+      },
+      {
+        "label": "Requisições de exemplo",
+        "text": "Com o servidor ativo, GET devolve a lista; POST cria um quarto e, se válido, retorna 201. O id gerado pode variar.",
+        "code": "curl http://127.0.0.1:8000/api/quartos/\ncurl -i -X POST http://127.0.0.1:8000/api/quartos/ -H \"Content-Type: application/json\" -d '{\"numero\":102,\"tipo\":\"Luxo\",\"disponivel\":true}'\n# 201 Created: {\"id\": 1, \"numero\": 102, \"tipo\": \"Luxo\", \"disponivel\": true}",
+        "language": "bash"
+      },
+      {
+        "label": "Como verificar",
+        "text": "Confira GET /api/quartos/ e a resposta 201 do POST. Salve os prints solicitados. Este exemplo é local e não configura segurança para produção.",
+        "code": "",
+        "language": "python"
+      }
+    ],
+    "source": "https://www.django-rest-framework.org/tutorial/quickstart/",
+    "related": "drf"
+  },
+  {
+    "id": "p3-8",
+    "number": 8,
+    "title": "Testes com pytest",
+    "description": "Escreva teste(s) passando; o diagrama pede um ou mais, enquanto este guia exercita Model, View e API.",
+    "files": "pytest.ini e quartos/tests/test_quartos.py",
+    "sections": [
+      {
+        "label": "Configuração",
+        "text": "Instale pytest e pytest-django no ambiente; configure o settings module.",
+        "code": "[pytest]\nDJANGO_SETTINGS_MODULE = resort.settings\npython_files = test_*.py\n",
+        "language": "ini"
+      },
+      {
+        "label": "Testes integrados",
+        "text": "Cada teste que usa banco solicita django_db. client faz requisições sem servidor e cada assert verifica o resultado.",
+        "code": "import pytest\nfrom django.urls import reverse\nfrom quartos.models import Quarto\n\n@pytest.mark.django_db\ndef test_model():\n    quarto = Quarto.objects.create(numero=101, tipo='Standard')\n    assert str(quarto) == 'Quarto 101 — Standard'\n\n@pytest.mark.django_db\ndef test_view_lista(client):\n    Quarto.objects.create(numero=102, tipo='Luxo', disponivel=True)\n    response = client.get(reverse('quartos:lista'))\n    assert response.status_code == 200\n    assert b'Luxo' in response.content\n\n@pytest.mark.django_db\ndef test_api_post(client):\n    response = client.post('/api/quartos/', data='{\"numero\": 103, \"tipo\": \"Suite\", \"disponivel\": true}', content_type='application/json')\n    assert response.status_code == 201\n    assert response.json()['numero'] == 103\n    assert Quarto.objects.filter(numero=103).exists()\n",
+        "language": "python"
+      },
+      {
+        "label": "Executar e verificar",
+        "text": "Execute pytest; confirme três testes passando e capture o resultado para a entrega.",
+        "code": "pytest -v",
+        "language": "bash"
+      }
+    ],
+    "source": "https://pytest-django.readthedocs.io/en/latest/tutorial.html",
+    "related": "pytest"
+  }
+]

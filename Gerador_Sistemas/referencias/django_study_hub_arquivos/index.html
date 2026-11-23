@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#123e31"><meta name="description" content="Documentação prática e consulta local para estudar Django e a prova P3.">
+  <title>Django Study Hub — Seu guia de consulta</title>
+  <link rel="stylesheet" href="./src/style.css">
+  <script defer src="./src/app.js"></script>
+</head>
+<body>
+  <div id="app">
+    <aside class="sidebar" id="sidebar" aria-label="Navegação principal"></aside>
+    <div class="shell">
+      <header class="topbar">
+        <button class="icon-button mobile-menu" id="menu-toggle" aria-label="Abrir menu" aria-expanded="false">☰</button>
+        <div class="top-path"><span>DOCUMENTAÇÃO</span><span class="path-divider">/</span><strong id="top-location">Visão geral</strong></div>
+        <div class="top-actions"><span class="top-caption">ESTUDO INDEPENDENTE</span><button class="icon-button" id="theme-toggle" aria-label="Alternar tema" title="Alternar tema">☾</button><a class="top-docs" href="https://docs.djangoproject.com/en/5.2/" target="_blank" rel="noopener">Docs Django <span>↗</span></a></div>
+      </header>
+      <main id="main" tabindex="-1"><div class="loading">Carregando base de conhecimento…</div></main>
+      <footer class="footer"><span>DJANGO STUDY HUB <b>·</b> FEITO PARA APRENDER</span><span>Consulta local, sem IA <i>●</i></span></footer>
+    </div>
+  </div>
+  <div class="mobile-overlay" id="overlay"></div><div class="toast" id="toast" role="status"></div>
+</body>
+</html>

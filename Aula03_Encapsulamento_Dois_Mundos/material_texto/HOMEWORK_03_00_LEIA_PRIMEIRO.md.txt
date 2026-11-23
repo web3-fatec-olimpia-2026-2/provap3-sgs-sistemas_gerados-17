@@ -1,0 +1,14 @@
+
+===== Página 1 =====
+📝  Homeworks — Aula 03 · Encapsulamento em
+dois mundos
+ILP-037 Técnicas de Programação II · FATEC Olímpia · 2026/2
+Três tarefas da Aula 03. Cada arquivo se explica sozinho — abra o que for fazer.
+Arquivo O que é Quem Prazo
+HOMEWORK_03a_Segunda_propertyTerminar o laboratório: proteger um 2º atributo Individualquarta, 26/08
+HOMEWORK_03b_Dois_mundos Explicar por que Python e Django protegem diferente Individualquarta, 26/08
+HOMEWORK_03c_ADR_validacao Registrar qual caminho de validação a equipe usa Da equipe quarta, 26/08
+Onde entregar: as duas individuais no Teams; a da equipe por commit/ADR no repositório (passo a passo
+no arquivo 03c).
+Dúvidas: canal 1.Dúvidas  no Teams.
+ILP-037 · FATEC Olímpia · 2026/2

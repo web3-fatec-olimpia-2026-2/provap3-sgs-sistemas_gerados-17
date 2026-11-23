@@ -1,0 +1,343 @@
+
+===== Página 1 =====
+Guardar bem: encapsulamento e propriedades
+ILP-037 Técnicas de Programação II • Aula 02 • 14/08/2026
+Prof. Jose Ceron Neto
+Faculdade de Tecnologia de Olímpia — Centro Paula Souza
+CST em Desenvolvimento de Software Multiplataforma
+Olímpia, SP — 2º semestre de 2026
+===== Página 2 =====
+Roteiro
+Quatro movimentos
+1. Recap: o que a segunda escreveu
+2. O atributo desprotegido
+3. Encapsulamento e @property
+4. Oficina no seu model
+OBJETIVO OPERACIONAL DESTA AULA
+Ao final, cada equipe terá identificado no model que escreveu na segunda-feira ao menos
+um dado que hoje aceita valor inválido, e saberá protegê-lo com @property —
+registrando a decisão na primeira entrada do Caderno de Design.
+Hoje as máquinas entram no fim, na prática. A primeira hora é no quadro e no seu model .
+Fatec Olímpia 1/22
+===== Página 3 =====
+PARTE 1 / 4
+Recap: o que a segunda
+escreveu
+1. Recap: o que a segunda escreveu
+2. O atributo desprotegido
+3. Encapsulamento e @property
+4. Oficina no seu model
+2/22
+===== Página 4 =====
+De onde viemos
+Duas aulas, um mesmo conceito por dois caminhos
+Sexta passada (aqui)
+Classe é a descrição; objeto é a instância
+Atributo é dado; método é ação
+self é o próprio objeto
+Segunda passada (Web III)
+class Reserva(models.Model)
+Cada campo virou coluna no banco
+makemigrations e migrate
+CLASSE (aqui) = MODEL (Web III) = TABELA (banco)
+A PONTE
+O model que vocês escreveram na segunda é uma classe. Cada campo é um atributo.
+Hoje a gente olha para esses atributos e faz uma pergunta que a segunda não fez: eles
+estão protegidos?
+Fatec Olímpia 3/22
+===== Página 5 =====
+Quem chega agora
+Recuperação para quem faltou em 07/08
+Metade da turma não esteve na primeira aula — Festival do Folclore. Se é o seu caso, você precisa de
+três coisas antes da próxima sexta, e todas estão no Teams:
+Trilha 1 — OO
+Áudio e flashcards de classe,
+objeto, atributo e método. 20
+minutos.
+Trilha 2 — Regras
+O contrato pedagógico e a política
+de IA em quatro níveis. Leitura de
+10 minutos.
+Trilha 3 — Caderno
+O que é o Caderno de Design e
+como sua equipe começa o dela.
+PRAZO
+Concluir até quarta, 20/08. Não vale nota — mas sem essa base, a aula de 21/08, sobre
+herança e composição, não vai fazer sentido. Ninguém fica para trás, e ninguém segura
+a turma.
+Fatec Olímpia 4/22
+===== Página 6 =====
+O Caderno de Design, de novo — agora com exemplo
+A dúvida da aula passada era legítima
+Na aula passada, a turma inteira ficou com a mesma dúvida: como assim, um caderno? Justo. Hoje
+ele deixa de ser abstrato — vocês escrevem a primeira entrada nesta aula.
+O que é
+Um arquivo de texto em /docs/design/ no
+repositório da equipe. Markdown. Versionado
+junto com o código.
+O que NÃO é
+Não é relatório para entregar no fim. Não é
+enfeite. É o registro de por que o código ficou
+como ficou.
+A primeira entrada, que sai de hoje:
+# ADR 001 - Proteção do campo valor
+Problema: o campo `valor` do nosso model aceita
+número negativo. Uma reserva de -50 reais passa.
+Decisão: validar com @property antes de gravar.
+Alternativa descartada: validar só no formulário
+(não protege quem cria pelo shell ou pelo admin).
+Commit: a1b2c3d
+ADR = Architecture Decision Record, registro de decisão de arquitetura. Uma decisão por arquivo.
+Fatec Olímpia 5/22
+===== Página 7 =====
+PARTE 2 / 4
+O atributo desprotegido
+1. Recap: o que a segunda escreveu
+2. O atributo desprotegido
+3. Encapsulamento e @property
+4. Oficina no seu model
+6/22
+===== Página 8 =====
+O código de vocês, da segunda-feira
+Isto é um model real, do tipo que as equipes escreveram
+class Reserva ( models . Model ) :
+hospede = models . C h a r F i e l d ( m a x _ l e n g t h =120)
+quarto = models . I n t e g e r F i e l d ()
+diarias = models . I n t e g e r F i e l d ()
+valor = models . D e c i m a l F i e l d ( m a x _ d i g i t s =8 , d e c i m a l _ p l a c e s =2)
+Funciona. Roda. Cria a tabela. Na segunda-feira, a pergunta era “funciona?” — e a resposta é sim.
+A PERGUNTA DE HOJE É OUTRA
+Esse model deixa alguém cadastrar uma reserva com diarias = 0 ? Com valor = -50 ?
+Com quarto = 99999 , que não existe? Deixa. E aí está o problema.
+Fatec Olímpia 7/22
+===== Página 9 =====
+O atributo público
+Por que "funciona" não é o suficiente
+r = Reserva ()
+r . valor = -50 # o objeto aceita , sem r ecl am ar
+r . diarias = 0 # tambem aceita
+r . save () # e grava no banco
+▲ o atributo esta exposto: qualquer um escreve qualquer coisa nele
+O que deveria ser verdade
+Uma reserva tem ao menos 1 diária
+O valor nunca é negativo
+O que o código garante
+Nada disso
+A regra do negócio existe só na cabeça de vocês
+PARA FIXAR O cofre do quarto com a porta encostada: existe, mas não protege nada. Um atributo público é um
+cofre sem fechadura.
+Fatec Olímpia 8/22
+===== Página 10 =====
+Encapsulamento
+O nome do que está faltando
+ENCAPSULAMENTO
+Princípio pelo qual um objeto controla o acesso ao próprio estado. Em vez de deixar
+qualquer código ler e escrever seus atributos diretamente, o objeto expõe operações que
+garantem que ele nunca entre num estado inválido.
+Sem encapsulamento
+O dado é público. Quem escreve nele é responsável
+por validar — e vai esquecer. A regra se espalha por
+todo lugar que toca o objeto.
+Com encapsulamento
+O objeto valida sozinho, num lugar só. Quem usa não
+precisa lembrar da regra — ela mora dentro do objeto.
+Em Python não há atributo “privado” de verdade, como em Java. Há uma convenção — o sublinhado
+— e uma ferramenta que a torna útil: a @property .
+Fatec Olímpia 9/22
+===== Página 11 =====
+@property — a fechadura do cofre
+O atributo vira operação, sem mudar quem usa
+class Reserva :
+def __i ni t__ ( self ) :
+self . _valor = 0 # s u b l i n h a d o : " nao mexa direto "
+@ p r o p e r t y
+def valor ( self ) : # ler : r . valor
+return self . _valor
+@valor . setter
+def valor ( self , novo ) : # es cre ver : r . valor = 100
+if novo < 0:
+raise V a l u e E r r o r ( " valor nao pode ser neg ati vo " )
+self . _valor = novo
+✓ agora r.valor = -50 levanta erro, em vez de gravar lixo
+Fatec Olímpia 10/22
+===== Página 12 =====
+O que mudou para quem usa
+Nada. E esse é o ponto.
+Antes
+r . valor = 100
+print ( r . valor )
+Depois
+r . valor = 100
+print ( r . valor )
+A VIRADA
+O código de quem usa a classe é idêntico. O que mudou é que agora, por baixo, existe
+uma fechadura. r.valor = -50 deixou de funcionar silenciosamente e passou a gritar.
+Você protegeu o objeto sem quebrar ninguém que já o usava.
+Isso se chama refatoração: mudar por dentro, preservando o comportamento por fora. É o verbo desta
+disciplina inteira.
+Fatec Olímpia 11/22
+===== Página 13 =====
+O decorador @ — uma palavra que volta
+Guardem, sem aprofundar hoje
+Aquele @property tem um nome: é um decorador. Ele embrulha uma função para lhe dar um
+comportamento novo, sem alterar o corpo dela.
+Vocês já viram um, na segunda
+No Web III, quando uma view só pode ser acessada
+por quem fez login, ela ganha @login_required em
+cima. Mesma ideia: um embrulho que acrescenta uma
+regra.
+Por que isso importa aqui
+@property e @login_required são o mesmo
+mecanismo. Quando a gente chegar em padrões
+estruturais, esse mecanismo tem nome de padrão:
+Decorator. Fica a semente.
+PARA FIXAR O decorador é o adesivo de “não perturbe” na maçaneta: não muda o quarto, muda como o mundo
+interage com ele.
+Fatec Olímpia 12/22
+===== Página 14 =====
+PARTE 3 / 4
+Encapsulamento e
+@property
+1. Recap: o que a segunda escreveu
+2. O atributo desprotegido
+3. Encapsulamento e @property
+4. Oficina no seu model
+13/22
+===== Página 15 =====
+Quando NÃO usar @property
+O critério que separa proteção de cerimônia
+Nem todo atributo precisa de fechadura. Colocar @property em tudo é o
+mesmo erro de sobre-aplicar padrão — só que mais cedo.
+Merece @property
+Tem regra: valor ≥ 0, diárias ≥ 1
+Depende de outros: total = diárias × valor
+Não pode mudar depois de criado
+Não precisa
+Texto livre, sem regra: um nome
+Dado que qualquer valor serve
+Enquanto não há regra, é só peso
+A REGRA DA DISCIPLINA, JÁ AQUI
+Proteção sem um problema que a justifique é cerimônia. Vocês colocam a fechadura
+onde há algo a proteger — e sabem dizer por quê. Essa frase vai voltar em cada aula,
+com cada padrão.
+Fatec Olímpia 14/22
+===== Página 16 =====
+O atributo calculado
+O caso em que @property paga sozinho
+class Reserva :
+@ p r o p e r t y
+def total ( self ) :
+return self . diarias * self . valor # calculado , nunca g uar da do
+Por que não guardar total ?
+Se total fosse um campo guardado, mudar diarias
+deixaria o total desatualizado. Bug clássico: dois
+dados que deveriam concordar e não concordam.
+A @property resolve
+Calculado na hora, sempre certo. O usuário escreve
+r.total como se fosse um campo — e nem percebe
+que é conta.
+PARA FIXAR A conta do hóspede no check-out: ninguém guarda o total num papel que envelhece — soma-se na
+hora, com os itens do dia.
+Fatec Olímpia 15/22
+===== Página 17 =====
+PARTE 4 / 4
+Oficina no seu model
+1. Recap: o que a segunda escreveu
+2. O atributo desprotegido
+3. Encapsulamento e @property
+4. Oficina no seu model
+16/22
+===== Página 18 =====
+O mesmo mecanismo, já no código de vocês
+Fechando o movimento antes da prática
+O @property de hoje não é uma invenção da disciplina. É o mesmo mecanismo que vocês já usam,
+sem saber o nome, no código que escrevem na segunda-feira.
+No Web III, vocês já viram
+@login_required sobre uma view
+@property num model
+@cached_property , aqui e ali
+Todos são a mesma ideia
+Um embrulho que acrescenta regra
+Sem alterar o corpo da função
+Escrito com um @ em cima
+A SEMENTE QUE FICA
+Quando a disciplina chegar aos padrões estruturais, esse embrulho vai ganhar nome
+próprio: Decorator. Vocês não vão aprender do zero — vão descobrir que já usavam.
+Guardem a palavra.
+Fatec Olímpia 17/22
+===== Página 19 =====
+Oficina — 35 minutos, no seu model
+Da folha da semana passada ao código de agora
+A folha de modelagem que vocês entregaram vira ação agora. No model da equipe:
+1. Achem um campo que hoje aceita valor inválido — negativo, zero, fora de faixa
+2. Escrevam, no papel ou no editor, a regra que ele deveria respeitar
+3. Transformem esse campo numa @property com setter que valida
+4. Achem um dado que é conta de outros dois — candidato a @property calculada
+5. Registrem a decisão do passo 1 como ADR 001 no Caderno de Design
+Regra da oficina
+Máquinas liberadas agora. Quem travou no ambiente senta com quem não travou — é para isso que a
+equipe existe. O Interlocutor lê o erro em voz alta antes de me chamar.
+Fatec Olímpia 18/22
+===== Página 20 =====
+O que a oficina de hoje se torna
+Folha da oficina
+07/08
+@property + ADR
+hoje
+Marco 1
+11/09
+Entrega
+09/12
+A @property de hoje é a primeira refatoração real do projeto de vocês
+O ADR 001 é a primeira entrada do Caderno de Design — aquela dúvida da semana passada,
+resolvida na prática
+Os dois entram no Marco 1, em 11/09
+ENTREGA
+O Relator confirma no Teams, até domingo 17/08, que a equipe abriu o /docs/design/ e
+escreveu o ADR 001. Uma linha basta: o link do commit.
+Fatec Olímpia 19/22
+===== Página 21 =====
+Homework
+Entrega até quarta-feira, 20/08, 23h59, no Teams
+1. Individual
+Pegue a classe do seu homework
+da semana passada. Escolha um
+atributo que tenha uma regra e
+proteja-o com @property e setter .
+2. Individual
+Em três a cinco linhas: o que é
+encapsulamento, e por que um
+atributo público é um risco? Com
+as suas palavras.
+3. Da equipe
+ADR 001 no Caderno de Design,
+publicado em /docs/design/ .
+Prazo: domingo, 17/08.
+LEITURA DE APOIO — OPCIONAL
+Documentação oficial do Python, built-in functions, verbete property :
+docs.python.org/pt-br/3/library/functions.html#property . Material de apoio no
+NotebookLM da turma, no Teams até sábado.
+Fatec Olímpia 20/22
+===== Página 22 =====
+Próximo encontro — sexta, 21/08
+Resolução do homework nos 20 minutos iniciais
+Retomada rápida do decorador, com exemplos que vocês trouxerem
+Herança × composição — quando estender uma classe, quando conter outra
+Polimorfismo e a primeira interface com abc
+É a última aula antes do nivelamento de 22/08
+Para quem faltou em 07/08
+As três trilhas de recuperação no Teams precisam estar concluídas até 20/08. A aula de 21/08 assume
+que você já tem objeto, classe e encapsulamento.
+Fatec Olímpia 21/22
+===== Página 23 =====
+Chamada
+Registro nominal de presença.
+Ao ser chamado, indique uma palavra sobre o encontro de hoje.
+As respostas não serão comentadas — servem de referência para o ajuste da
+próxima aula.
+Relatores: confirmem no Teams a abertura do Caderno de Design.
+Fatec Olímpia 22/22
+===== Página 24 =====
+GOVERNO DO ESTADO
+DE SÃO PAULO
+Até sexta.

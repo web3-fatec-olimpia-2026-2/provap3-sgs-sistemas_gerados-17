@@ -1,0 +1,22 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0c0c0c">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="{% static 'pedidos/icone-192.png' %}">
+  <title>Cadastrar Pedido — Loja Virtual</title>
+</head>
+<body>
+  <h1>Cadastrar Pedido</h1>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Salvar</button>
+  </form>
+  <p><a href="{% url 'pedidos:lista' %}">Voltar</a></p>
+  <script>if ("serviceWorker" in navigator) { navigator.serviceWorker.register("/sw.js"); }</script>
+</body>
+</html>

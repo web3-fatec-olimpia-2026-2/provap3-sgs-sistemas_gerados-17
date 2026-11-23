@@ -1,0 +1,35 @@
+{% load static %}<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0D6EFD">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="{% static 'pedidos/icone-192.png' %}">
+  <link rel="stylesheet" href="{% static 'pedidos/vendor/bootstrap/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'pedidos/css/estilo.css' %}">
+  <title>{% block title %}Loja Virtual{% endblock %}</title>
+</head>
+<body>
+  <nav class="navbar navbar-expand bg-primary" data-bs-theme="dark">
+    <div class="container">
+      <a class="navbar-brand" href="{% url 'pedidos:lista' %}">Loja Virtual</a>
+      <div class="navbar-nav">
+        <a class="nav-link" href="{% url 'pedidos:lista' %}">Lista</a>
+        <a class="nav-link" href="{% url 'pedidos:criar' %}">Cadastrar</a>
+        <a class="nav-link" href="{% url 'pedidos:api' %}">API</a>
+      </div>
+    </div>
+  </nav>
+  <main class="container py-4">
+    <h1 class="h3 mb-1">{% block page_title %}Loja Virtual{% endblock %}</h1>
+    {% block page_subtitle %}{% endblock %}
+
+    {% block toolbar_actions %}{% endblock %}
+    {% block content %}{% endblock %}
+  </main>
+  <script src="{% static 'pedidos/vendor/bootstrap/bootstrap.bundle.min.js' %}" defer></script>
+  <script src="{% static 'pedidos/js/app.js' %}" defer></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,21 @@
+{% extends "pedidos/base.html" %}
+{% block title %}{% if obj %}Editar{% else %}Cadastrar{% endif %} Pedido — Loja Virtual{% endblock %}
+{% block page_title %}{% if obj %}Editar{% else %}Cadastrar{% endif %} Pedido{% endblock %}
+{% block content %}
+
+<div class="card"><div class="card-body">
+  <form method="post">
+    {% csrf_token %}
+    {% for erro in form.non_field_errors %}<div class="alert alert-danger">{{ erro }}</div>{% endfor %}
+    {% for campo in form %}
+    <div class="mb-3">
+      <label class="form-label" for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+      {{ campo }}
+      {% for erro in campo.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+    </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-primary">Salvar</button>
+    <a class="btn btn-outline-primary" href="{% if obj %}{% url 'pedidos:detalhe' obj.pk %}{% else %}{% url 'pedidos:lista' %}{% endif %}">Voltar</a>
+  </form>
+</div></div>
+{% endblock %}

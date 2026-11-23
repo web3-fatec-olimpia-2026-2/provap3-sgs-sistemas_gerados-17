@@ -1,0 +1,17 @@
+{% extends "pharns/base.html" %}
+{% block toolbar_actions %}<p class="acoes"><a href="{% url 'pharns:criar' %}">Cadastrar Pharm</a> <a href="{% url 'pharns:api' %}">API (JSON)</a> <a href="{% url 'pharns:exercicios' %}">Exercícios</a></p>{% endblock %}
+{% block content %}
+<aside class="apresentacao" data-apresentacao><strong>Apresentação ·</strong> Esta página (view <code>lista</code>) é FINA: busca os registros, pede os valores ao <code>PharmService</code> e entrega tudo ao <code>PainelVM</code> (MVVM). O template só exibe.</aside>
+<aside class="apresentacao" data-apresentacao><strong>Apresentação ·</strong> O valor de cada linha passa pela política de tipo de cliente do núcleo (Strategy, <code>nucleo/politicas.py</code>); o selo “com desconto / valor cheio” é decidido no <code>ItemVM</code>.</aside>
+<aside class="apresentacao" data-apresentacao><strong>Apresentação ·</strong> A coluna ID interno é o código LNNL (motor-id-interno): 14 caracteres, tipo 26 e 2 dígitos verificadores módulo 79 — feito para pessoas lerem e ditarem.</aside>
+<aside class="apresentacao" data-apresentacao><strong>Apresentação ·</strong> A chave de cada registro é um UUIDv4 (Instruções §10.4): não dá para adivinhar o próximo.</aside>
+<aside class="apresentacao" data-apresentacao><strong>Apresentação ·</strong> Modo exercício: o código deste site está completo. O questionário de revisão fica em <code>/exercicios/</code> — cada pergunta esconde a resposta atrás do botão <strong>Ver resposta</strong>.</aside>
+<aside class="apresentacao" data-apresentacao><strong>Apresentação ·</strong> Formatação: estilo <code>cmd</code> (tela preta, estilo terminal). Trocar o estilo muda só <code>base.html</code> e os CSS — as páginas de domínio não mudam.</aside>
+<ul class="lista">
+{% for item in painel.itens %}
+  <li>{{ item.codigo }} · <a href="{% url 'pharns:detalhe' item.id %}">{{ item.titulo }}</a> · {{ item.tipo_label }} · {{ item.valor_formatado }} ({{ item.selo }})
+    · <a href="{% url 'pharns:editar' item.id %}">editar</a> · <a href="{% url 'pharns:excluir' item.id %}">excluir</a></li>
+{% endfor %}
+</ul>
+<p class="rodape">{{ painel.rodape }}</p>
+{% endblock %}

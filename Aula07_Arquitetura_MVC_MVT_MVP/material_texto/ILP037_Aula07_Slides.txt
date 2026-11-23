@@ -1,0 +1,175 @@
+
+===== Página 1 =====
+Arquitetura: MVC × MVT × MVP
+ILP-037 Técnicas de Programação II • Aula 07 • 18/09/2026
+Prof. Jose Ceron Neto
+Faculdade de Tecnologia de Olímpia — Centro Paula Souza
+CST em Desenvolvimento de Software Multiplataforma
+Olímpia, SP — 2º semestre de 2026
+===== Página 2 =====
+Roteiro
+Separar em camadas o que o SRP já ensinou
+1. As arquiteturas e o Service testável
+2. Laboratório: extrair o Service
+— intervalo
+3. No projeto de vocês
+A IDEIA DA NOITE
+MVC, MVT, MVP — todas dizem a mesma coisa: separe o dado, a regra e a
+apresentação. E a regra de negócio não deve saber o que é web.
+Fatec Olímpia 1/14
+===== Página 3 =====
+PARTE 1 / 3
+As arquiteturas e o
+Service
+1. As arquiteturas e o Service
+2. Laboratório: extrair
+3. No projeto de vocês
+2/14
+===== Página 4 =====
+Reforço do Marco 1
+Antes de avançar, uma coisa que ficou
+Descrever (fraco)
+"Usamos @property para proteger o preço."
+Justificar (forte)
+"Escolhemos @property em vez de validar só na tela,
+porque a tela não protege quem cria pelo shell."
+O QUE SEPAROU OS CADERNOS NO MARCO 1
+Quem descreveu perdeu; quem justificou ganhou. O Marco 2 cobra de novo, mais
+fundo. O homework de hoje já é insumo dele.
+Fatec Olímpia 3/14
+===== Página 5 =====
+O smell: a view que faz tudo
+Dado, regra e apresentação misturados
+def r e l a t o r i o _ r e s e r v a s _ v i e w ( re se rva s ) :
+linhas = []
+t o t a l _ g e r a l = 0
+for r in re ser va s :
+base = r [ " diarias " ] * r [ " valor " ]
+if r [ " tipo " ] == " f i d e l i d a d e " : # <- regra de negocio
+total = base * 0.90
+...
+linhas . append ( f " { r [ ' hospede ']}: R$ { total } " ) # <- a p r e s e n t a c a o
+return f " R E L A T O R I O \ n ... " # <- a p r e s e n t a c a o
+▲ para testar o calculo, sou obrigado a chamar a view e ler texto
+A regra de negócio está presa dentro da view. Ela não tem vida própria.
+Fatec Olímpia 4/14
+===== Página 6 =====
+MVC, MVT, MVP
+Três nomes, um princípio
+O QUE TODAS DIZEM
+Separe o dado, a regra e a apresentação. Discordam só em onde cada parte mora e
+quem chama quem.
+dado regra apresentação
+MVC Model Controller View
+MVT (Django) Model View Template
+MVP Model Presenter View (passiva)
+No Django, a "View" é a REGRA (o Controller do MVC). Não decorem as siglas —
+reconheçam a separação no código.
+PARA FIXAR A brigada do hotel: cada setor com sua função.Fatec Olímpia 5/14
+===== Página 7 =====
+Extrair o Service
+A regra ganha vida própria
+class R e l a t o r i o S e r v i c e : # SO a regra . Nao sabe o que e web .
+def __i ni t__ ( self , res erv as ) :
+self . r es erv as = res er vas
+def cal cu lar ( self ) :
+linhas = [( r [ " hospede " ] , self . _total ( r ) ) for r in self . res er vas ]
+return linhas , sum ( t for _ , t in linhas ) # devolve DADOS
+def r e l a t o r i o _ r e s e r v a s _ v i e w ( re se rva s ) : # a view fica FINA
+linhas , total = R e l a t o r i o S e r v i c e ( r ese rv as ) . c alc ula r ()
+return formata ( linhas , total )
+TESTÁVEL SEM HTTP
+Agora eu testo a regra direto: service.calcular() — sem request, sem template, sem
+subir servidor. A regra não sabe o que é web.
+Fatec Olímpia 6/14
+===== Página 8 =====
+Por que isso importa
+Testabilidade é consequência de boa arquitetura
+A REGRA QUE SABE O QUE É WEB
+...só pode ser testada subindo a web. Testar fica caro. E o que é caro, ninguém faz.
+Então a regra fica sem teste.
+A REGRA QUE NÃO SABE O QUE É WEB
+...é testada direto, num piscar. Testar fica barato. E o que é barato, todo mundo faz. A
+regra fica protegida.
+Isto é o SRP da Aula 06 em escala de camadas: uma classe, uma responsabilidade -> uma
+camada, uma responsabilidade.
+Fatec Olímpia 7/14
+===== Página 9 =====
+Quando NÃO extrair
+O antifachada de sempre
+SERVICE SÓ QUANDO HÁ REGRA DE VERDADE
+Uma view que só lista objetos e renderiza está ótima. Não crie um Service para ela. O
+Service se justifica quando há cálculo, decisão, ou orquestração de vários passos.
+Extrair Service de view trivial é a mesma sobre-engenharia de sempre. A competência é
+decidir se cabe.
+Vocês já sabem esse critério: vale para padrão, vale para princípio, vale para arquitetura. Não aplique
+porque é "boa prática" — aplique porque o problema pede.
+Fatec Olímpia 8/14
+===== Página 10 =====
+PARTE 2 / 3
+Laboratório: extrair
+1. As arquiteturas e o Service
+2. Laboratório: extrair
+3. No projeto de vocês
+9/14
+===== Página 11 =====
+Laboratório — extrair o Service
+55 minutos, Python puro
+1. Você recebe a view que faz tudo — e 2 testes (um passa, um falha)
+2. Extrai o RelatorioService : só a regra, devolve dados
+3. Deixa a view fina: chama o service e formata
+4. A saída final continua idêntica; a regra vira testável sozinha
+Python puro — imita uma view Django
+A função imita uma view (recebe dados, devolve texto), mas roda em qualquer máquina. No Bloco 3,
+vocês fazem no projeto Django de verdade.
+python3 -m pytest . Regra do Interlocutor: leia o erro em voz alta antes de me chamar.
+Fatec Olímpia 10/14
+===== Página 12 =====
+PARTE 3 / 3
+No projeto de vocês
+1. As arquiteturas e o Service
+2. Laboratório: extrair
+3. No projeto de vocês
+11/14
+===== Página 13 =====
+Agora no projeto Django
+Identificar, planejar — não implementar ainda
+1. Abram o views.py do projeto da equipe
+2. Achem uma view que faz coisas demais: busca + regra + apresentação
+3. Não refatorem agora — só identifiquem e planejem a extração de um Service
+4. Registrem no Caderno de Design (ADR) — isso alimenta o Marco 2
+O MVT DO DJANGO, NO CÓDIGO DE VOCÊS
+models.py = dado • a view = regra • o template = apresentação. O Service é uma
+camada a mais, onde a regra complexa mora — testável sem HTTP.
+Fatec Olímpia 12/14
+===== Página 14 =====
+Homework
+Entrega até quarta, 24/09
+1. Individual
+Termine o laboratório: extrair o
+RelatorioService . Entregue o
+.py .
+2. Individual
+Em 3–5 linhas: por que a regra
+"não deve saber o que é web"? (IA
+vedada.)
+3. Da equipe
+ADR planejando a extração de um
+Service de uma view do projeto.
+(Marco 2.)
+AMANHÃ: NIVELAMENTO 2
+Assíncrono, sem hora marcada: modelo relacional, SQL na mão, Git além do commit.
+Quem sentiu falta de base, é a hora.
+Fatec Olímpia 13/14
+===== Página 15 =====
+Antes de sair
+Encaminhamentos
+Chamada nominal
+Relatores: confirmem no Teams o laboratório e o ADR do projeto
+Sábado 19/09: Nivelamento 2 assíncrono
+Próxima aula: MVVM com Alpine.js e a comparação das quatro arquiteturas
+Fatec Olímpia 14/14
+===== Página 16 =====
+GOVERNO DO ESTADO
+DE SÃO PAULO
+A regra não sabe o que é web.

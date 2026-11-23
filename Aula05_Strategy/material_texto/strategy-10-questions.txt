@@ -1,0 +1,92 @@
+
+===== Página 1 =====
+ILP-037 · TÉCNICAS DE PROGRAMAÇÃO II
+ESTUDO DIRIGIDO: STRATEGY
+FATEC Olímpia · Prof. de Técnicas de Programação II
+Página 1 de 2
+Perguntas Frequentes: Meu Primeiro Padrão de Projeto
+FAQ de Sobrevivência para Alunos da FATEC Olímpia — Entendendo o Padrão Strategy sem Decoreba
+1. O que é um padrão de projeto, afinal?
+Em resumo: É uma solução testada e reutilizável para um problema de modelagem de software que acontece com frequência.
+Detalhe & Oficina: Na nossa Oficina de Software, o padrão não é um código pronto que você copia e cola, mas sim a planta de uma
+ferramenta sob medida para resolver um defeito clássico. No contexto de hotelaria do nosso Resort de Olímpia, é equivalente a ter um manual
+de recepção padronizado: você não reinventa as regras de check-in a cada hóspede que entra; você segue um modelo que o mercado já testou
+e provou que funciona para evitar o caos.
+Fonte: Aprendendo padrões de projeto em Python (Chetan Giridhar), Cap. 1 / Slides da Aula 05
+2. Strategy é a mesma coisa que polimorfismo?
+Em resumo: Não! O polimorfismo é o recurso da linguagem que permite que objetos ajam igual; o Strategy é a arquitetura que
+organiza isso.
+Detalhe & Oficina: O polimorfismo é o 'mecanismo de encaixe universal' da nossa parafusadeira na Oficina. Ele permite que qualquer ponteira
+se conecte ao motor. O Strategy é o plano de trabalho completo: a decisão de criar gavetas separadas com ponteiras de fenda, phillips e
+sextavada (classes de tarifa), onde a parafusadeira (a classe Reserva) aperta o botão e chama o método comum aplicar() sem se importar com
+qual ponteira está encaixada no momento.
+Fonte: ILP037_Aula05_Slides.pdf / Strategy em Python (Refactoring.Guru)
+3. Por que criar várias classes em vez de um simples 'if'?
+Em resumo: Porque blocos 'if/elif' extensos tornam as classes rígidas, difíceis de testar e propensas a bugs a cada nova regra
+de negócio.
+Detalhe & Oficina: Se a caixa de disjuntores do Resort fosse unificada numa única placa soldada (o if/elif), cada vez que você quisesse puxar
+energia para um ar-condicionado de uma nova suíte, precisaria abrir a placa inteira e mexer nos fios soldados (alterar a classe Reserva). Com o
+Strategy, você tem disjuntores individuais (classes separadas): se um queimar ou se você precisar adicionar uma nova tarifa de parceiro local,
+basta plugar um disjuntor novo sem afetar em nada o restante da rede elétrica.
+Fonte: Strategy (Refactoring.Guru) / ILP037_Aula05_Slides.pdf
+4. O que significa 'delegar' aqui?
+Em resumo: Significa transferir a execução de um cálculo ou comportamento específico de um objeto principal para outro
+menor e focado.
+Detalhe & Oficina: Na recepção do Resort de Olímpia, o Gerente de Reservas (a classe de Contexto) não sabe fazer de cabeça o cálculo
+complexo das regras de impostos de convênios corporativos. O gerente simplesmente recebe a política de tarifa (o objeto Strategy) e diz:
+'Calcule isso para mim' (chama o método calcular()). O gerente não assume o fardo da conta; ele simplesmente transfere (delega) a
+responsabilidade para quem realmente entende daquela regra específica.
+Fonte: Strategy em Python / Padrões de Projeto (Refactoring.Guru)
+5. O que quer dizer 'aberto para estender, fechado para modificar'?
+Em resumo: É o Princípio do Aberto/Fechado (OCP): o seu código principal está protegido contra bugs, mas aceita novas
+funções facilmente.
+Detalhe & Oficina: Na nossa Oficina, a sua parafusadeira é fechada para modificação (você não solda o motor ou abre o circuito elétrico toda
+vez que precisa usar um parafuso diferente), mas é aberta para extensão (basta encaixar uma ponteira nova). No Resort, se o hotel fechar um
+convênio inédito com as escolas públicas de Olímpia, você apenas cria uma nova classe TarifaEscola (extensão) sem tocar em nenhuma linha
+do código já consolidado da classe Reserva (fechamento).
+Fonte: Aprendendo padrões de projeto em Python (Chetan Giridhar), SOLID Principles / Strategy (Refactoring.Guru)
+===== Página 2 =====
+ILP-037 · TÉCNICAS DE PROGRAMAÇÃO II
+ESTUDO DIRIGIDO: STRATEGY
+FATEC Olímpia · Prof. de Técnicas de Programação II
+Página 2 de 2
+6. Quando eu NÃO devo usar o padrão Strategy?
+Em resumo: Se o comportamento de cálculo do seu sistema não varia ou se você tem apenas uma regra fixa de cálculo que
+nunca irá mudar.
+Detalhe & Oficina: Se a tarifa do Resort de Olímpia fosse sempre o valor fixo de R$ 150 para absolutamente todas as pessoas, sem
+exceções, convênios ou sazonalidade, usar Strategy seria mera cerimônia desnecessária. Na nossa Oficina, seria equivalente a comprar um
+jogo de chaves pneumáticas industriais caríssimo e complexo apenas para apertar um pequeno parafuso de brinquedo uma única vez.
+Mantenha o código simples quando não houver variação de negócio real.
+Fonte: ILP037_Aula05_Slides.pdf (Critério Antifachada) / Strategy (Refactoring.Guru)
+7. Em Python eu preciso mesmo de classes, ou dá para fazer apenas com funções?
+Em resumo: Em Python você NÃO é obrigado a criar classes para as estratégias; você pode passar funções comuns como
+argumentos.
+Detalhe & Oficina: Diferente de linguagens rígidas como Java, em Python as funções são cidadãs de primeira classe. Isso significa que
+podemos tratar funções como variáveis ordinárias. Na Oficina, se você precisa dar um aperto rápido, você não precisa montar um suporte
+plástico inteiro (a classe) para a chave de fenda; você pode simplesmente passar o encaixe do bocal puro (a função) direto para a máquina para
+obter um código muito mais enxuto e direto.
+Fonte: Strategy em Python / Padrões de Projeto (Refactoring.Guru)
+8. Onde eu realmente uso esse padrão no meu projeto da FATEC?
+Em resumo: Use em qualquer trecho do sistema onde você identifique regras de negócio variáveis que executam a mesma
+finalidade.
+Detalhe & Oficina: No sistema de gerenciamento hoteleiro do nosso Resort, você aplicará o Strategy nas políticas de cancelamento de
+reservas (reembolso total, parcial ou sem reembolso), nos diferentes métodos de pagamento (Pix sem taxas, Cartão de Crédito parcelado com
+juros do banco, Boleto bancário) ou até nos filtros de recomendação de atrações turísticas de Olímpia (ordenar por proximidade, custo-benefício
+ou avaliação dos hóspedes).
+Fonte: Strategy (Refactoring.Guru) / ILP037_Aula05_Slides.pdf
+9. Quantos padrões de projeto nós vamos aprender neste semestre?
+Em resumo: Vamos focar em uma seleção dos padrões de projeto mais demandados e consolidados pelo mercado de
+tecnologia.
+Detalhe & Oficina: Uma Oficina de excelência não possui milhões de ferramentas estranhas que ninguém usa; ela tem um conjunto de cerca
+de 23 chaves clássicas muito bem cuidadas (o catálogo original GoF). O Strategy é a primeira chave de fenda de precisão que colocamos na
+nossa maleta de aprendizado. Dominar poucas e excelentes ferramentas de design de software nos dá o poder de resolver quase 90% dos
+problemas de engenharia do mercado.
+Fonte: ILP037_Aula05_Slides.pdf / Aprendendo padrões de projeto em Python (Chetan Giridhar)
+10. Eu preciso decorar as estruturas dos padrões para as avaliações ou para o Marco?
+Em resumo: Não! O foco da avaliação é a sua competência técnica de identificar e justificar decisões de arquitetura no seu
+portfólio.
+Detalhe & Oficina: Um mecânico de elite na Oficina não é o que decorou a tabela de especificações do catálogo, mas o que sabe olhar para o
+motor quebrado do jipe de safári de Olímpia e dizer exatamente: 'precisamos de uma chave de boca 10 para ajustar esta peça'. No Marco de
+entrega da nossa disciplina de Técnicas de Programação II, você deverá demonstrar que sabe justificar a escolha ou rejeição do padrão com
+argumentos técnicos sólidos.
+Fonte: ILP037_Aula05_Slides.pdf

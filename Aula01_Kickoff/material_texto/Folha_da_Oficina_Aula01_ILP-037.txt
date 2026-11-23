@@ -1,0 +1,31 @@
+
+===== Página 1 =====
+Oficina — Modelagem em objetos
+ILP-037 Técnicas de Programação II • Aula 01 • 07/08/2026 • Fatec Olímpia
+folha 1 de 2
+Equipe Relator
+Integrantes
+Regra da oficina. Escrevam em português, na linguagem do negócio de vocês. Não é para virar código hoje. Se travar
+em “como se escreve isso em Python”, escreva em português e siga. Partam da ideia de aplicação que a equipe já tem para o
+projeto do semestre.
+1 Que entidades existem no problema? candidatas a classe — 12 min
+Listem os substantivos do negócio. Um por linha. Substantivo no singular.
+2 O que cada entidade guarda? atributos — junto com o passo 1
+Para cada entidade acima, os dados que ela mantém. Escrevam o nome da entidade e, ao lado, os dados.
+===== Página 2 =====
+Oficina — Modelagem em objetos
+ILP-037 Técnicas de Programação II • Aula 01 • 07/08/2026 • Fatec Olímpia
+folha 2 de 2
+3 O que cada entidade sabe fazer? métodos — 10 min
+Ações da própria entidade, não coisas que outra pessoa faz com ela. Verbo no infinitivo.
+4 Quem conhece quem? relações — 8 min
+Desenhem as entidades como caixas, liguem com setas e escrevam sobre a seta o motivo da ligação.
+espaço para o diagrama
+5 Qual é a entidade central? 5 min
+Circulem no diagrama acima e escrevam aqui o porquê, em uma frase.
+Entrega. O Relator fotografa as duas folhas e publica no Teams até
+domingo, 09/08, 23h59. A folha física fica com o professor hoje e é de-
+volvida na próxima aula, com anotações.
+Esta folha vira o tema da equipe (09/08),
+o models.py (17/08) e a primeira página do
+Caderno de Design.

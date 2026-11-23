@@ -1,0 +1,738 @@
+{
+  "django": {
+    "location": {
+      "file": "Não é arquivo: terminal",
+      "folder": "exemplo/ (a raiz que contém manage.py)",
+      "action": "Execute no terminal, não cole em um arquivo Python.",
+      "responsibility": "O terminal invoca o interpretador e os comandos do Django; manage.py fornece o contexto do projeto."
+    },
+    "scenario": "Antes de começar o sistema do resort, a equipe precisa conferir se está usando a instalação correta do Django.",
+    "prerequisites": "Execute após instalar o Django no ambiente virtual.",
+    "breakdown": "O comando pergunta ao módulo Django instalado qual versão está em uso.",
+    "connection": "Nenhum arquivo do projeto é executado pelo comando; use a versão para conferir a compatibilidade.",
+    "expected": "O terminal imprime a versão instalada.",
+    "practice": "Qual comando mostra a versão do Django instalada no ambiente ativo?"
+  },
+  "mvt": {
+    "location": {
+      "file": "Não é arquivo: diagrama de arquitetura",
+      "folder": "Projeto como um todo",
+      "action": "Leia como um mapa; não copie como código Python.",
+      "responsibility": "Mostra a responsabilidade dos componentes, não um arquivo executável."
+    },
+    "scenario": "A recepção precisa buscar os quartos e mostrar uma página: dados, lógica e apresentação têm responsabilidades distintas.",
+    "prerequisites": "Conheça a ideia de uma aplicação web e de uma requisição.",
+    "breakdown": "Model descreve dados; View coordena a resposta; Template apresenta HTML. URLs conectam a requisição à View.",
+    "connection": "Veja o fluxo de listagem no projeto guiado: URL → view → ORM → template.",
+    "expected": "Você consegue apontar qual componente cuida de cada parte.",
+    "practice": "Identifique, numa listagem de quartos, quem define dados, quem prepara a resposta e quem apresenta o HTML."
+  },
+  "venv": {
+    "location": {
+      "file": "Não é arquivo: terminal",
+      "folder": "exemplo/ ou outra pasta escolhida para o projeto",
+      "action": "Execute a criação e depois o comando de ativação do seu sistema.",
+      "responsibility": "O ambiente .venv isola os pacotes Python do projeto."
+    },
+    "scenario": "O resort pode ter projetos com dependências diferentes; um ambiente isolado evita misturar instalações.",
+    "prerequisites": "Python com suporte a venv disponível.",
+    "breakdown": "venv cria .venv; o script de ativação seleciona o ambiente para o shell atual.",
+    "connection": "A instalação posterior de Django e DRF será feita nesse ambiente; ativação não modifica o código do app.",
+    "expected": "O prompt pode indicar o ambiente ativo; confira com python -m pip --version.",
+    "practice": "Indique o comando de ativação do ambiente para seu sistema e explique em qual terminal executá-lo."
+  },
+  "instalar": {
+    "location": {
+      "file": "Não é arquivo: terminal",
+      "folder": "exemplo/ (a raiz que contém manage.py)",
+      "action": "Execute no terminal, não cole em um arquivo Python.",
+      "responsibility": "O terminal invoca o interpretador e os comandos do Django; manage.py fornece o contexto do projeto."
+    },
+    "scenario": "Antes de cadastrar quartos, a equipe precisa instalar o framework que executará o projeto.",
+    "prerequisites": "Python e ambiente virtual criado e ativado.",
+    "breakdown": "python -m pip usa o pip associado ao interpretador ativo; a restrição escolhe a série 5.2.",
+    "connection": "A instalação torna django-admin e os módulos Django disponíveis ao projeto.",
+    "expected": "python -m django --version mostra uma versão 5.2.x.",
+    "practice": "Escreva o comando que instala Django 5.2 no ambiente virtual ativo."
+  },
+  "startproject": {
+    "location": {
+      "file": "Não é arquivo: terminal",
+      "folder": "Pasta mãe escolhida para o novo projeto",
+      "action": "Execute o comando uma vez. O exemplo sem ponto final cria um diretório resort/.",
+      "responsibility": "django-admin gera arquivos iniciais do projeto; o caminho criado depende dos argumentos."
+    },
+    "scenario": "Antes de organizar os quartos, é preciso criar a estrutura que configurará toda a aplicação.",
+    "prerequisites": "Django instalado no ambiente ativo; escolha um diretório de trabalho.",
+    "breakdown": "startproject resort cria uma pasta resort/ que contém manage.py e o pacote interno resort/.",
+    "connection": "No guia completo usamos startproject resort . dentro de exemplo/ já criada; o ponto final muda o destino.",
+    "expected": "A pasta criada contém manage.py e o pacote de configuração.",
+    "practice": "Qual a diferença entre startproject resort e startproject resort . em relação à pasta criada?"
+  },
+  "startapp": {
+    "location": {
+      "file": "Não é arquivo: terminal",
+      "folder": "exemplo/ (a raiz que contém manage.py)",
+      "action": "Execute no terminal, não cole em um arquivo Python.",
+      "responsibility": "O terminal invoca o interpretador e os comandos do Django; manage.py fornece o contexto do projeto."
+    },
+    "scenario": "Para separar a funcionalidade de quartos do restante do resort, criamos um aplicativo próprio.",
+    "prerequisites": "Projeto já criado, com manage.py, e ambiente ativo.",
+    "breakdown": "startapp quartos gera um diretório de aplicativo com models.py, views.py e outros arquivos iniciais.",
+    "connection": "Depois registre quartos em resort/settings.py e inclua as rotas do app.",
+    "expected": "A pasta quartos/ aparece ao lado de manage.py.",
+    "practice": "Crie um aplicativo chamado passeios e indique de qual pasta executar o comando."
+  },
+  "runserver": {
+    "location": {
+      "file": "Não é arquivo: terminal",
+      "folder": "exemplo/ (a raiz que contém manage.py)",
+      "action": "Execute no terminal, não cole em um arquivo Python.",
+      "responsibility": "O terminal invoca o interpretador e os comandos do Django; manage.py fornece o contexto do projeto."
+    },
+    "scenario": "A recepção quer abrir a aplicação em seu navegador enquanto a equipe a desenvolve.",
+    "prerequisites": "Projeto criado, dependências instaladas e banco migrado.",
+    "breakdown": "manage.py encaminha o comando runserver ao Django; sem argumentos o endereço é local na porta 8000.",
+    "connection": "O servidor recebe requisições e as encaminha pelo URLconf; não é servidor de produção.",
+    "expected": "O terminal indica o endereço; abra http://127.0.0.1:8000/quartos/ após configurar a rota.",
+    "practice": "Em qual pasta você deve executar runserver? Qual URL abrir após configurar a lista?"
+  },
+  "settings": {
+    "location": {
+      "file": "exemplo/resort/settings.py",
+      "folder": "exemplo/resort/",
+      "action": "Após a lista INSTALLED_APPS existente, acrescente a linha; não crie outra lista nem remova os apps padrão.",
+      "responsibility": "Configura os apps instalados, banco, templates e outras opções do projeto."
+    },
+    "scenario": "Um resort tem setores diferentes; o projeto precisa saber quais aplicativos fazem parte do sistema.",
+    "prerequisites": "Projeto e app quartos criados.",
+    "breakdown": "INSTALLED_APPS é uma lista existente no arquivo; += acrescenta quartos sem remover os aplicativos padrão.",
+    "connection": "A configuração torna os models e templates do app descobríveis pelo Django.",
+    "expected": "makemigrations passa a reconhecer o aplicativo quartos.",
+    "practice": "Onde acrescentar passeios à lista de aplicativos sem remover os apps padrão?"
+  },
+  "admin": {
+    "location": {
+      "file": "Não é arquivo: terminal",
+      "folder": "exemplo/ (a raiz que contém manage.py)",
+      "action": "Execute no terminal, não cole em um arquivo Python.",
+      "responsibility": "O terminal invoca o interpretador e os comandos do Django; manage.py fornece o contexto do projeto."
+    },
+    "scenario": "O gerente precisa de credenciais para entrar no painel administrativo e gerenciar quartos.",
+    "prerequisites": "Migrações aplicadas, admin instalado e URL /admin/ configurada.",
+    "breakdown": "createsuperuser solicita os dados do usuário no terminal; /admin/ é uma URL, não comando de terminal.",
+    "connection": "Registre Quarto em quartos/admin.py para o model aparecer no painel.",
+    "expected": "Acesse http://127.0.0.1:8000/admin/ e autentique-se.",
+    "practice": "Quais pré-requisitos e comando permitem entrar no painel administrativo?"
+  },
+  "model": {
+    "location": {
+      "file": "exemplo/quartos/models.py",
+      "folder": "exemplo/quartos/",
+      "action": "Adicione ou adapte o trecho dentro do app; mantenha os imports necessários.",
+      "responsibility": "Define os models e campos que descrevem os dados do aplicativo."
+    },
+    "scenario": "Cada quarto do resort precisa de uma ficha com número, tipo e disponibilidade, para que a recepção possa consultá-lo.",
+    "prerequisites": "Projeto criado; app quartos em INSTALLED_APPS.",
+    "breakdown": "models.Model é a classe-base; cada atributo é um campo; __str__ fornece uma representação legível.",
+    "connection": "Depois gere e aplique migrações; a view consultará Quarto pelo ORM.",
+    "expected": "O banco passa a ter uma tabela após makemigrations e migrate.",
+    "practice": "Acrescente um campo andar ao model. Em qual arquivo ele fica e quais dois comandos atualizam o banco?",
+    "lines": [
+      "from django.db import models — importa os tipos que definem campos de banco.",
+      "class Quarto(models.Model) — declara a entidade que o Django reconhece como model.",
+      "numero, tipo e disponivel — definem os dados; unique exige número distinto e default define o valor inicial.",
+      "__str__ — produz uma identificação legível, útil inclusive no admin."
+    ]
+  },
+  "fields": {
+    "location": {
+      "file": "exemplo/quartos/models.py",
+      "folder": "exemplo/quartos/",
+      "action": "Adicione ou adapte o trecho dentro do app; mantenha os imports necessários. Este é um trecho de uso; não é um arquivo completo nem deve ser colado isoladamente.",
+      "responsibility": "Define os models e campos que descrevem os dados do aplicativo."
+    },
+    "scenario": "Uma ficha de passeio precisa distinguir nome, data, vagas e preço, em vez de guardar tudo como texto.",
+    "prerequisites": "Um model declarado em models.py e import de django.db.models.",
+    "breakdown": "Cada linha é um campo: CharField limita texto; IntegerField guarda inteiro; DecimalField define precisão e escala.",
+    "connection": "São exemplos de campos alternativos: indente-os dentro de uma classe Model existente ou de uma nova entidade; não cole no nível do módulo.",
+    "expected": "Após atualizar o model, gere e aplique uma migração.",
+    "practice": "Defina um campo de preço decimal com até 7 dígitos e 2 casas; em que classe ele deve ficar?"
+  },
+  "relationships": {
+    "location": {
+      "file": "exemplo/quartos/models.py",
+      "folder": "exemplo/quartos/",
+      "action": "Adicione ou adapte o trecho dentro do app; mantenha os imports necessários.",
+      "responsibility": "Define os models e campos que descrevem os dados do aplicativo."
+    },
+    "scenario": "Uma reserva precisa indicar a qual quarto pertence, sem repetir toda a ficha do quarto.",
+    "prerequisites": "Quarto existe no mesmo app; importe models e defina Reserva em models.py.",
+    "breakdown": "ForeignKey aponta para Quarto; on_delete define o comportamento de exclusão; related_name permite acessar reservas a partir do quarto.",
+    "connection": "A mudança exige migração; Reserva não faz parte do exemplo executável básico e é uma extensão didática.",
+    "expected": "Após migrar, uma Reserva poderá referenciar um Quarto existente.",
+    "practice": "Como uma Reserva poderia apontar para um Quarto usando ForeignKey? Qual arquivo receberia a classe?"
+  },
+  "register": {
+    "location": {
+      "file": "exemplo/quartos/admin.py",
+      "folder": "exemplo/quartos/",
+      "action": "Adicione o import e o registro ao arquivo existente.",
+      "responsibility": "Conecta os models do app ao site administrativo do Django."
+    },
+    "scenario": "O gerente precisa editar quartos no painel, mas o model não aparece automaticamente na lista de administração.",
+    "prerequisites": "Model Quarto criado; admin e respectivas URLs configurados.",
+    "breakdown": "admin importa o site administrativo; admin.site.register(Quarto) registra o model.",
+    "connection": "O admin usa o model definido em models.py; o acesso ao painel depende de usuário e permissões.",
+    "expected": "Após migrar e entrar no admin, Quarto aparece para usuário autorizado.",
+    "practice": "Indique o import e o registro necessários para que Quarto apareça no painel administrativo."
+  },
+  "makemigrations": {
+    "location": {
+      "file": "Não é arquivo: terminal",
+      "folder": "exemplo/ (a raiz que contém manage.py)",
+      "action": "Execute no terminal, não cole em um arquivo Python.",
+      "responsibility": "O terminal invoca o interpretador e os comandos do Django; manage.py fornece o contexto do projeto."
+    },
+    "scenario": "O cadastro ganhou um campo novo; é necessário registrar uma alteração planejada para o banco.",
+    "prerequisites": "Model criado ou alterado e app registrado em INSTALLED_APPS.",
+    "breakdown": "makemigrations compara os models com o estado das migrações e escreve arquivos no diretório migrations do app.",
+    "connection": "O arquivo gerado descreve a mudança; somente migrate a aplica ao banco.",
+    "expected": "Um arquivo de migração é criado ou o Django informa que não há alterações.",
+    "practice": "Depois de acrescentar um campo, qual comando escreve a migração e onde você o executa?",
+    "lines": [
+      "python manage.py invoca os comandos do projeto configurado.",
+      "makemigrations detecta alterações e gera arquivos de migração; não muda as tabelas.",
+      "Execute migrate em seguida para aplicar os arquivos."
+    ]
+  },
+  "migrate": {
+    "location": {
+      "file": "Não é arquivo: terminal",
+      "folder": "exemplo/ (a raiz que contém manage.py)",
+      "action": "Execute no terminal, não cole em um arquivo Python.",
+      "responsibility": "O terminal invoca o interpretador e os comandos do Django; manage.py fornece o contexto do projeto."
+    },
+    "scenario": "A equipe já registrou a mudança na planta; agora precisa atualizar a estrutura do banco de dados.",
+    "prerequisites": "Migração criada e configuração do banco válida.",
+    "breakdown": "migrate executa as migrações pendentes na ordem necessária.",
+    "connection": "O esquema do SQLite passa a refletir as migrações aplicadas; showmigrations mostra o estado.",
+    "expected": "A saída lista as migrações aplicadas; a tabela passa a existir.",
+    "practice": "Qual comando aplica migrações pendentes ao banco? O que precisa existir antes?",
+    "lines": [
+      "migrate lê as migrações pendentes e as aplica na ordem de dependência.",
+      "O comando usa o banco configurado em resort/settings.py; não altera um template."
+    ]
+  },
+  "showmigrations": {
+    "location": {
+      "file": "Não é arquivo: terminal",
+      "folder": "exemplo/ (a raiz que contém manage.py)",
+      "action": "Execute no terminal, não cole em um arquivo Python.",
+      "responsibility": "O terminal invoca o interpretador e os comandos do Django; manage.py fornece o contexto do projeto."
+    },
+    "scenario": "Algo mudou no banco e a equipe quer conferir quais alterações já foram aplicadas.",
+    "prerequisites": "Projeto configurado; para dbshell o cliente do banco deve estar instalado.",
+    "breakdown": "showmigrations mostra [X] nas migrações aplicadas; dbshell abre o cliente específico do banco.",
+    "connection": "O estado das migrações ajuda a investigar diferenças entre models e banco.",
+    "expected": "A lista mostra o status de cada migração; dbshell inicia o cliente, se disponível.",
+    "practice": "Como conferir no terminal quais migrações de quartos já foram aplicadas?"
+  },
+  "path": {
+    "location": {
+      "file": "exemplo/quartos/urls.py",
+      "folder": "exemplo/quartos/",
+      "action": "Crie o arquivo se ainda não existir; adicione imports e padrões a urlpatterns, sem duplicá-lo.",
+      "responsibility": "Associa rotas da aplicação às views. Precisa ser incluído no URLconf do projeto."
+    },
+    "scenario": "A recepção acessa /quartos/; o Django precisa saber qual função deve atender esse endereço.",
+    "prerequisites": "Views de listagem e detalhe criadas ou planejadas; arquivo incluído pelo URLconf do projeto.",
+    "breakdown": "path associa o padrão à view; <int:pk> captura um inteiro; name permite criar URLs pelo nome.",
+    "connection": "resort/urls.py inclui quartos/urls.py; a view recebe pk, não o caminho físico do arquivo.",
+    "expected": "Com servidor e views configurados, /quartos/ abre a lista e /quartos/1/ tenta abrir o detalhe.",
+    "practice": "Crie uma rota de detalhe para <int:pk> e indique onde ela deve ser incluída.",
+    "lines": [
+      "path(...) — vincula o caminho relativo a uma função da view, não ao arquivo físico.",
+      "<int:pk> — converte o segmento da URL em inteiro e o envia como pk.",
+      "name — permite gerar o caminho pelo nome sem escrever a URL inteira."
+    ]
+  },
+  "include": {
+    "location": {
+      "file": "exemplo/resort/urls.py",
+      "folder": "exemplo/resort/",
+      "action": "Edite o URLconf do projeto e complemente urlpatterns.",
+      "responsibility": "Encaminha prefixos para as URLs do app e inclui rotas de API e admin."
+    },
+    "scenario": "O sistema tem várias áreas; o arquivo principal precisa encaminhar as rotas da área de quartos.",
+    "prerequisites": "quartos/urls.py existente com urlpatterns.",
+    "breakdown": "include carrega as URLs do app abaixo do prefixo escolhido; aqui o prefixo é vazio.",
+    "connection": "O projeto decide o prefixo; o app decide o restante do caminho e a view.",
+    "expected": "/quartos/ é resolvida pelo padrão correspondente no app.",
+    "practice": "Como o URLconf do projeto delega os caminhos ao arquivo quartos/urls.py?",
+    "lines": [
+      "include(\"quartos.urls\") carrega padrões de URL do aplicativo.",
+      "path(\"\", ...) não acrescenta prefixo; outros prefixos são possíveis.",
+      "quartos/urls.py precisa definir urlpatterns."
+    ]
+  },
+  "reverse": {
+    "location": {
+      "file": "exemplo/quartos/tests/test_quartos.py (exemplo de uso)",
+      "folder": "exemplo/quartos/tests/",
+      "action": "Adicione o import e use reverse dentro do teste ou de outra função Python. Este é um trecho de uso; não é um arquivo completo nem deve ser colado isoladamente.",
+      "responsibility": "Traduz nomes de URL em caminhos; pode ser usado em views e testes."
+    },
+    "scenario": "O endereço de um quarto pode mudar; referenciar o nome da rota evita espalhar caminhos fixos.",
+    "prerequisites": "Rota nomeada detalhe, app_name e namespace quartos configurados.",
+    "breakdown": "reverse procura quartos:detalhe e usa 1 para preencher o parâmetro posicional pk.",
+    "connection": "O nome é definido em quartos/urls.py; a URL produzida pode ser usada em redirecionamentos ou testes.",
+    "expected": "Com a configuração do exemplo, o resultado é /quartos/1/.",
+    "practice": "Escreva a chamada que obtém a URL da rota quartos:detalhe para o identificador 5."
+  },
+  "view": {
+    "location": {
+      "file": "exemplo/quartos/views.py",
+      "folder": "exemplo/quartos/",
+      "action": "Complemente a view existente; trechos de corpo precisam ficar indentados dentro de uma função.",
+      "responsibility": "Recebe requisições, coordena consultas e prepara respostas."
+    },
+    "scenario": "A recepcionista pede a lista de quartos. Alguém precisa consultar os dados e preparar a página.",
+    "prerequisites": "Quarto criado e migrado, URL configurada e template a criar.",
+    "breakdown": "O import de render prepara HTML; Quarto é importado do app; a função recebe request, consulta e retorna uma resposta.",
+    "connection": "quartos/urls.py chama a view; models.py fornece o model e o template recebe a chave quartos.",
+    "expected": "GET /quartos/ responde com HTML se o template e os dados estiverem disponíveis.",
+    "practice": "Na view de listagem, envie a coleção com a chave quartos. Qual arquivo receberá essa chave?",
+    "lines": [
+      "from django.shortcuts import render — importa a função que constrói uma resposta com template.",
+      "from .models import Quarto — importa a entidade do mesmo aplicativo.",
+      "def lista_quartos(request) — declara a função que recebe a requisição.",
+      "Quarto.objects.all() — prepara a consulta; a view pode adicionar filtros.",
+      "render(..., {\"quartos\": quartos}) — procura o template e passa a coleção com o nome quartos."
+    ]
+  },
+  "detail": {
+    "location": {
+      "file": "exemplo/quartos/views.py",
+      "folder": "exemplo/quartos/",
+      "action": "Complemente a view existente; trechos de corpo precisam ficar indentados dentro de uma função.",
+      "responsibility": "Recebe requisições, coordena consultas e prepara respostas."
+    },
+    "scenario": "A recepcionista seleciona um quarto específico; o sistema deve informar se ele não existir.",
+    "prerequisites": "Quarto e rota com <int:pk> configurados; template de detalhe existente.",
+    "breakdown": "get_object_or_404 consulta Quarto pelo pk e gera Http404 se não houver objeto; render envia quarto ao template.",
+    "connection": "O pk vem de quartos/urls.py; o arquivo físico da view não é uma URL.",
+    "expected": "Um id existente mostra o detalhe; um inexistente retorna 404.",
+    "practice": "Escreva a busca por pk em uma view retornando 404 quando o quarto não existir.",
+    "lines": [
+      "A rota captura pk e o envia à função detalhe_quarto.",
+      "get_object_or_404(Quarto, pk=pk) procura o model e gera 404 se ele não existir.",
+      "render passa o objeto ao template sob a chave quarto."
+    ]
+  },
+  "request": {
+    "location": {
+      "file": "exemplo/quartos/views.py",
+      "folder": "exemplo/quartos/",
+      "action": "Complemente a view existente; trechos de corpo precisam ficar indentados dentro de uma função. Este é um trecho de uso; não é um arquivo completo nem deve ser colado isoladamente.",
+      "responsibility": "Recebe requisições, coordena consultas e prepara respostas."
+    },
+    "scenario": "O funcionário pesquisa um quarto ou envia um formulário: a view precisa saber de onde vêm os dados.",
+    "prerequisites": "Uma função view que receba request e uma rota apontando para ela.",
+    "breakdown": "request.method distingue o método; POST contém dados de formulário; GET contém parâmetros de consulta.",
+    "connection": "A view usa os dados para criar um form ou filtrar a consulta, depois retorna uma resposta.",
+    "expected": "Uma requisição com ?q=luxo disponibiliza luxo em request.GET.",
+    "practice": "Como uma view obtém o valor de q na URL /quartos/?q=luxo?"
+  },
+  "redirect": {
+    "location": {
+      "file": "exemplo/quartos/views.py",
+      "folder": "exemplo/quartos/",
+      "action": "Complemente a view existente; trechos de corpo precisam ficar indentados dentro de uma função. Este é um trecho de uso; não é um arquivo completo nem deve ser colado isoladamente.",
+      "responsibility": "Recebe requisições, coordena consultas e prepara respostas."
+    },
+    "scenario": "Depois de salvar o cadastro, a recepção deve voltar à lista em vez de reenviar o formulário ao atualizar a página.",
+    "prerequisites": "Rota quartos:lista configurada e uma view que retorne uma resposta.",
+    "breakdown": "redirect cria uma resposta HTTP de redirecionamento para a rota nomeada.",
+    "connection": "O navegador faz uma nova requisição à URL correspondente, depois que a view de cadastro responde.",
+    "expected": "Após o cadastro válido, o navegador abre /quartos/.",
+    "practice": "Após salvar, como retornar o navegador à rota nomeada quartos:lista?"
+  },
+  "cbv": {
+    "location": {
+      "file": "exemplo/quartos/views.py",
+      "folder": "exemplo/quartos/",
+      "action": "Complemente a view existente; trechos de corpo precisam ficar indentados dentro de uma função.",
+      "responsibility": "Recebe requisições, coordena consultas e prepara respostas."
+    },
+    "scenario": "Várias páginas de listagem podem compartilhar o mesmo padrão de comportamento.",
+    "prerequisites": "Model Quarto existente; rota apontando para QuartoListView.as_view().",
+    "breakdown": "ListView é uma view genérica; model indica os objetos a listar.",
+    "connection": "A configuração de template e de contexto deve acompanhar as convenções ou ser declarada explicitamente.",
+    "expected": "A view renderiza uma lista com o template configurado.",
+    "practice": "Como conectar uma ListView a uma rota usando as_view()?"
+  },
+  "crud": {
+    "location": {
+      "file": "exemplo/quartos/views.py",
+      "folder": "exemplo/quartos/",
+      "action": "Complemente a view existente; trechos de corpo precisam ficar indentados dentro de uma função. Este é um trecho de uso; não é um arquivo completo nem deve ser colado isoladamente.",
+      "responsibility": "Recebe requisições, coordena consultas e prepara respostas."
+    },
+    "scenario": "A recepção precisa corrigir uma ficha existente sem criar outro quarto por engano.",
+    "prerequisites": "QuartoForm definido; quarto recuperado; rota e template de edição criados.",
+    "breakdown": "instance=quarto liga o form à instância existente; is_valid valida o POST antes de save.",
+    "connection": "O objeto recuperado vem do model; após salvar, a view deve retornar um redirect ou resposta.",
+    "expected": "Uma edição válida altera o quarto existente em vez de criar outro.",
+    "practice": "Como vincular um ModelForm a um quarto já existente ao editar o cadastro?"
+  },
+  "all": {
+    "location": {
+      "file": "exemplo/quartos/views.py",
+      "folder": "exemplo/quartos/",
+      "action": "Complemente a view existente; trechos de corpo precisam ficar indentados dentro de uma função. Este é um trecho de uso; não é um arquivo completo nem deve ser colado isoladamente.",
+      "responsibility": "Recebe requisições, coordena consultas e prepara respostas."
+    },
+    "scenario": "Para um relatório completo, a recepção precisa consultar todos os quartos cadastrados.",
+    "prerequisites": "Quarto importado na view e migrações aplicadas.",
+    "breakdown": "objects é o gerenciador; all() produz um QuerySet dos objetos.",
+    "connection": "A view pode enviar o QuerySet a um template; não é uma linha que deva ficar sozinha no nível do módulo.",
+    "expected": "A lista contém os registros disponíveis na consulta, incluindo os indisponíveis.",
+    "practice": "Como obter um QuerySet com todos os quartos em uma view?"
+  },
+  "filter": {
+    "location": {
+      "file": "exemplo/quartos/views.py",
+      "folder": "exemplo/quartos/",
+      "action": "Complemente a view existente; trechos de corpo precisam ficar indentados dentro de uma função. Este é um trecho de uso; não é um arquivo completo nem deve ser colado isoladamente.",
+      "responsibility": "Recebe requisições, coordena consultas e prepara respostas."
+    },
+    "scenario": "O resort tem muitos quartos, mas a recepção precisa localizar apenas os que estão disponíveis.",
+    "prerequisites": "Quarto importado na view, model migrado e dados cadastrados.",
+    "breakdown": "objects.filter(disponivel=True) cria um QuerySet restrito; order_by no exemplo organiza pelo número.",
+    "connection": "O ORM consulta os dados do model; a view passa o resultado ao template pela chave quartos.",
+    "expected": "Somente quartos com disponivel=True aparecem; uma consulta sem resultados é vazia, não erro.",
+    "practice": "Escreva uma consulta para quartos cujo numero seja maior que 100. Em qual função da view ela pode ser usada?",
+    "lines": [
+      "Quarto.objects — acessa o gerenciador do model.",
+      "filter(disponivel=True) — limita o QuerySet aos quartos disponíveis.",
+      "order_by(\"numero\"), no exemplo prático — ordena o resultado; a view deve atribuí-lo e enviá-lo ao template."
+    ]
+  },
+  "get": {
+    "location": {
+      "file": "exemplo/quartos/views.py",
+      "folder": "exemplo/quartos/",
+      "action": "Complemente a view existente; trechos de corpo precisam ficar indentados dentro de uma função. Este é um trecho de uso; não é um arquivo completo nem deve ser colado isoladamente.",
+      "responsibility": "Recebe requisições, coordena consultas e prepara respostas."
+    },
+    "scenario": "Ao buscar uma ficha identificada por número único, espera-se exatamente um resultado.",
+    "prerequisites": "Quarto importado; banco migrado; execute dentro de uma view ou shell.",
+    "breakdown": "get(pk=1) procura uma única linha. Pode lançar DoesNotExist ou MultipleObjectsReturned.",
+    "connection": "Para uma resposta HTTP 404 quando não existe, use get_object_or_404 em uma view.",
+    "expected": "Um objeto é retornado se exatamente um registro corresponder.",
+    "practice": "O que acontece com get(pk=999) se o registro não existir? Qual alternativa é apropriada em uma view?"
+  },
+  "lookups": {
+    "location": {
+      "file": "exemplo/quartos/views.py",
+      "folder": "exemplo/quartos/",
+      "action": "Complemente a view existente; trechos de corpo precisam ficar indentados dentro de uma função. Este é um trecho de uso; não é um arquivo completo nem deve ser colado isoladamente.",
+      "responsibility": "Recebe requisições, coordena consultas e prepara respostas."
+    },
+    "scenario": "A recepção procura quartos de luxo com número acima de um limite e quer excluir os indisponíveis.",
+    "prerequisites": "Quarto importado e campos tipo, numero e disponivel definidos.",
+    "breakdown": "__icontains procura texto sem diferenciar maiúsculas/minúsculas; __gte significa maior ou igual; exclude elimina as condições indicadas.",
+    "connection": "O QuerySet pode ser passado ao template; outros lookups aceitam sufixos como __gt e __lte.",
+    "expected": "O resultado contém apenas objetos que atendem às condições combinadas.",
+    "practice": "Escreva uma busca de tipo contendo luxo sem diferenciar maiúsculas de minúsculas."
+  },
+  "queryset": {
+    "location": {
+      "file": "exemplo/quartos/views.py",
+      "folder": "exemplo/quartos/",
+      "action": "Complemente a view existente; trechos de corpo precisam ficar indentados dentro de uma função. Este é um trecho de uso; não é um arquivo completo nem deve ser colado isoladamente.",
+      "responsibility": "Recebe requisições, coordena consultas e prepara respostas."
+    },
+    "scenario": "A equipe quer o primeiro quarto em ordem, saber quantos existem ou verificar se há disponibilidade.",
+    "prerequisites": "Quarto importado; código dentro de uma função ou shell Django.",
+    "breakdown": "order_by ordena; first retorna o primeiro ou None; count conta; exists verifica existência; create grava uma instância.",
+    "connection": "Estas operações consultam ou criam dados do model e podem alimentar a lógica da view.",
+    "expected": "Cada expressão retorna o resultado correspondente; create efetivamente grava no banco.",
+    "practice": "Como verificar se existe algum quarto disponível sem contar todos os resultados?"
+  },
+  "save": {
+    "location": {
+      "file": "exemplo/quartos/views.py",
+      "folder": "exemplo/quartos/",
+      "action": "Complemente a view existente; trechos de corpo precisam ficar indentados dentro de uma função. Este é um trecho de uso; não é um arquivo completo nem deve ser colado isoladamente.",
+      "responsibility": "Recebe requisições, coordena consultas e prepara respostas."
+    },
+    "scenario": "Um funcionário altera uma ficha ou marca vários quartos para manutenção.",
+    "prerequisites": "Instância quarto recuperada; Quarto importado; valide antes de gravar.",
+    "breakdown": "save grava a instância; update altera linhas do QuerySet diretamente; delete remove a instância.",
+    "connection": "save não chama automaticamente full_clean nem a validação do Form; update não chama save dos objetos.",
+    "expected": "O banco reflete a alteração ou exclusão após as operações.",
+    "practice": "Explique por que uma regra definida apenas no Form não é executada por quarto.save()."
+  },
+  "template": {
+    "location": {
+      "file": "exemplo/quartos/views.py",
+      "folder": "exemplo/quartos/",
+      "action": "Complemente a view existente; trechos de corpo precisam ficar indentados dentro de uma função. Este é um trecho de uso; não é um arquivo completo nem deve ser colado isoladamente.",
+      "responsibility": "Recebe requisições, coordena consultas e prepara respostas."
+    },
+    "scenario": "Após consultar os quartos, a recepção precisa vê-los numa página legível.",
+    "prerequisites": "View com request e variável quartos; template existente no caminho indicado.",
+    "breakdown": "render combina a requisição, o nome do template e um dicionário de contexto.",
+    "connection": "O template acessa a lista como quartos; o caminho lógico do template não é URL do navegador.",
+    "expected": "A view retorna uma resposta HTML processada.",
+    "practice": "Na chamada render, que dicionário permite ao template usar a variável quartos?",
+    "lines": [
+      "request fornece o contexto da requisição.",
+      "\"quartos/lista.html\" é o nome lógico do template, não uma URL.",
+      "{\"quartos\": quartos} disponibiliza a coleção para o loop no HTML."
+    ]
+  },
+  "for": {
+    "location": {
+      "file": "exemplo/quartos/templates/quartos/lista.html",
+      "folder": "exemplo/quartos/templates/quartos/",
+      "action": "Crie ou complemente o HTML. A pasta de templates pertence ao app neste exemplo.",
+      "responsibility": "Define a apresentação do HTML com variáveis e tags recebidas pela view."
+    },
+    "scenario": "Uma página de disponibilidade precisa repetir uma linha para cada quarto, sem escrever o HTML manualmente.",
+    "prerequisites": "A view envia {\"quartos\": quartos} e renderiza quartos/lista.html.",
+    "breakdown": "for percorre quartos; {{ quarto.numero }} e {{ quarto.tipo }} exibem valores; empty trata sequência vazia.",
+    "connection": "A chave quartos vem da view em views.py; o navegador recebe o HTML já renderizado.",
+    "expected": "A lista mostra um item por quarto ou a mensagem de lista vazia.",
+    "practice": "Escreva um loop que mostre apenas o tipo de cada quarto. Qual chave a view precisa enviar?",
+    "lines": [
+      "{% for quarto in quartos %} percorre a coleção enviada pela view.",
+      "{{ quarto.numero }} e {{ quarto.tipo }} exibem atributos de cada objeto.",
+      "{% empty %} apresenta uma alternativa quando a coleção está vazia; {% endfor %} encerra a repetição."
+    ]
+  },
+  "tags": {
+    "location": {
+      "file": "exemplo/quartos/templates/quartos/lista.html",
+      "folder": "exemplo/quartos/templates/quartos/",
+      "action": "Crie ou complemente o HTML. A pasta de templates pertence ao app neste exemplo.",
+      "responsibility": "Define a apresentação do HTML com variáveis e tags recebidas pela view."
+    },
+    "scenario": "Páginas do resort podem compartilhar cabeçalho e rodapé e mudar só o conteúdo principal.",
+    "prerequisites": "Crie base.html com um block conteudo e rodape.html em um local de templates configurado.",
+    "breakdown": "extends escolhe a base; block preenche uma região; if/else controla apresentação; include insere outro template.",
+    "connection": "Os nomes são caminhos lógicos de templates, não URLs. Este exemplo requer os arquivos base e rodapé, não presentes no projeto mínimo.",
+    "expected": "O HTML final combina o conteúdo com a estrutura da base.",
+    "practice": "Crie um bloco conteudo em um template filho e indique o arquivo base de que ele depende."
+  },
+  "modelform": {
+    "location": {
+      "file": "exemplo/quartos/forms.py",
+      "folder": "exemplo/quartos/",
+      "action": "Crie o arquivo se necessário; adicione a classe ou complemente o método nela.",
+      "responsibility": "Define campos e validações executadas quando o formulário é validado."
+    },
+    "scenario": "Antes de cadastrar um quarto, a recepção precisa de campos que correspondam à ficha do model.",
+    "prerequisites": "Model Quarto criado; forms.py pode ser criado manualmente.",
+    "breakdown": "ModelForm constrói campos a partir do model; Meta.model e fields selecionam os dados editáveis.",
+    "connection": "A view instancia QuartoForm; o template o exibe e devolve os dados em POST.",
+    "expected": "Um formulário com numero, tipo e disponivel pode ser exibido e validado.",
+    "practice": "Defina em Meta quais campos de Quarto ficarão visíveis no formulário e indique o arquivo.",
+    "lines": [
+      "forms.ModelForm fornece campos associados ao model.",
+      "Meta.model aponta para Quarto; fields limita os campos editáveis.",
+      "A view deve instanciar o form e verificar is_valid() antes de save()."
+    ]
+  },
+  "validar": {
+    "location": {
+      "file": "exemplo/quartos/views.py",
+      "folder": "exemplo/quartos/",
+      "action": "Complemente a view existente; trechos de corpo precisam ficar indentados dentro de uma função. Este é um trecho de uso; não é um arquivo completo nem deve ser colado isoladamente.",
+      "responsibility": "Recebe requisições, coordena consultas e prepara respostas."
+    },
+    "scenario": "Ao receber um cadastro, a recepção precisa verificar os dados antes de gravá-los.",
+    "prerequisites": "QuartoForm importado; request vem de uma view; mostre erros no template.",
+    "breakdown": "QuartoForm(request.POST) vincula dados; is_valid executa validações; save grava somente após sucesso.",
+    "connection": "A classe está em forms.py, mas o tratamento da requisição e a decisão de salvar ficam na view.",
+    "expected": "Dados válidos são salvos; dados inválidos ficam em form.errors.",
+    "practice": "Em qual condição a view deve chamar form.save(), depois de receber POST?",
+    "lines": [
+      "O form é vinculado aos dados enviados em request.POST.",
+      "is_valid() executa conversão e validações antes de decidir se os dados podem ser usados.",
+      "form.save() grava a instância válida; form.errors apresenta os erros em caso contrário."
+    ]
+  },
+  "clean": {
+    "location": {
+      "file": "exemplo/quartos/forms.py",
+      "folder": "exemplo/quartos/",
+      "action": "Crie o arquivo se necessário; adicione a classe ou complemente o método nela. Este é um trecho de uso; não é um arquivo completo nem deve ser colado isoladamente.",
+      "responsibility": "Define campos e validações executadas quando o formulário é validado."
+    },
+    "scenario": "Um número de quarto igual a zero não deve ser aceito no formulário da recepção.",
+    "prerequisites": "QuartoForm e campo numero existentes; importe forms.",
+    "breakdown": "clean_numero é um método da classe QuartoForm; lê cleaned_data, lança ValidationError ou retorna o valor.",
+    "connection": "is_valid da view chama essa validação. Ela não se aplica automaticamente ao ORM nem ao serializer da API.",
+    "expected": "Ao enviar 0 pelo formulário, o erro aparece; valor positivo válido segue o fluxo.",
+    "practice": "Altere clean_numero para exigir número maior que 100 e indique em qual classe o método deve ficar.",
+    "lines": [
+      "clean_numero deve ser um método indentado dentro de QuartoForm.",
+      "self.cleaned_data[\"numero\"] contém o valor já convertido pelo campo.",
+      "ValidationError interrompe a aceitação do campo; return numero devolve o valor válido."
+    ]
+  },
+  "drf": {
+    "location": {
+      "file": "Não é arquivo: terminal e exemplo/resort/settings.py",
+      "folder": "exemplo/ e exemplo/resort/",
+      "action": "Execute a instalação no terminal; depois acrescente rest_framework à lista existente em settings.py.",
+      "responsibility": "O terminal instala o pacote; settings.py ativa o app do DRF."
+    },
+    "scenario": "Outro sistema precisa dos quartos em JSON, sem receber uma página HTML.",
+    "prerequisites": "Projeto Django e ambiente virtual ativo; verifique compatibilidade de versões.",
+    "breakdown": "pip instala djangorestframework; rest_framework em INSTALLED_APPS ativa o app da extensão.",
+    "connection": "Depois crie serializer, ViewSet e router; DRF é uma biblioteca separada do Django.",
+    "expected": "A aplicação pode importar rest_framework e configurar endpoints.",
+    "practice": "Diferencie a página HTML em /quartos/ da resposta de uma API em /api/quartos/."
+  },
+  "serializer": {
+    "location": {
+      "file": "exemplo/quartos/api.py",
+      "folder": "exemplo/quartos/",
+      "action": "Crie ou complemente este arquivo; nesta arquitetura serializer e ViewSet ficam juntos.",
+      "responsibility": "Define a representação e as operações da API do app; a rota é registrada no URLconf do projeto."
+    },
+    "scenario": "Um sistema parceiro precisa receber a ficha de um quarto como dados estruturados, e não como HTML.",
+    "prerequisites": "DRF instalado e registrado; model Quarto criado e migrado.",
+    "breakdown": "ModelSerializer define a representação e validação; Meta indica model e campos expostos.",
+    "connection": "Nesta arquitetura serializer e ViewSet ficam em quartos/api.py; também podem ficar em arquivos separados.",
+    "expected": "A API pode representar quartos em JSON e validar entradas.",
+    "practice": "Quais campos do model Quarto seu serializer irá expor? Onde ele fica no exemplo?",
+    "lines": [
+      "serializers.ModelSerializer define representação e validação de entrada para API.",
+      "Meta.model associa o model; fields determina os campos expostos.",
+      "O ViewSet utiliza esta classe; o JSON é gerado na resposta da API."
+    ]
+  },
+  "viewset": {
+    "location": {
+      "file": "exemplo/quartos/api.py",
+      "folder": "exemplo/quartos/",
+      "action": "Crie ou complemente este arquivo; nesta arquitetura serializer e ViewSet ficam juntos.",
+      "responsibility": "Define a representação e as operações da API do app; a rota é registrada no URLconf do projeto."
+    },
+    "scenario": "Além de consultar quartos, o sistema parceiro precisa criar e atualizar registros por HTTP.",
+    "prerequisites": "QuartoSerializer definido antes da classe no mesmo arquivo api.py; DRF instalado.",
+    "breakdown": "ModelViewSet agrupa ações; queryset seleciona os objetos e serializer_class escolhe a representação.",
+    "connection": "O router em resort/urls.py mapeia URLs para as ações. Para produção, configure permissões e autenticação.",
+    "expected": "O router disponibiliza ações de lista, detalhe, criação e edição.",
+    "practice": "Quais duas propriedades conectam o ModelViewSet ao model e ao serializer?",
+    "lines": [
+      "viewsets.ModelViewSet agrupa ações de lista, detalhe, criação, atualização e exclusão.",
+      "queryset determina os objetos tratados; serializer_class seleciona QuartoSerializer.",
+      "No exemplo real, QuartoSerializer está acima no mesmo arquivo api.py; o router o conecta às URLs."
+    ]
+  },
+  "router": {
+    "location": {
+      "file": "exemplo/resort/urls.py",
+      "folder": "exemplo/resort/",
+      "action": "Edite o URLconf do projeto e complemente urlpatterns. Este é um trecho de uso; não é um arquivo completo nem deve ser colado isoladamente.",
+      "responsibility": "Encaminha prefixos para as URLs do app e inclui rotas de API e admin."
+    },
+    "scenario": "A equipe precisa transformar as ações da API em endereços acessíveis a outros sistemas.",
+    "prerequisites": "QuartoViewSet definido em quartos/api.py; DRF instalado e include importado.",
+    "breakdown": "DefaultRouter cria rotas; register associa o prefixo quartos ao ViewSet; include adiciona as URLs ao projeto.",
+    "connection": "O endpoint /api/quartos/ é uma URL, enquanto resort/urls.py e quartos/api.py são arquivos físicos.",
+    "expected": "GET /api/quartos/ alcança a ação de listagem.",
+    "practice": "Identifique o arquivo físico que registra o router e o endpoint produzido para a lista.",
+    "lines": [
+      "DefaultRouter constrói o roteamento das ações do ViewSet.",
+      "router.register(\"quartos\", QuartoViewSet) registra o prefixo do recurso.",
+      "path(\"api/\", include(router.urls)) no projeto acrescenta o prefixo /api/."
+    ]
+  },
+  "http": {
+    "location": {
+      "file": "Não é arquivo: cliente HTTP ou terminal",
+      "folder": "Cliente HTTP; para curl, qualquer pasta com acesso ao servidor",
+      "action": "Envie uma requisição HTTP; o exemplo é um pedido, não código para colar em Python. Este é um trecho de uso; não é um arquivo completo nem deve ser colado isoladamente.",
+      "responsibility": "O cliente conversa com o endpoint publicado pela aplicação."
+    },
+    "scenario": "O sistema de reservas envia uma ficha de quarto ao sistema do resort e espera uma resposta estruturada.",
+    "prerequisites": "Servidor ativo, DRF configurado e endpoint /api/quartos/ disponível.",
+    "breakdown": "GET consulta; POST envia JSON. Content-Type informa o formato do corpo.",
+    "connection": "O router encaminha ao ViewSet, que usa o serializer e o model.",
+    "expected": "GET retorna uma representação; POST válido normalmente retorna 201 e o objeto criado.",
+    "practice": "Qual método HTTP consulta a lista? Qual método cria um registro e qual status indica criação bem-sucedida?"
+  },
+  "pytest": {
+    "location": {
+      "file": "Não é arquivo: terminal",
+      "folder": "exemplo/ (a raiz que contém manage.py)",
+      "action": "Execute no terminal, não cole em um arquivo Python.",
+      "responsibility": "O terminal invoca o interpretador e os comandos do Django; manage.py fornece o contexto do projeto."
+    },
+    "scenario": "A equipe precisa verificar repetidamente se o cadastro e as páginas continuam funcionando.",
+    "prerequisites": "Ambiente ativo, dependências instaladas e pytest.ini configurado.",
+    "breakdown": "pytest descobre testes; -v detalha a execução de um arquivo específico.",
+    "connection": "pytest-django conecta os testes ao projeto Django; tests/test_quartos.py contém os casos.",
+    "expected": "O terminal mostra testes aprovados ou falhas com seus detalhes.",
+    "practice": "Como executar apenas quartos/tests/test_quartos.py com saída detalhada?"
+  },
+  "config-test": {
+    "location": {
+      "file": "exemplo/pytest.ini",
+      "folder": "exemplo/",
+      "action": "Crie pytest.ini na raiz do projeto ou edite a seção existente.",
+      "responsibility": "Configura descoberta de testes e o módulo de settings para pytest-django."
+    },
+    "scenario": "Os testes precisam saber qual configuração Django usar antes de acessar os models.",
+    "prerequisites": "pytest e pytest-django instalados; pacote resort com settings.py existente.",
+    "breakdown": "DJANGO_SETTINGS_MODULE identifica o módulo Python resort.settings; python_files define o padrão de descoberta.",
+    "connection": "pytest lê o arquivo na raiz e inicializa o Django usando as configurações indicadas.",
+    "expected": "pytest passa a encontrar o projeto e os arquivos test_*.py.",
+    "practice": "Qual valor de DJANGO_SETTINGS_MODULE corresponde ao pacote de configuração resort?",
+    "lines": [
+      "[pytest] inicia a seção de configuração.",
+      "DJANGO_SETTINGS_MODULE informa o módulo Python das configurações.",
+      "python_files informa como localizar os arquivos de teste."
+    ]
+  },
+  "test-db": {
+    "location": {
+      "file": "exemplo/quartos/tests/test_quartos.py",
+      "folder": "exemplo/quartos/tests/",
+      "action": "Crie o diretório de testes e o arquivo, ou adicione uma função test_ ao existente.",
+      "responsibility": "Guarda testes automatizados; pytest os descobre pelo padrão configurado."
+    },
+    "scenario": "Uma vistoria automática precisa garantir que um quarto criado mantenha seu número.",
+    "prerequisites": "pytest-django e settings configurados; model e migrações existentes.",
+    "breakdown": "django_db autoriza o teste a acessar o banco de testes; objects.create cria o registro; assert verifica o resultado.",
+    "connection": "O teste importa o model; pytest-django prepara um banco de teste separado.",
+    "expected": "pytest informa que o teste passou se o valor salvo for 101.",
+    "practice": "Crie um teste que salve o quarto 202 e verifique seu número. Qual marca autoriza acesso ao banco?",
+    "lines": [
+      "pytest.mark.django_db habilita o acesso ao banco de testes.",
+      "objects.create cria o registro de teste; assert compara o resultado esperado.",
+      "Os dados usados no teste não são os cadastros normais do banco de desenvolvimento."
+    ]
+  },
+  "test-client": {
+    "location": {
+      "file": "exemplo/quartos/tests/test_quartos.py",
+      "folder": "exemplo/quartos/tests/",
+      "action": "Crie o diretório de testes e o arquivo, ou adicione uma função test_ ao existente.",
+      "responsibility": "Guarda testes automatizados; pytest os descobre pelo padrão configurado."
+    },
+    "scenario": "A equipe quer conferir se a página de quartos responde corretamente sem abrir o navegador.",
+    "prerequisites": "pytest-django configurado; rota e view prontas; acesso ao banco marcado quando necessário.",
+    "breakdown": "client simula uma requisição GET; status_code é comparado com 200 usando assert.",
+    "connection": "A requisição passa por URLs e view, que podem consultar o banco e renderizar o template.",
+    "expected": "pytest informa sucesso quando a resposta é HTTP 200.",
+    "practice": "Escreva um assert que confirme status 200 depois de client.get(\"/quartos/\")."
+  }
+}

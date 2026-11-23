@@ -1,0 +1,6 @@
+# Dependencia unica deste projeto didatico: o pytest.
+# No laboratorio da FATEC (WSL + venv), rode dentro do ambiente virtual:
+#   python3 -m venv .venv && source .venv/bin/activate
+#   pip install -r requirements.txt
+#   python3 -m pytest -v
+pytest>=7.0

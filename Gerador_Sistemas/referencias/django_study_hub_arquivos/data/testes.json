@@ -1,0 +1,130 @@
+[
+  {
+    "id": "pytest",
+    "category": "testes",
+    "title": "Executar testes com pytest",
+    "code": "python -m pip install pytest pytest-django\npytest\npytest quartos/tests/test_quartos.py -v",
+    "description": "pytest executa testes; pytest-django integra o Django e disponibiliza fixtures. Configure DJANGO_SETTINGS_MODULE em pytest.ini.",
+    "explanation": "pytest executa testes; pytest-django integra o Django e disponibiliza fixtures. Configure DJANGO_SETTINGS_MODULE em pytest.ini.",
+    "when": "No terminal, após instalar as dependências de teste.",
+    "keywords": [
+      "testar aplicacao",
+      "pytest",
+      "executar testes",
+      "teste especifico",
+      "test_*.py"
+    ],
+    "synonyms": [
+      "testar aplicacao",
+      "pytest",
+      "executar testes",
+      "teste especifico",
+      "test_*.py"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "python -m pip install pytest pytest-django\npytest\npytest quartos/tests/test_quartos.py -v",
+    "source": "https://pytest-django.readthedocs.io/en/latest/tutorial.html",
+    "version": "pytest-django · referência externa ao Django",
+    "syntax": "python -m pip install pytest pytest-django\npytest\npytest quartos/tests/test_quartos.py -v",
+    "kind": "Terminal",
+    "related": [
+      "config-test",
+      "test-db",
+      "test-client"
+    ]
+  },
+  {
+    "id": "config-test",
+    "category": "testes",
+    "title": "Configurar pytest-django",
+    "code": "[pytest]\nDJANGO_SETTINGS_MODULE = resort.settings\npython_files = test_*.py",
+    "description": "O pytest.ini informa o módulo de configurações do Django e o padrão de arquivos.",
+    "explanation": "O pytest.ini informa o módulo de configurações do Django e o padrão de arquivos.",
+    "when": "Na raiz do projeto, ao lado de manage.py.",
+    "keywords": [
+      "pytest.ini",
+      "django_settings_module",
+      "configuracao teste"
+    ],
+    "synonyms": [
+      "pytest.ini",
+      "django_settings_module",
+      "configuracao teste"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "[pytest]\nDJANGO_SETTINGS_MODULE = resort.settings\npython_files = test_*.py",
+    "source": "https://pytest-django.readthedocs.io/en/latest/configuring_django.html",
+    "version": "pytest-django · referência externa ao Django",
+    "syntax": "[pytest]\nDJANGO_SETTINGS_MODULE = resort.settings\npython_files = test_*.py",
+    "kind": "Conceito",
+    "related": []
+  },
+  {
+    "id": "test-db",
+    "category": "testes",
+    "title": "Testar um Model",
+    "code": "import pytest\nfrom quartos.models import Quarto\n\n@pytest.mark.django_db\ndef test_cria_quarto():\n    quarto = Quarto.objects.create(numero=101, tipo=\"Padrão\")\n    assert quarto.numero == 101",
+    "description": "A marca django_db permite acesso ao banco de teste. assert verifica o resultado. Uma fixture que acessa o banco pode solicitar db.",
+    "explanation": "A marca django_db permite acesso ao banco de teste. assert verifica o resultado. Uma fixture que acessa o banco pode solicitar db.",
+    "when": "Para verificar persistência e comportamento do model.",
+    "keywords": [
+      "testar model",
+      "fixture db",
+      "django_db",
+      "criar dados",
+      "assert"
+    ],
+    "synonyms": [
+      "testar model",
+      "fixture db",
+      "django_db",
+      "criar dados",
+      "assert"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "import pytest\nfrom quartos.models import Quarto\n\n@pytest.mark.django_db\ndef test_cria_quarto():\n    quarto = Quarto.objects.create(numero=101, tipo=\"Padrão\")\n    assert quarto.numero == 101",
+    "source": "https://pytest-django.readthedocs.io/en/latest/helpers.html",
+    "version": "pytest-django · referência externa ao Django",
+    "syntax": "import pytest\nfrom quartos.models import Quarto\n\n@pytest.mark.django_db\ndef test_cria_quarto():\n    quarto = Quarto.objects.create(numero=101, tipo=\"Padrão\")\n    assert quarto.numero == 101",
+    "kind": "Conceito",
+    "related": []
+  },
+  {
+    "id": "test-client",
+    "category": "testes",
+    "title": "Testar View e API",
+    "code": "import pytest\n\n@pytest.mark.django_db\ndef test_lista(client):\n    response = client.get(\"/quartos/\")\n    assert response.status_code == 200",
+    "description": "A fixture client usa django.test.Client para fazer requisições sem servidor em execução. Verifique status e conteúdo.",
+    "explanation": "A fixture client usa django.test.Client para fazer requisições sem servidor em execução. Verifique status e conteúdo.",
+    "when": "Para testar rotas, views e endpoints.",
+    "keywords": [
+      "testar view",
+      "testar urls",
+      "testar api",
+      "client",
+      "get",
+      "post",
+      "status_code",
+      "conteudo",
+      "testclient"
+    ],
+    "synonyms": [
+      "testar view",
+      "testar urls",
+      "testar api",
+      "client",
+      "get",
+      "post",
+      "status_code",
+      "conteudo",
+      "testclient"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "import pytest\n\n@pytest.mark.django_db\ndef test_lista(client):\n    response = client.get(\"/quartos/\")\n    assert response.status_code == 200",
+    "source": "https://docs.djangoproject.com/en/5.2/topics/testing/tools/#the-test-client",
+    "version": "pytest-django · referência externa ao Django",
+    "syntax": "import pytest\n\n@pytest.mark.django_db\ndef test_lista(client):\n    response = client.get(\"/quartos/\")\n    assert response.status_code == 200",
+    "kind": "Conceito",
+    "related": []
+  }
+]

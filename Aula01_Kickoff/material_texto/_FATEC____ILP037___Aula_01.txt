@@ -1,0 +1,557 @@
+
+===== Página 1 =====
+Kickoff: o acordo, a engrenagem e o objeto
+ILP-037 Técnicas de Programação II • Aula 01 • 07/08/2026
+Prof. Jose Ceron Neto
+Faculdade de Tecnologia de Olímpia — Centro Paula Souza
+CST em Desenvolvimento de Software Multiplataforma
+Olímpia, SP — 2º semestre de 2026
+===== Página 2 =====
+Roteiro
+Os tópicos que serão abordados
+1. A disciplina e os critérios
+2. A engrenagem: segunda e sexta
+3. O objeto
+4. Oficina: modelagem em objetos
+5. Encaminhamentos
+objetivo operacional desta aula
+Ao final, cada equipe terá o domínio do seu projeto descrito em objetos —
+classes candidatas, atributos, comportamentos e relações — registrado em
+folha, e cada aluno saberá distinguir classe de objeto em código lido.
+Nenhuma atividade de hoje depende de máquina, instalação ou ambiente. Papel e caneta.
+Fatec Olímpia 1/34
+===== Página 3 =====
+PARTE 1 / 5
+A disciplina e os
+critérios
+1. A disciplina e os critérios
+2. A engrenagem: segunda e sexta
+3. O objeto
+4. Oficina: modelagem em objetos
+5. Encaminhamentos
+2/34
+===== Página 4 =====
+Onde estamos
+O que Técnicas de Programação I entregou e o que falta
+ILP-036 Téc. Prog. I
+classes, herança,
+polimorfismo
+ILP-037 Téc. Prog. II
+padrões de projeto, TDD,
+persistência, arquitetura
+4º semestre
+integração e
+entrega contínua
+Vocês já viram
+Escrever uma classe
+Criar objetos a partir dela
+Herança e polimorfismo
+O que vamos desenvolver
+Quando a herança é a escolha errada
+Como o código aguenta mudar sem
+quebrar
+Como saber que continua funcionando
+O vocabulário que a indústria usa para isso
+Código que funciona hoje e ninguém consegue alterar amanhã é dívida, não entrega.
+Fechar essa lacuna é o objeto desta disciplina.
+Fatec Olímpia 3/34
+===== Página 5 =====
+Como a disciplina funciona
+80 aulas, 100% laboratório. Não há aula
+puramente expositiva no plano de ensino.
+Não há projeto novo. Trabalhamos sobre o
+mesmo projeto e o mesmo repositório de
+Web III.
+Um artefato próprio: o Caderno de
+Design, versionado junto com o código.
+Homework semanal, resolvido nos 20
+minutos iniciais da aula seguinte.
+Canal de dúvidas:
+Teams da Disciplina > Dúvidas
+Atendimento:
+Teams
+Email: jose.ceron@cps.sp.gov.br
+Resposta em até: 48 horas
+Fatec Olímpia 4/34
+===== Página 6 =====
+Conteúdo programático
+Oito unidades didáticas
+1. Reancoragem de orientação a objetos
+2. Princípios de design: coesão, acoplamento,
+SOLID
+3. Padrões de persistência: Active Record e
+Repository
+4. Padrões arquiteturais: MVC, MVT, MVP e MVVM
+5. Desenvolvimento dirigido a testes (TDD)
+6. Padrões estruturais
+7. Padrões de criação
+8. Padrões comportamentais
+unidade 1 — hoje
+Objeto, classe e instância. Atributo, método e o parâmetro self. Modelagem de
+um domínio real em objetos. Herança, composição e interface entram nos
+encontros de 21/08.
+Fatec Olímpia 5/34
+===== Página 7 =====
+Avaliação
+Média Final = (Cad × 0,4) + (M arc × 0,3) + (Cont × 0,2) + (P ort × 0,1)
+Instrumento Como é medido Peso
+Cad Caderno de Design e código refatorado Adequação e justificativa dos padrões,
+arquitetura, refatoração, testes, diagra-
+mas, defesa
+40%
+Marc Marcos de design (média de 4) Incremento entregue, histórico de
+commits, defesa oral, contribuição
+individual
+30%
+Cont Avaliação contínua individual Arguição oral em aula, quatro katas
+de refatoração, rodada individual de
+27/11
+20%
+Port Portfólio e participação Homeworks, Coding Dojos, Caça ao Pa-
+drão, autoavaliação
+10%
+Não há prova escrita nem prova prática nesta disciplina Frequência mínima 75%
+Revisão de média: 08 a 10/12 Exame: 17 a 23/12
+Fatec Olímpia 6/34
+===== Página 8 =====
+Frequência
+Registro nominal, nos minutos finais
+Atraso por trânsito, escala ou deslocamento
+não deve custar presença
+Nesta semana: Festival do Folclore, de 02 a
+09/08, com impacto conhecido sobre
+circulação e escalas de trabalho na cidade
+Os dois sábados de nivelamento são
+assíncronos: presença por conclusão da trilha,
+sem hora marcada
+Saída antecipada
+Quem precisar sair antes do horário
+deve comunicar no início da aula.
+Fatec Olímpia 7/34
+===== Página 9 =====
+Calendário: 20 encontros
+Agosto
+07 sex hoje
+14 sex
+21 sex
+22 SÁB nivelamento
+28 sex
+Setembro / Outubro
+04 sex
+11 sex Marco 1
+18 sex
+19 SÁB nivelamento
+25 sex
+02 out
+09 out Marco 2
+16 out 23 out 30 out
+Novembro / Dezembro
+06 sex Marco 3
+13 sex
+20 sex — sem aula
+27 sex rodada individual
+04 dez
+11 dez entrega e defesa
+Dois sábados de nivelamento — assíncronos
+22/08 e 19/09, sem hora marcada. São reposição oficial de sexta-feira: o sábado 22/08
+repõe o feriado de 20/11. Presença registrada pela conclusão da trilha. Não trazem
+conteúdo novo — servem para nivelar a base.
+*Alterações no calendário podem ocorrer e serão avisadas com antecedência
+Fatec Olímpia 8/34
+===== Página 10 =====
+Uso de IA generativa: quatro níveis
+Nível Escopo Regra
+1 Livre Explicação conceitual, tradução de mensagens de erro, nomencla-
+tura de classes e métodos, revisão de texto, geração de dados de
+teste, diagrama a partir do código
+2 Declaração obrigatória Trechos acima de 5 linhas incorporados ao projeto exigem comen-
+tário de autoria, menção no pull request e capacidade de explicar
+linha a linha
+3 Vedado Arguição oral em aula, defesa dos marcos, rodada individual de
+27/11, validação da Caça ao Padrão e o diagnóstico de hoje
+4 Objeto de ensino Engenharia de prompt, verificação de saída e crítica de design as-
+sistida — tratado em aula própria, em 04/09
+Verificação: arguição oral por amostragem, em qualquer aula — um trecho do seu código é escolhido
+e você explica.
+Sanção: uso não declarado implica rejeição do PR e nota zero na entrega daquele marco.
+para fixar Quatro crachás de acesso: verde circula livre, amarelo assina o livro, vermelho é área
+restrita, e o quarto não é crachá — é treinamento. L.D.P.A.
+Fatec Olímpia 9/34
+===== Página 11 =====
+A responsabilidade quanto ao uso de IA
+Não há restrição de ferramenta
+Código que não sabe explicar
+não pode manter
+não pode depurar
+não pode defender
+A arguição é individual e sem
+assistência
+Advertência específica desta
+disciplina
+Assistentes de IA exageram em
+padrões. Respondem Factory e
+Singleton onde bastava uma função.
+Aqui isso não é acerto — é
+exatamente o erro que a rubrica pune.
+IA é permitida. Não saber explicar o que ela produziu, não.
+Fatec Olímpia 10/34
+===== Página 12 =====
+Contrato pedagógico
+O nosso acordo
+Proposta e formato do acordo
+As regras valem tanto para os alunos
+quanto para o professor
+Nenhum aluno termina a disciplina
+sem ter construído — inclusive com
+atendimento fora do horário, se for
+preciso
+Silêncio quando alguém está
+falando. Conversa paralela custa a
+aula de todos, e a de hoje é curta
+Abrangência
+Avaliação
+Frequência
+Calendário
+Uso de IA
+Combinado?
+Fatec Olímpia 11/34
+===== Página 13 =====
+PARTE 2 / 5
+A engrenagem:
+segunda e sexta
+1. A disciplina e os critérios
+2. A engrenagem: segunda e sexta
+3. O objeto
+4. Oficina: modelagem em objetos
+5. Encaminhamentos
+12/34
+===== Página 14 =====
+Segunda constrói. Sexta entende e refatora.
+Segunda — ISW-030 Web III
+escreve o código
+faz funcionar
+entrega a sprint
+Sexta — ILP-037
+lê o código que você escreveu
+aponta o problema de desenho
+nomeia o padrão e refatora
+o mesmo repositório
+Na segunda, a pergunta é
+“Funciona?”
+Na sexta, a pergunta é
+“Por que está assim, e dá para melhorar?”
+consequência prática
+Esta disciplina não abre uma segunda frente de trabalho. Mesma equipe,
+mesmo projeto, mesmo repositório. O que muda é o critério de julgamento
+aplicado sobre o mesmo artefato.
+Fatec Olímpia 13/34
+===== Página 15 =====
+Um repositório, três julgamentos
+Como as três disciplinas do semestre não se sobrepõem
+AGO-021 Gestão Ágil Avalia o processo: backlog, cerimônias, contribuição,
+atas
+ISW-030 Web III Avalia o funcionamento: a aplicação roda, persiste,
+expõe API, publica
+ILP-037 Téc. Prog. II Avalia a decisão de design: por que este código está
+assim, o que foi refatorado, qual padrão entrou e por
+quê, e se está testado
+princípio
+Nenhuma nota é computada duas vezes. O artefato é compartilhado; o objeto
+de avaliação, não.
+Fatec Olímpia 14/34
+===== Página 16 =====
+O Caderno de Design
+O artefato próprio desta disciplina
+Documento vivo, versionado junto com o código, em /docs/design/ no repositório da
+equipe.
+1. Registro de decisões
+O problema, as alternativas consideradas, a
+escolhida, e o preço que se aceitou pagar
+2. Catálogo de padrões
+Para cada padrão: o problema que o motivou e o
+commit em que ele entrou
+3. Diário de refatoração
+O antes, o depois, e o teste que garantiu que
+nada quebrou
+4. Diagramas
+Classes do núcleo e um diagrama de sequência
+mínimo para a entrega final
+Seis padrões aplicados, sendo ao menos dois de cada família; arquitetura de
+interface declarada e justificada; cobertura mínima de 50% da camada de
+domínio.
+Fatec Olímpia 15/34
+===== Página 17 =====
+O critério que mais reprova
+Padrão aplicado sem um problema que o justifique conta zero.
+Havendo exagero, desconta.
+O que não é avaliado
+Saber o nome do padrão
+Reproduzir o diagrama do livro
+Aplicar o maior número deles
+O que é avaliado
+Reconhecer o problema
+Decidir se o padrão cabe
+Justificar a alternativa descartada
+para fixar Reforma de hotel: trocar a fiação porque há risco é manutenção; trocar a fachada
+porque o vizinho trocou é despesa.
+Fatec Olímpia 16/34
+===== Página 18 =====
+Caça ao Padrão
+Abre na próxima aula, 14/08
+O Django, o Django REST Framework e o Alpine.js — que vocês já usam nas segundas —
+são implementações industriais dos padrões que estudaremos. Vários trazem o nome do
+padrão no próprio código-fonte.
+Como pontuar
+Apresentar, em até 5 minutos, no início de uma aula:
+1. o link para a linha no código-fonte
+2. o problema que o padrão resolve ali
+3. onde ele difere do padrão do livro
+Pontuação
++3 por padrão validado
++1 se a equipe mostrar o mesmo padrão
+no próprio projeto
+–2 por padrão alegado sem evidência
+Ranking publicado no Teams. Compõe o
+Portfólio.
+Fatec Olímpia 17/34
+===== Página 19 =====
+Equipes e papéis operacionais
+As mesmas de Web III — não se refaz nada
+Papel Atribuição nesta disciplina Papel Scrum
+Condutor Conduz a refatoração, executa primeiro, ve-
+rifica que a equipe alcançou o mesmo es-
+tado
+Scrum Master
+Interlocutor Único canal com o professor. Enuncia a
+mensagem de erro à equipe antes de acio-
+nar
+Product Owner
+Verificador Confere que nenhum integrante ficou para
+trás
+Dev + qualidade
+Relator Registra cada erro e a solução; mantém o
+Caderno de Design
+Dev + documentação
+Rotação
+obrigatória a cada marco, em sincronia com as sprints de Web III — um papel por ciclo,
+não dois
+A composição é a firmada em Web III. Aqui não se forma equipe do zero
+Fatec Olímpia 18/34
+===== Página 20 =====
+PARTE 3 / 5
+O objeto
+1. A disciplina e os critérios
+2. A engrenagem: segunda e sexta
+3. O objeto
+4. Oficina: modelagem em objetos
+5. Encaminhamentos
+19/34
+===== Página 21 =====
+Orientação a objetos
+===== Página 22 =====
+Por que a disciplina começa aqui
+premissa
+Padrão de projeto é vocabulário de segunda ordem. Ele nomeia arranjos entre
+objetos. Sem objeto, interface e composição operantes, o catálogo produz
+reconhecimento de nome e nenhuma competência de decisão.
+O que faremos até 22/08
+Objeto, classe, instância hoje
+Encapsulamento e propriedades 14/08
+Herança, composição, interface 21/08
+Nivelamento assíncrono 22/08
+O primeiro padrão só entra em
+18/09 — padrões de persistência
+São quatro encontros de base antes do
+primeiro padrão. É deliberado, e é o que torna o
+resto possível.
+Fatec Olímpia 21/34
+===== Página 23 =====
+Classe e objeto
+Duas entidades distintas, com nomes próximos
+classe
+Descrição de um tipo. Declara quais dados uma entidade guarda e quais
+operações ela oferece. Existe uma vez, no código-fonte.
+objeto (instância)
+Entidade concreta criada em execução a partir de uma classe, com os seus
+próprios valores para os dados declarados.
+Hospede
+nome · documento
+fazer_check_in()
+nome = "Ana"
+hospedado = True
+nome = "Bruno"
+hospedado = False
+para fixar A planta do apartamento-tipo e cada apartamento construído.
+Fatec Olímpia 22/34
+===== Página 24 =====
+Atributo, método e self
+atributo
+Dado mantido por um objeto. Compõe o seu estado. Acessado por
+objeto.atributo.
+método
+Operação declarada na classe e invocada sobre um objeto. Pode consultar e
+alterar o estado desse objeto.
+self
+Primeiro parâmetro de todo método de instância. Recebe automaticamente o
+objeto sobre o qual o método foi chamado.
+Erro mais frequente: escrever nome em vez de self.nome dentro do método — a primeira cria variável
+que morre ali; a segunda altera o objeto.Fatec Olímpia 23/34
+===== Página 25 =====
+A primeira classe
+Cada linha tem nome técnico
+class Hospede :
+def __ in it_ _ ( self , nome , d o c u m e n t o ) :
+self . nome = nome
+self . d o c u m e n t o = d o c u m e n t o
+self . h o s p e d a d o = False
+def f a z e r _ c h e c k _ i n ( self ) :
+self . h o s p e d a d o = True
+def e s t a _ h o s p e d a d o ( self ) :
+return self . h o s p e d a d o
+class Hospede — declaração da classe
+__init__ — construtor: executa na criação do
+objeto
+self.nome — atributo de instância
+fazer_check_in — método de instância
+Fatec Olímpia 24/34
+===== Página 26 =====
+Uma classe, muitos objetos
+O que ocorre em tempo de execução
+ana = Hospede ( " Ana Souza " , " 123 " )
+bruno = Hospede ( " Bruno Lima " , " 456 " )
+ana . f a z e r _ c h e c k _ i n ()
+print ( ana . e s t a _ h o s p e d a d o () ) # True
+print ( bruno . e s t a _ h o s p e d a d o () ) # False
+o ponto crítico
+Existe uma única classe Hospede e dois objetos em memória, cada um com o
+seu próprio hospedado. Invocar o método sobre ana não altera bruno. Estado é do
+objeto, não da classe.
+Fatec Olímpia 25/34
+===== Página 27 =====
+O mesmo problema, dois arranjos
+Por que a orientação a objetos existe
+Dado e comportamento separados
+nome_1 = " Ana "
+h o s p e d a d o _ 1 = False
+nome_2 = " Bruno "
+h o s p e d a d o _ 2 = False
+def ch ec k_i n ( indice ) :
+...
+Cada entidade nova exige variáveis novas e uma
+alteração na função.
+Dado e comportamento reunidos
+ana = Hospede ( " Ana " , " 123 " )
+ana . f a z e r _ c h e c k _ i n ()
+Entidade nova é objeto novo. Nenhum outro
+trecho de código muda.
+consequência
+Todo padrão de projeto do semestre é um arranjo entre objetos. Depende
+deste princípio e de mais nada.
+Fatec Olímpia 26/34
+===== Página 28 =====
+PARTE 4 / 5
+Oficina: modelagem
+em objetos
+1. A disciplina e os critérios
+2. A engrenagem: segunda e sexta
+3. O objeto
+4. Oficina: modelagem em objetos
+5. Encaminhamentos
+27/34
+===== Página 29 =====
+Oficina
+40 minutos, em equipe, na folha entregue
+Tomem a ideia de aplicação que a equipe já tem para o projeto do semestre e respondam,
+nesta ordem:
+1. Que entidades existem no problema? Listem os substantivos do negócio.
+candidatas a classe
+2. Para cada entidade: que dados ela guarda? atributos
+3. Para cada entidade: que operações ela oferece? métodos
+4. Que entidade conhece qual? Liguem com seta e escrevam o motivo. relações
+5. Qual delas é a central do sistema? Circulem.
+Regra da oficina
+Escrever em português, na linguagem do negócio. Não é para virar código hoje. Travou
+em “como se escreve isso em Python”? Escreva em português e siga.
+Fatec Olímpia 28/34
+===== Página 30 =====
+O que a folha de hoje se torna
+Folha de hoje
+07/08
+Tema da equipe
+09/08 — Web III
+models.py
+17/08 — Web III
+Marco 1
+11/09 — ILP-037
+É a primeira página do Caderno de Design da equipe
+Alimenta o fechamento do tema no nivelamento de amanhã, em Web III
+Vira o models.py que vocês escreverão na segunda-feira 17/08
+entrega
+O Relator fotografa a folha e publica no canal da equipe no Teams até domingo,
+09/08, 23h59. A folha física fica comigo e é devolvida na próxima aula.
+Fatec Olímpia 29/34
+===== Página 31 =====
+PARTE 5 / 5
+Encaminhamentos
+1. A disciplina e os critérios
+2. A engrenagem: segunda e sexta
+3. O objeto
+4. Oficina: modelagem em objetos
+5. Encaminhamentos
+30/34
+===== Página 32 =====
+Diagnóstico de entrada
+10 minutos, pelo celular
+Formulário no Teams — Atividades de aula → Diagnóstico de entrada
+Não vale nota. O resultado calibra o ritmo das próximas aulas
+Marque “não sei” sempre que não souber. Chutar inutiliza o instrumento
+Sem consulta a IA e sem consulta a colega — Nível 3 da política
+Sem celular à mão
+Peça a versão impressa. Preencha e entregue na saída.
+Fatec Olímpia 31/34
+===== Página 33 =====
+Homework
+Entrega até quarta-feira, 12/08, 23h59, no Teams
+1. Individual
+Escolha uma entidade do seu
+cotidiano — não pode ser
+hóspede, quarto ou reserva.
+Descreva: nome da classe, três
+atributos e três métodos.
+2. Individual
+Em três a cinco linhas, com as
+suas palavras: qual a diferença
+entre classe e objeto?
+3. Da equipe
+Fotografia da folha da oficina,
+publicada no canal da equipe.
+Prazo: domingo, 09/08.
+leitura de apoio — opcional
+Documentação oficial do Python em português, capítulo 9, Classes, seções 9.1
+a 9.3.3 apenas. docs.python.org/pt-br/3/tutorial/classes.html — não avance
+para herança, que é conteúdo de 21/08.
+Material de apoio no NotebookLM da turma, publicado no Teams até sábado.
+Fatec Olímpia 32/34
+===== Página 34 =====
+Próximo encontro — sexta, 14/08
+Resolução do homework nos 20 minutos iniciais
+Encapsulamento e propriedades: @property e o atributo calculado
+O decorador como conceito — por que @login_required e @property são a mesma ideia
+Versionamento como registro de decisão: a mensagem de commit que explica o porquê
+Abertura da Caça ao Padrão
+Traga o ambiente funcionando
+A partir de 14/08 usaremos as máquinas. Quem não concluiu a instalação em Web III deve
+resolver no nivelamento de amanhã, 08/08, ou procurar atendimento.
+Fatec Olímpia 33/34
+===== Página 35 =====
+Chamada
+Registro nominal de presença.
+Ao ser chamado, indique uma palavra sobre o encontro de hoje.
+As respostas não serão comentadas — servem de referência para o ajuste
+da próxima aula.
+Relatores: entrega das folhas da oficina.
+Fatec Olímpia 34/34
+===== Página 36 =====
+GOVERNO DO ESTADO
+DE SÃO PAULO
+Até sexta.

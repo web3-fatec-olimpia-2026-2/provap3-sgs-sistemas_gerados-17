@@ -1,0 +1,169 @@
+[
+  {
+    "id": "drf",
+    "category": "drf",
+    "title": "Criar API com Django REST Framework",
+    "code": "python -m pip install \"djangorestframework>=3.16,<3.17\"\n# Adicione \"rest_framework\" a INSTALLED_APPS",
+    "description": "DRF é uma biblioteca separada do Django para APIs. Seus detalhes não são especificados pela documentação oficial Django; consulte também a documentação oficial do DRF.",
+    "explanation": "DRF é uma biblioteca separada do Django para APIs. Seus detalhes não são especificados pela documentação oficial Django; consulte também a documentação oficial do DRF.",
+    "when": "Ao expor dados para outros sistemas.",
+    "keywords": [
+      "criar api rest",
+      "rest framework",
+      "json",
+      "instalar drf",
+      "http"
+    ],
+    "synonyms": [
+      "criar api rest",
+      "rest framework",
+      "json",
+      "instalar drf",
+      "http"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "python -m pip install \"djangorestframework>=3.16,<3.17\"\n# Adicione \"rest_framework\" a INSTALLED_APPS",
+    "source": "https://www.django-rest-framework.org/tutorial/quickstart/",
+    "version": "DRF 3.16 · referência externa ao Django",
+    "syntax": "python -m pip install \"djangorestframework>=3.16,<3.17\"\n# Adicione \"rest_framework\" a INSTALLED_APPS",
+    "kind": "Extensão",
+    "related": [
+      "serializer",
+      "viewset",
+      "router"
+    ]
+  },
+  {
+    "id": "serializer",
+    "category": "drf",
+    "title": "Criar serializer",
+    "code": "from rest_framework import serializers\nfrom .models import Quarto\n\nclass QuartoSerializer(serializers.ModelSerializer):\n    class Meta:\n        model = Quarto\n        fields = [\"id\", \"numero\", \"tipo\", \"disponivel\"]",
+    "description": "ModelSerializer define a representação e validação de dados para a API a partir de um model. Não é o mesmo que um ModelForm.",
+    "explanation": "ModelSerializer define a representação e validação de dados para a API a partir de um model. Não é o mesmo que um ModelForm.",
+    "when": "Em serializers.py ou api.py.",
+    "keywords": [
+      "criar serializer",
+      "modelserializer",
+      "json",
+      "validacao serializer"
+    ],
+    "synonyms": [
+      "criar serializer",
+      "modelserializer",
+      "json",
+      "validacao serializer"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "from rest_framework import serializers\nfrom .models import Quarto\n\nclass QuartoSerializer(serializers.ModelSerializer):\n    class Meta:\n        model = Quarto\n        fields = [\"id\", \"numero\", \"tipo\", \"disponivel\"]",
+    "source": "https://www.django-rest-framework.org/api-guide/serializers/",
+    "version": "DRF 3.16 · referência externa ao Django",
+    "syntax": "from rest_framework import serializers\nfrom .models import Quarto\n\nclass QuartoSerializer(serializers.ModelSerializer):\n    class Meta:\n        model = Quarto\n        fields = [\"id\", \"numero\", \"tipo\", \"disponivel\"]",
+    "kind": "Classe",
+    "related": [
+      "model",
+      "viewset",
+      "drf"
+    ]
+  },
+  {
+    "id": "viewset",
+    "category": "drf",
+    "title": "Criar ModelViewSet",
+    "code": "from rest_framework import viewsets\nfrom .models import Quarto\n\nclass QuartoViewSet(viewsets.ModelViewSet):\n    queryset = Quarto.objects.all()\n    serializer_class = QuartoSerializer",
+    "description": "ModelViewSet agrupa ações comuns de listagem, detalhe, criação, atualização e exclusão. Configure autenticação e permissões para produção.",
+    "explanation": "ModelViewSet agrupa ações comuns de listagem, detalhe, criação, atualização e exclusão. Configure autenticação e permissões para produção.",
+    "when": "Para organizar operações REST de um model.",
+    "keywords": [
+      "criar viewset",
+      "modelviewset",
+      "apiview",
+      "api"
+    ],
+    "synonyms": [
+      "criar viewset",
+      "modelviewset",
+      "apiview",
+      "api"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "from rest_framework import viewsets\nfrom .models import Quarto\n\nclass QuartoViewSet(viewsets.ModelViewSet):\n    queryset = Quarto.objects.all()\n    serializer_class = QuartoSerializer",
+    "source": "https://www.django-rest-framework.org/api-guide/viewsets/",
+    "version": "DRF 3.16 · referência externa ao Django",
+    "syntax": "from rest_framework import viewsets\nfrom .models import Quarto\n\nclass QuartoViewSet(viewsets.ModelViewSet):\n    queryset = Quarto.objects.all()\n    serializer_class = QuartoSerializer",
+    "kind": "Classe",
+    "related": [
+      "model",
+      "serializer",
+      "router",
+      "drf"
+    ]
+  },
+  {
+    "id": "router",
+    "category": "drf",
+    "title": "Registrar rotas da API",
+    "code": "from django.urls import include, path\nfrom rest_framework.routers import DefaultRouter\nfrom quartos.api import QuartoViewSet\n\nrouter = DefaultRouter()\nrouter.register(\"quartos\", QuartoViewSet)\n# Acrescente em urlpatterns: path(\"api/\", include(router.urls))",
+    "description": "O router gera padrões de URL para as ações do ViewSet; inclua router.urls no URLconf.",
+    "explanation": "O router gera padrões de URL para as ações do ViewSet; inclua router.urls no URLconf.",
+    "when": "No urls.py, para disponibilizar /api/quartos/.",
+    "keywords": [
+      "registrar rotas api",
+      "router.register",
+      "defaultrouter",
+      "endpoint"
+    ],
+    "synonyms": [
+      "registrar rotas api",
+      "router.register",
+      "defaultrouter",
+      "endpoint"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "from django.urls import include, path\nfrom rest_framework.routers import DefaultRouter\nfrom quartos.api import QuartoViewSet\n\nrouter = DefaultRouter()\nrouter.register(\"quartos\", QuartoViewSet)\n# Acrescente em urlpatterns: path(\"api/\", include(router.urls))",
+    "source": "https://www.django-rest-framework.org/api-guide/routers/",
+    "version": "DRF 3.16 · referência externa ao Django",
+    "syntax": "from django.urls import include, path\nfrom rest_framework.routers import DefaultRouter\nfrom quartos.api import QuartoViewSet\n\nrouter = DefaultRouter()\nrouter.register(\"quartos\", QuartoViewSet)\n# Acrescente em urlpatterns: path(\"api/\", include(router.urls))",
+    "kind": "Método",
+    "related": [
+      "viewset",
+      "include",
+      "http"
+    ]
+  },
+  {
+    "id": "http",
+    "category": "drf",
+    "title": "Métodos HTTP e respostas JSON",
+    "code": "GET /api/quartos/\nPOST /api/quartos/\nContent-Type: application/json\n\n{\"numero\": 101, \"tipo\": \"Standard\", \"disponivel\": true}",
+    "description": "GET consulta; POST cria; PUT substitui, PATCH altera parcialmente e DELETE exclui. Uma criação bem-sucedida normalmente retorna 201 no ModelViewSet.",
+    "explanation": "GET consulta; POST cria; PUT substitui, PATCH altera parcialmente e DELETE exclui. Uma criação bem-sucedida normalmente retorna 201 no ModelViewSet.",
+    "when": "Ao consumir ou testar uma API REST.",
+    "keywords": [
+      "get",
+      "post",
+      "put",
+      "patch",
+      "delete",
+      "status 201",
+      "json",
+      "api navegavel"
+    ],
+    "synonyms": [
+      "get",
+      "post",
+      "put",
+      "patch",
+      "delete",
+      "status 201",
+      "json",
+      "api navegavel"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "GET /api/quartos/\nPOST /api/quartos/\nContent-Type: application/json\n\n{\"numero\": 101, \"tipo\": \"Standard\", \"disponivel\": true}",
+    "source": "https://www.django-rest-framework.org/api-guide/status-codes/",
+    "version": "DRF 3.16 · referência externa ao Django",
+    "syntax": "GET /api/quartos/\nPOST /api/quartos/\nContent-Type: application/json\n\n{\"numero\": 101, \"tipo\": \"Standard\", \"disponivel\": true}",
+    "kind": "Conceito",
+    "related": []
+  }
+]

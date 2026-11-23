@@ -1,0 +1,65 @@
+
+===== Página 1 =====
+10 Perguntas Frequentes: MVVM e Adapter
+ILP-037 Técnicas de Programação II — FATEC Olímpia  Guia de Consulta Rápida
+1. Se eu já tenho o Service, para que serve o ViewModel?
+Em resumo: O Service cuida da regra de negócio (o que o sistema faz); o ViewModel cuida da lógica de exibição
+(como a informação é formatada para aparecer na tela).
+■ No Resort de Olímpia: A Governança/Service valida se a reserva pode existir e calcula a tarifa; o Maître/ViewModel pega
+o prato pronto e decide a apresentação no cardápio antes do garçom (View) levar à mesa.
+Fonte: ILP037_Aula08_Slides.pdf (Slides 3, 5, 6, 7)
+2. MVVM substitui o MVC/MVT?
+Em resumo: Não substitui — o MVVM acrescenta uma camada dedicada de preparação de exibição para manter a
+tela limpa e testável.
+■ No Resort de Olímpia: O Resort continua tendo estoque (Model), governança (Service/Controller) e garçom (View); o
+MVVM apenas introduz o maître para arrumar a bandeja sem sobrecarregar o garçom.
+Fonte: ILP037_Aula08_Slides.pdf (Slides 7, 8)
+3. O x-model do Alpine é MVVM?
+Em resumo: Sim, o x-model implementa data binding reativo bidirecional no navegador, que é o mecanismo central
+do MVVM clássico.
+■ No Resort de Olímpia: É como um terminal de pedido direto na mesa do hóspede: mudou o item no visor, atualiza a
+comanda na cozinha; alterou a comanda na cozinha, a tela da mesa atualiza na hora.
+Fonte: ILP037_Aula08_Slides.pdf (Slide 9); model — Alpine.js
+4. Preciso de ViewModel em toda tela?
+Em resumo: Não! Criar ViewModel para telas simples que apenas exibem o dado como ele é constitui
+sobre-engenharia (antifachada).
+■ No Resort de Olímpia: Se o garçom apenas entrega uma garrafa de água mineral lacrada direto do estoque para a
+mesa, não faz sentido chamar o maître para re-empratar a garrafa.
+Fonte: ILP037_Aula08_Slides.pdf (Slide 10)
+5. O que é um Adapter, em uma frase?
+Em resumo: O Adapter é uma estrutura que 'veste' uma classe incompatível para que ela passe a responder à
+interface esperada pelo sistema.
+■ No Resort de Olímpia: É o adaptador de tomada do Resort que conecta o plugue europeu do secador do hóspede à
+tomada brasileira da parede, sem quebrar a parede e sem alterar o secador.
+Fonte: Ficha Adapter.pdf (Pág. 139); ILP037_Aula08_Slides.pdf (Slide 13)
+===== Página 2 =====
+6. Por que não mudar o próprio driver do Neon em vez de criar um Adapter?
+Em resumo: Porque o driver do Neon é código de terceiros (biblioteca externa) e você não possui controle sobre a
+sua assinatura nem deve alterá-lo.
+■ No Resort de Olímpia: Você não pode reconfigurar os circuitos elétricos internos do aparelho trazido pelo hóspede de
+fora, nem reescrever a fiação de todo o Resort só para um cliente.
+Fonte: Ficha Adapter.pdf (Pág. 139); ILP037_Aula08_Slides.pdf (Slide 16)
+7. Adapter é a mesma coisa que o 'if usa_neon', só mais bonito?
+Em resumo: Não! O 'if' espalha decisões de infraestrutura e duplica condicionais, enquanto o Adapter isola a
+tradução e elimina o 'if' da regra de negócio.
+■ No Resort de Olímpia: Em vez do garçom checar em cada atendimento se o hóspede é europeu e trocar o conector
+manualmente, o adaptador na parede resolve o encaixe de forma transparente.
+Fonte: ILP037_Aula08_Slides.pdf (Slides 12, 13, 14, 15)
+8. Quando NÃO usar Adapter?
+Em resumo: Não use se você controla as duas pontas do código ou quando o duck typing do Python resolve
+interfaces parecidas sem necessidade de nova classe.
+■ No Resort de Olímpia: Se dois hotéis parceiros em Olímpia utilizam o mesmo padrão de tomadas brasileiras, basta
+conectar os aparelhos diretamente sem comprar adaptadores.
+Fonte: ILP037_Aula08_Slides.pdf (Slide 16)
+9. Isso cai no Marco 2?
+Em resumo: Sim, mediante a fundamentação escrita nos Registros de Decisão Arquitetural (ADRs) da equipe no
+Caderno de Design.
+■ No Resort de Olímpia: É o relatório oficial da gestão da brigada justificando a escolha estratégica de colocar ou não um
+maître (ViewModel) e adaptadores de tomada (Adapter) no hotel.
+Fonte: ILP037_Aula07_Slides.pdf (Slides 2, 9, 10); ILP037_Aula08_Slides.pdf (Slide 19)
+10. Qual a diferença entre o que o Service separa e o que o ViewModel separa?
+Em resumo: O Service isola a regra de negócio (o que o sistema faz); o ViewModel isola a lógica de exibição (como a
+informação é formatada para ver).
+■ No Resort de Olímpia: A Governança (Service) decide se o quarto pode ser reservado pelo valor da tarifa; o Maître
+(ViewModel) decide se escreve 'LIVRE' em verde ou 'RESERVAR' no botão da vitrine.
+Fonte: ILP037_Aula07_Slides.pdf (Slide 4); ILP037_Aula08_Slides.pdf (Slides 1, 5, 19)

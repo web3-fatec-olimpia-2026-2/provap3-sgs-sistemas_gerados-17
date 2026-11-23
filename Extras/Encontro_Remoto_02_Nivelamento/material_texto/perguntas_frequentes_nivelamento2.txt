@@ -1,0 +1,66 @@
+
+===== Página 1 =====
+ILP-037 TÉCNICAS DE PROGRAMAÇÃO II — FATEC OLÍMPIA
+GUIA DE 10 RESPOSTAS RÁPIDAS (NIVELAMENTO 2)
+Nivelamento 2 — Ancorado nas Fontes Oficiais
+Página 1 de 2
+10 Dúvidas Frequentes de Quem Faz os Labs Sozinho
+ILP-037 Técnicas de Programação II  FATEC Olímpia  Nivelamento 2 (SQL, Git e Leitura de Erros)
+LAB 1 — SQL NA MÃO (SQLITE)
+1. O que é uma tabela, e o que é uma linha?
+Em resumo: A tabela é a planilha completa de dados, e a linha representa um registro individual específico.
+Detalhe & Resort de Olímpia: Na recepção do Resort de Olímpia, a tabela 'quarto' é o livro geral onde estão cadastradas todas as acomodações.
+Cada linha (registro) dessa tabela é a ficha individual de um quarto específico (ex.: Quarto 101, Categoria Luxo, Diária R$ 350).
+Fonte: sqlite3 — DB-API 2.0 interface for SQLite databases & ILP037_Nivelamento2_Slides.pdf
+2. Qual a diferença entre SELECT e WHERE?
+Em resumo: O SELECT escolhe QUAIS COLUNAS você quer ver, enquanto o WHERE define a CONDIÇÃO (filtro) das linhas.
+Detalhe & Resort de Olímpia: Se você precisa saber o número dos quartos que custam menos de R$ 300 no Resort, você usa SELECT numero
+(as colunas exibidas) e WHERE diaria < 300 (o filtro de seleção).
+Fonte: ILP037_Nivelamento2_Slides.pdf
+3. O que o JOIN junta, e por quê?
+Em resumo: O JOIN conecta duas ou mais tabelas relacionando-as através de um campo comum (o 'elo' ou chave estrangeira).
+Detalhe & Resort de Olímpia: A tabela 'reserva' guarda quem reservou e a tabela 'quarto' guarda as características do cômodo. O JOIN une a
+reserva ao quarto através do campo quarto_id (o elo), permitindo descobrir o nome do hóspede e o número do seu quarto na mesma consulta.
+Fonte: ILP037_Nivelamento2_Slides.pdf
+4. Isso é a mesma coisa que o Django faz?
+Em resumo: Sim! O Django usa um ORM que escreve e executa comandos SQL no banco de dados por baixo dos panos.
+Detalhe & Resort de Olímpia: O ORM é como o garçom do restaurante do Resort: você faz o pedido em linguagem simples
+(reserva.quarto.numero), e ele traduz e leva a consulta em SQL diretamente para a cozinha (o banco SQLite). Entender SQL é entender o ORM.
+Fonte: ILP037_Nivelamento2_Slides.pdf
+LAB 2 — GIT ALÉM DO COMMIT (BRANCH E CONFLITO)
+5. O que é uma branch?
+Em resumo: Uma branch é uma linha de trabalho paralela e totalmente isolada do código principal.
+Detalhe & Resort de Olímpia: Pense nisso como criar uma planta rascunhada para reformar uma suíte do Resort sem mexer na maquete oficial
+da recepção (main). Você testa novos recursos livremente na sua branch e só junta ao main quando estiver tudo perfeito.
+Fonte: Git - Basic Branching and Merging & ILP037_Nivelamento2_Slides.pdf
+6. Por que apareceu 'CONFLICT'? Eu fiz algo errado?
+Em resumo: Não! O conflito NÃO é um erro ou bug; é apenas o Git pedindo uma decisão humana sobre alterações concorrentes.
+Detalhe & Resort de Olímpia: Se duas pessoas alteram o valor da diária do mesmo Quarto 101 ao mesmo tempo em branches diferentes (uma
+colocou R$ 400 e a outra R$ 450), o Git é honesto e diz: 'Não sei qual preço o Resort prefere manter, por favor escolha você!'
+Fonte: Git - Basic Branching and Merging & ILP037_Nivelamento2_Slides.pdf
+7. O que significam os sinais <<< === >>> no meu arquivo?
+Em resumo: São marcadores visuais que delimitam o que veio da sua branch atual e o que veio da outra branch.
+Detalhe & Resort de Olímpia: Entre <<<<<<< HEAD e ======= fica o código da sua branch (ex.: categoria 'Presidencial'). Entre ======= e
+>>>>>>> fica o código vindo da outra branch (ex.: categoria 'Suíte'). O símbolo ======= é o divisor central.
+Fonte: Git - Basic Branching and Merging & ILP037_Nivelamento2_Slides.pdf
+8. Como eu sei que resolvi o conflito?
+Em resumo: Você apagou os três marcadores (<<<, ===, >>>), salvou a versão final, e rodou git add + git commit com status limpo.
+Detalhe & Resort de Olímpia: É como finalizar uma ficha do Resort: você limpa os marcadores de rascunho, deixa só o texto final correto,
+confirma os arquivos com git add, conclui com git commit e roda git status para ver a mensagem verde confirmando que o conflito acabou.
+Fonte: Git - Basic Branching and Merging & ILP037_Nivelamento2_Slides.pdf
+===== Página 2 =====
+ILP-037 TÉCNICAS DE PROGRAMAÇÃO II — FATEC OLÍMPIA
+GUIA DE 10 RESPOSTAS RÁPIDAS (NIVELAMENTO 2)
+Nivelamento 2 — Ancorado nas Fontes Oficiais
+Página 2 de 2
+LAB 3 — LER UM ERRO EM 3 PASSOS
+9. O erro do Python é sempre culpa minha?
+Em resumo: De forma alguma! A mensagem de erro não é um castigo ou bronca, é um painel de diagnóstico amigo.
+Detalhe & Resort de Olímpia: No Resort de Olímpia, é equivalente a um sensor na piscina avisando 'temperatura abaixo do ideal'. O sistema não
+está bravo com você; ele só está apontando exatamente o que encontrou para você ajustar com calma e sem pânico.
+Fonte: 8. Errors and Exceptions — Python 3.14.7 documentation & ILP037_Nivelamento2_Slides.pdf
+10. Por que devo ler a ÚLTIMA linha do erro primeiro?
+Em resumo: Porque o Python exibe o histórico de baixo para cima, colocando o resumo direto do problema na última linha.
+Detalhe & Resort de Olímpia: A última linha revela O QUÊ deu errado (ex.: NameError), o 'line N' mostra ONDE foi, e o tipo serve como pista
+direta da causa. Ler de baixo para cima economiza tempo e elimina o susto de olhar para a tela cheia de texto.
+Fonte: 8. Errors and Exceptions — Python 3.14.7 documentation & ILP037_Nivelamento2_Slides.pdf

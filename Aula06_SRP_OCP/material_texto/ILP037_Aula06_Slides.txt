@@ -1,0 +1,164 @@
+
+===== Página 1 =====
+Princípios de design: SRP e OCP
+ILP-037 Técnicas de Programação II • Aula 06 • 11/09/2026
+Prof. Jose Ceron Neto
+Faculdade de Tecnologia de Olímpia — Centro Paula Souza
+CST em Desenvolvimento de Software Multiplataforma
+Olímpia, SP — 2º semestre de 2026
+===== Página 2 =====
+Roteiro
+Dando nome ao que vocês já fazem — e o Marco 1
+1. SRP e OCP: os princípios
+2. Laboratório: separar responsabilidades
+— intervalo
+3. Marco 1: entrega e defesa
+A IDEIA DA NOITE
+Os princípios de design não são teoria nova. Eles dão nome ao que vocês já vêm
+fazendo bem — inclusive o Strategy da semana passada. E hoje entrega o Marco 1.
+Fatec Olímpia 1/13
+===== Página 3 =====
+PARTE 1 / 3
+SRP e OCP: os princípios
+1. SRP e OCP: os princípios
+2. Laboratório: separar
+3. Marco 1: entrega e defesa
+2/13
+===== Página 4 =====
+Recap: o Strategy da Aula 05
+Guardem esta imagem
+class T a r i f a C o m u m :
+def aplicar ( self , base ) : return base
+class T a r i f a F i d e l i d a d e :
+def aplicar ( self , base ) : return base * 0.90
+class Reserva :
+def __i ni t__ ( self , diarias , valor_diaria , tarifa ) :
+self . tarifa = tarifa
+def total ( self ) :
+return self . tarifa . aplicar ( self . diarias * self . v a l o r _ d i a r i a )
+Semana passada: cada política numa classe, a Reserva delegando. No fim da aula, essa imagem
+volta — com um nome novo.
+Fatec Olímpia 3/13
+===== Página 5 =====
+O smell: a classe que faz tudo
+Três motivos para mudar num lugar só
+class Reserva :
+def total ( self ) : # 1. regra de negocio
+return self . diarias * self . v a l o r _ d i a r i a
+def f o r m a t a r _ r e c i b o ( self ) : # 2. a p r e s e n t a c a o
+return f " RECIBO \ n { self . hospede }\ n ... "
+def s a l v a r _ e m _ a r q u i v o ( self , caminho ) : # 3. i n f r a e s t r u t u r a
+with open ( caminho , " w " ) as f :
+f . write ( self . f o r m a t a r _ r e c i b o () )
+▲ calcula, formata E salva: tres responsabilidades misturadas
+Mudou o layout? Mexe aqui. Mudou o destino (banco)? Mexe aqui. Mudou a regra? Mexe aqui. Três
+motivos para tocar na mesma classe.
+Fatec Olímpia 4/13
+===== Página 6 =====
+SRP — Responsabilidade Única
+Uma classe, um motivo para mudar
+SRP (SINGLE RESPONSIBILITY PRINCIPLE)
+Uma classe deve ter um só motivo para mudar. A Reserva cuida da reserva; formatar e
+salvar são trabalho de outras classes.
+Reserva os dados e o total() — regra de negócio
+ReciboFormatter o formatar(reserva) — apresentação
+ArquivoRepository o salvar(texto, caminho) — infraestrutura
+NÃO é "uma classe por método". O critério é "um motivo para mudar" — separar demais é
+tão ruim quanto juntar demais.
+PARA FIXAR O funcionário com um crachá só: a recepção não cozinha, a cozinha não limpa o quarto.
+Fatec Olímpia 5/13
+===== Página 7 =====
+OCP — Aberto/Fechado
+E aqui a semana passada volta
+OCP (OPEN/CLOSED PRINCIPLE)
+O código deve ser aberto para estender e fechado para modificação. Você acrescenta
+comportamento sem alterar o que já funciona.
+VOCÊS JÁ FIZERAM ISSO
+Na Aula 05, quando criaram uma TarifaVIP nova sem tocar na Reserva — isso foi OCP.
+O Strategy que vocês escreveram já era o princípio, antes de ter o nome.
+OCP não é prever todo futuro. Abstrai-se onde a variação JÁ apareceu — não para o "e se"
+que talvez nunca venha.
+PARA FIXAR Acrescentar uma categoria de tarifa sem reformar a recepção.
+Fatec Olímpia 6/13
+===== Página 8 =====
+Princípio × padrão
+O fecho da noite
+Princípio Padrão
+uma diretriz: o "o quê" uma solução nomeada: um
+"como"
+OCP: "estenda sem modificar" Strategy: políticas trocáveis
+vale para todo o código resolve um problema específico
+A TRAJETÓRIA DA DISCIPLINA
+Primeiro a mão, depois o nome. Vocês encapsularam antes de saber "encapsulamento";
+fizeram polimorfismo antes do nome; escreveram OCP como Strategy. O nome vem
+depois de vocês sentirem por que dói.
+Fatec Olímpia 7/13
+===== Página 9 =====
+PARTE 2 / 3
+Laboratório: separar
+1. SRP e OCP: os princípios
+2. Laboratório: separar
+3. Marco 1: entrega e defesa
+8/13
+===== Página 10 =====
+Laboratório — separar responsabilidades
+35 minutos, Python puro
+1. Você recebe a Reserva que faz tudo — e 2 testes (um passa, um falha)
+2. Separa em Reserva + ReciboFormatter + ArquivoRepository
+3. O recibo tem que sair idêntico — é a prova de que você não quebrou nada
+Refatorar é mudar a forma, não o resultado
+O teste do recibo é a rede de segurança. Você muda a estrutura (três classes em vez de uma), mas o
+recibo formatado continua o mesmo. Se ele mudar, você quebrou algo.
+python3 -m pytest . Regra do Interlocutor: leia o erro em voz alta antes de me chamar.
+Fatec Olímpia 9/13
+===== Página 11 =====
+PARTE 3 / 3
+Marco 1: entrega e defesa
+1. SRP e OCP: os princípios
+2. Laboratório: separar
+3. Marco 1: entrega e defesa
+10/13
+===== Página 12 =====
+Marco 1 — hoje
+Entrega e defesa do Caderno de Design
+O Marco 1 avalia a decisão de design da equipe: o Caderno, com os ADRs. Hoje vocês entregam e
+defendem.
+A DEFESA É ORAL E SEM CONSULTA
+Cada equipe apresenta uma decisão do Caderno: qual foi, por que a tomaram, e o que
+descartaram. Sem IA, sem colar — vocês explicam o que decidiram.
+O que conta: justificar, não só descrever. "Escolhemos X em vez de Y porque..." — não
+"usamos X".
+Material de apoio no Teams: o vídeo "Como fechar o Marco 1" e o checklist. Quem ainda ajusta, usa
+enquanto as outras equipes defendem.
+Fatec Olímpia 11/13
+===== Página 13 =====
+Homework
+Entrega até quarta, 17/09 — leve, pós-Marco
+1. Individual
+Termine o laboratório de SRP (as
+três classes). Entregue o .py .
+2. Individual
+Em 3–5 linhas: qual a diferença
+entre um princípio (OCP) e um
+padrão (Strategy)? (IA vedada.)
+3. Equipe (opcional)
+Um ADR sobre uma
+responsabilidade que vocês
+perceberam misturada no projeto.
+DEPOIS DA ENTREGA
+O homework é leve de propósito — vocês acabaram de fechar um marco. Descansem a
+cabeça e voltem inteiros para arquitetura, na próxima.
+Fatec Olímpia 12/13
+===== Página 14 =====
+Antes de sair
+Encaminhamentos
+Chamada nominal
+Relatores: confirmem a entrega do Caderno no Teams (link do docs/design/ )
+Marco 1 entregue. Vocês sabem por que o código de vocês está como está — e sabem
+defender
+Próxima aula: arquitetura — MVC, MVT, MVP. Onde as responsabilidades viram camadas
+Fatec Olímpia 13/13
+===== Página 15 =====
+GOVERNO DO ESTADO
+DE SÃO PAULO
+Primeiro a mão, depois o nome.

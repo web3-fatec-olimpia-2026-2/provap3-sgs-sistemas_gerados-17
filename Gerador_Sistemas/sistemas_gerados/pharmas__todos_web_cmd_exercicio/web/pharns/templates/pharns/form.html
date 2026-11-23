@@ -1,0 +1,13 @@
+{% extends "pharns/base.html" %}
+{% block title %}{% if obj %}Editar{% else %}Cadastrar{% endif %} Pharm — Pharmas{% endblock %}
+{% block page_title %}{% if obj %}Editar{% else %}Cadastrar{% endif %} Pharm{% endblock %}
+{% block content %}
+<aside class="apresentacao" data-apresentacao><strong>Apresentação ·</strong> Formulário = <code>PharmForm</code> (ModelForm): reaproveita os validators do model — a mesma regra do encapsulamento, agora no mundo Django.</aside>
+<aside class="apresentacao" data-apresentacao><strong>Apresentação ·</strong> Ao salvar, <code>form.is_valid()</code> roda as validações; <code>save()</code> sozinho não validaria (pegadinha testada em <code>tests/test_models.py</code>).</aside>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Salvar</button>
+</form>
+<p><a href="{% if obj %}{% url 'pharns:detalhe' obj.pk %}{% else %}{% url 'pharns:lista' %}{% endif %}">Voltar</a></p>
+{% endblock %}

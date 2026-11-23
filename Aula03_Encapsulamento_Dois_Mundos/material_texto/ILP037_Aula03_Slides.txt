@@ -1,0 +1,303 @@
+
+===== Página 1 =====
+Consolidar fazendo: encapsulamento em dois mundos
+ILP-037 Técnicas de Programação II • Aula 03 • 21/08/2026
+Prof. Jose Ceron Neto
+Faculdade de Tecnologia de Olímpia — Centro Paula Souza
+CST em Desenvolvimento de Software Multiplataforma
+Olímpia, SP — 2º semestre de 2026
+===== Página 2 =====
+Roteiro
+Quatro blocos
+1. A planta do complexo:
+Teams, GitHub, Taiga
+2. A mão na massa: encapsulamento
+3. O mesmo conceito, dois mundos
+4. A porta para herança
+OBJETIVO DA NOITE
+Sair daqui plugado nas ferramentas (Teams, GitHub, Taiga), com uma @property escrita
+pela sua própria mão, e sabendo por que proteger um dado em Python puro é diferente
+de proteger no Django.
+Duas aulas atrás a gente viu a teoria. Hoje a gente faz — e conecta com o que vocês fizeram na
+segunda em Web III.
+Fatec Olímpia 1/21
+===== Página 3 =====
+PARTE 1 / 4
+A planta do complexo
+1. A planta do complexo: Teams, GitHub,
+Taiga
+2. A mão na massa: encapsulamento
+3. O mesmo conceito, dois mundos
+4. A porta para herança
+2/21
+===== Página 4 =====
+Onde estamos nas três disciplinas
+A mesma equipe, o mesmo produto, três olhares
+AGO-021
+Gestão Ágil
+o processo
+backlog, sprint, Taiga
+ISW-030
+Web III
+o funcionamento
+o site roda, persiste
+ILP-037
+Téc. Prog. II
+a decisão de design
+por que o código é assim
+UM PRODUTO SÓ
+Vocês constroem uma aplicação no semestre. AGO cuida de como vocês se organizam,
+Web III de fazer funcionar, e aqui a gente pergunta por que o código ficou assim, e dá
+para melhorar. Mesma equipe, mesmo repositório, três perguntas.
+Hoje é sexta: a gente lê o que vocês construíram na segunda e pensa no design.
+Fatec Olímpia 3/21
+===== Página 5 =====
+A planta: onde mora cada coisa
+Primeira disciplina inteira no Teams — perder-se aqui é esperado
+Teams
+Onde está o material e onde se
+entrega.
+Módulos por aula
+Vídeos de solução
+Canal de Dúvidas
+Atividades = entregas
+GitHub
+Onde mora o código da equipe.
+Seu usuário
+O time da equipe
+O repositório do projeto
+Cada aula, uma branch
+Taiga
+Onde mora o plano da equipe.
+O quadro da Sprint 1
+Os cartões de tarefa
+O professor como admin
+O mesmo das 3 disciplinas
+Meta deste bloco: sair da aula com o time do GitHub fechado e o quadro do Taiga de pé.
+Fatec Olímpia 4/21
+===== Página 6 =====
+Agora, na prática
+20h00 é o ponto de controle
+1. GitHub — quem ainda não enviou o usuário, envia agora no canal combinado.
+Formamos os times com quem está aqui.
+2. Taiga — cada equipe confirma: quadro criado, professor como administrador, cartões
+iniciais da Sprint 1.
+3. Teams — todo mundo localiza: o módulo de hoje, onde entregar o homework, e o canal
+de Dúvidas.
+Ponto de controle — 20h00
+Toda equipe com time no GitHub e quadro no Taiga. Quem não tem, pareia com quem tem.
+Ninguém sai deste bloco desplugado — é pré-requisito de todo o resto do semestre.
+Fatec Olímpia 5/21
+===== Página 7 =====
+PARTE 2 / 4
+A mão na massa:
+encapsulamento
+1. A planta do complexo: Teams, GitHub,
+Taiga
+2. A mão na massa: encapsulamento
+3. O mesmo conceito, dois mundos
+4. A porta para herança
+6/21
+===== Página 8 =====
+Recap em 90 segundos
+O que a gente viu, e não teve tempo de fazer
+ENCAPSULAMENTO
+O objeto protege o próprio dado. Em vez de deixar qualquer código gravar qualquer
+coisa, o objeto valida antes.
+atributo público qualquer um grava lixo (q.diaria = -30 passa)
+@property + setter o objeto valida antes de gravar
+CADERNO DE DESIGN
+Onde a equipe registra por que o código é assim — o ADR. É o artefato que só existe
+nesta disciplina.
+PARA FIXAR O cofre do quarto: o hóspede usa, mas não mexe na fechadura.
+Fatec Olímpia 7/21
+===== Página 9 =====
+A demonstração relâmpago
+O problema, e a fechadura — uma vez, ao vivo
+q = Quarto (101 , 250)
+q . diaria = -30 # smell : aceita diaria negativa , grava lixo
+class Quarto :
+def __i ni t__ ( self , numero , diaria ) :
+self . numero = numero
+self . diaria = diaria # usa o setter
+@ p r o p e r t y
+def diaria ( self ) :
+return self . _diaria
+@diaria . setter
+def diaria ( self , valor ) :
+if valor < 0:
+raise V a l u e E r r o r ( " diaria ne gat iv a " )
+self . _diaria = valor
+✓ agora q.diaria = -30 levanta ValueError, em vez de gravar
+Fatec Olímpia 8/21
+===== Página 10 =====
+Laboratório — 30 minutos, na sua máquina
+Agora é você que instala a fechadura
+Roteiro impresso na mesa. Em resumo:
+1. Pegue a classe do seu homework 02a — ou a Quarto de referência
+2. Escolha um segundo atributo que tenha regra
+3. Escreva @property + setter que valida esse atributo
+4. Rode o teste com python3 -m pytest e veja passar
+Duas regras do laboratório
+Rode sempre python3 -m pytest tests/ — com o -m . Se der ModuleNotFoundError , o
+pytest.ini com pythonpath = . resolve (já está na pasta).
+Regra do Interlocutor: me chame pelo Interlocutor, e leia o erro em voz alta para o grupo antes.
+Boa parte se resolve na leitura.
+Fatec Olímpia 9/21
+===== Página 11 =====
+Critério de conclusão
+Ninguém fica para trás
+A equipe sinaliza quando
+todos rodaram o teste verde —
+não quando o primeiro rodou.
+Quem terminou ajuda quem travou. É para isso que a equipe existe — e conta como participação.
+Fatec Olímpia 10/21
+===== Página 12 =====
+PARTE 3 / 4
+O mesmo conceito, dois
+mundos
+1. A planta do complexo: Teams, GitHub,
+Taiga
+2. A mão na massa: encapsulamento
+3. O mesmo conceito, dois mundos
+4. A porta para herança
+11/21
+===== Página 13 =====
+A ponte com segunda-feira
+Vocês já fizeram encapsulamento em Web III — de outro jeito
+Na segunda, em Web III, vocês colocaram isto num campo do model :
+valor = models . D e c i m a l F i e l d (
+m a x _ d i g i t s =8 , d e c i m a l _ p l a c e s =2 ,
+v a l i d a t o r s =[ M i n V a l u e V a l i d a t o r (0) ] , # impede valor neg ati vo
+)
+A PERGUNTA
+Isso é encapsulamento — o mesmo princípio da sexta: impedir que o dado entre inválido.
+Mas a implementação foi diferente. Aqui na sexta a gente usou @property . Lá usou
+validator . Por quê?
+Fatec Olímpia 12/21
+===== Página 14 =====
+Os dois lado a lado
+O mesmo princípio, duas mãos diferentes
+Python puro (aqui) Django model (Web III)
+Proteger um valor @property + setter que valida validators=[MinValueValidator(0)]
+no campo
+Por que assim é a ferramenta da linguagem save() não valida; o validador roda
+via ModelForm / full_clean()
+@property serve para ler e proteger o atributo só dado calculado (o total )
+setter num campo do
+model
+— quebra formulário, admin e ORM
+O mesmo conceito de OO tem duas mãos, conforme onde você está. Saber qual usar onde é o que
+separa quem decorou de quem entendeu.
+Fatec Olímpia 13/21
+===== Página 15 =====
+O que isso significa para o seu homework
+Ninguém errou — agora todo mundo sabe separar
+Se a sua entidade é classe Python comum
+@property + setter está perfeito
+É o que o homework 02a pediu
+Se você foi aplicar no model do Django
+Aí é o outro caminho: validador
+@property lá é só para o total
+A LIÇÃO QUE FICA
+Os dois estão certos, cada um no seu mundo. Isto vai voltar em todo padrão do
+semestre: a solução certa depende do terreno. Padrão não é receita cega — é decisão.
+No Caderno de Design, a equipe registra qual caminho escolheu no projeto, e por quê. Esse é o ADR.
+Fatec Olímpia 14/21
+===== Página 16 =====
+PARTE 4 / 4
+A porta para herança
+1. A planta do complexo: Teams, GitHub,
+Taiga
+2. A mão na massa: encapsulamento
+3. O mesmo conceito, dois mundos
+4. A porta para herança
+15/21
+===== Página 17 =====
+O problema que herança resolve
+Categorias de quarto no Resort
+No Resort há quarto comum, suíte, quarto presidencial. Todos são quarto — têm número, diária,
+hóspede. Mas a suíte tem sala; o presidencial tem mordomo.
+A PERGUNTA
+Copiar a classe Quarto inteira três vezes, mudando um detalhe em cada, é desperdício
+— e vira manutenção em três lugares. Como escrever “a suíte é um quarto, com um
+pouco mais”?
+A resposta é herança.
+Fatec Olímpia 16/21
+===== Página 18 =====
+Herança: class Suite(Quarto)
+A suíte é-um quarto, e reaproveita
+class Quarto :
+def __i ni t__ ( self , numero , diaria ) :
+self . numero = numero
+self . diaria = diaria
+class Suite ( Quarto ) : # Suite E - UM Quarto
+def __i ni t__ ( self , numero , diaria , te m_s ala ) :
+super () . _ _i nit __ ( numero , diaria ) # r e a p r o v e i t a o Quarto
+self . t em _sa la = tem _s ala
+O QUE super() FAZ
+Chama o construtor do Quarto de dentro da Suite . A suíte ganha numero e diaria de
+graça, sem copiar código, e só acrescenta o que é dela: tem_sala .
+PARA FIXAR A categoria de quarto: a suíte é um quarto, com mais. Não se reescreve o quarto — herda-se.
+Fatec Olímpia 17/21
+===== Página 19 =====
+É-um ou tem-um?
+A distinção que vocês vão usar o semestre todo
+É-UM → herança
+A suíte é um quarto.
+class Suite(Quarto)
+Quando o novo tipo é uma variação do original.
+TEM-UM → composição
+O quarto tem um frigobar.
+self.frigobar = Frigobar()
+Quando um objeto contém outro, mas não é ele.
+O TESTE RÁPIDO
+Fale em voz alta: “a suíte é um quarto” — soa certo, é herança. “O quarto é um frigobar”
+— soa errado, então é tem-um: composição. O ouvido ajuda mais que a regra.
+Hoje é só reconhecer. A gente aprofunda na próxima sexta.
+Fatec Olímpia 18/21
+===== Página 20 =====
+Sábado: nivelamento assíncrono
+A rede de segurança da base
+22/08, sábado, sem hora marcada. Trilha no Teams, presença por conclusão.
+Não tem conteúdo novo — serve para firmar a base: objeto, classe, atributo, método.
+Quem ainda patina em OO, é a hora. Herança, que a gente começou hoje, se apoia nisso.
+Quem está firme, usa para adiantar o Caderno de Design.
+Para quem faltou às aulas anteriores
+As trilhas de recuperação continuam no Teams. O sábado é a chance de emparelhar antes que a
+distância aumente.
+Fatec Olímpia 19/21
+===== Página 21 =====
+Homework
+Entrega até quarta-feira, 26/08, 23h59, no Teams
+1. Individual
+Termine o laboratório: a segunda
+@property + setter . Entregue o
+.py .
+2. Individual
+Em 3–5 linhas: por que proteger
+um valor em Python puro usa
+@property , mas no model do
+Django usa validador? (IA vedada.)
+3. Da equipe
+ADR no Caderno de Design: qual
+caminho de validação a equipe usa
+no projeto — Python ou Django —
+e por quê.
+PRAZO
+Quarta, 26/08. O Bloco 1 de hoje já mostrou como entregar no Teams — então “não sei
+entregar” não vale mais. Entregar errado é melhor que não entregar.
+Fatec Olímpia 20/21
+===== Página 22 =====
+Antes de sair
+Chamada e exit ticket
+Uma palavra sobre a aula de hoje.
+Chamada nominal agora
+Uma palavra por pessoa — eu anoto e não comento
+Relatores: confirmem no Teams o time do GitHub, o quadro do Taiga e o ADR
+Sábado 22/08: nivelamento assíncrono. Próxima sexta 28/08: herança a fundo e polimorfismo
+Fatec Olímpia 21/21
+===== Página 23 =====
+GOVERNO DO ESTADO
+DE SÃO PAULO
+Até sábado, na trilha.

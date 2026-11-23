@@ -1,0 +1,89 @@
+
+===== Página 1 =====
+ILP-037 · FATEC OLÍMPIA — STUDY GUIDE: ARQUITETURA DE SOFTWARE
+Página 1
+A regra de negócio não deve saber o que é web.
+FATEC OLÍMPIA · ILP-037 TÉCNICAS DE PROGRAMAÇÃO II · AULA 07
+Study Guide: Arquitetura e Service Layer (MVC × MVT × MVP)
+Guia Prático de Separação de Responsabilidades e Testabilidade Sem HTTP
+1. O Code Smell em 2 Linhas
+ O Code Smell: Uma view que busca dados no banco, calcula regras de negócio (como descontos e diárias) e formata o texto de
+resposta na mesma função. Para testar a regra de cálculo, você é obrigado a subir a infraestrutura web e parsear texto retornado
+— a regra fica presa, lenta e sem testes.
+2. Comparativo: MVC × MVT × MVP
+ Arquitetura
+ Dado (Model)
+ Regra de Negócio
+ Apresentação
+ O que têm em comum
+MVC
+Model
+Controller
+View
+Separação estrita em 3 papéis.
+MVT (Django)
+Model
+View (função/classe)
+Template
+No Django, a View é a regra
+(equivale ao Controller).
+MVP
+Model
+Presenter
+View (passiva)
+View é burra; Presenter
+orquestra a lógica de
+apresentação.
+Ponto Central: MVC, MVT e MVP dizem a MESMA coisa — separar dado, regra e apresentação. E a regra de negócio NÃO deve
+saber o que é web.
+3. Extraindo o Service Layer (Código do Resort)
+ # 1. Service: Pura regra de negócio. Devolve DADOS, não texto/HTTP.
+class RelatorioService:
+    def __init__(self, reservas):
+        self.reservas = reservas  # Recebe dados brutos
+    def calcular(self):
+        linhas = [(r["hospede"], self._total(r)) for r in self.reservas]
+        total_geral = sum(t for _, t in linhas)
+        return linhas, total_geral  # Devolve dados puros (tupla)
+    def _total(self, r):
+        base = r["diarias"] * r["valor"]
+        return base * 0.90 if r.get("tipo") == "fidelidade" else base
+# 2. View Fina no Django: Apenas orquestra HTTP e delega a regra.
+def relatorio_reservas_view(request):
+    reservas = obter_reservas_do_banco()
+    linhas, total = RelatorioService(reservas).calcular()  # Delegou ao Service!
+    return render(request, 'relatorio.html', {'linhas': linhas, 'total': total})
+4. Por Que Importa: Testabilidade Sem HTTP
+ A Regra que SABE o que é Web (Ruim):
+ Presa a HttpRequest e respostas de template.
+ Só se testa subindo o servidor/client HTTP.
+ Teste fica lento e caro → Ninguém faz → Regra sem teste.
+A Regra que NÃO SABE o que é Web (Bom):
+ Recebe dados simples e devolve dados puros.
+ Testa-se direto no pytest em milissegundos.
+ Teste fica barato → Todo mundo faz → Regra protegida.
+5. Critério Antifachada & A Ponte com a Aula 06
+===== Página 2 =====
+ILP-037 · FATEC OLÍMPIA — STUDY GUIDE: ARQUITETURA DE SOFTWARE
+Página 2
+A regra de negócio não deve saber o que é web.
+Critério Antifachada: Nem toda view precisa de Service! Uma view que só busca dados no banco e renderiza um template está
+ótima. O Service só se justifica se houver regra de negócio real (cálculos, decisões ou orquestração). Extrair Service de view trivial
+é sobre-engenharia.
+A Ponte com o SRP (Aula 06): Arquitetura é o Princípio da Responsabilidade Única em escala de camadas: Uma classe, um
+motivo para mudar → Uma camada, um motivo para mudar.
+6. Glossário Prático
+ MVC (Model-View-Controller):
+Padrão clássico que separa dados (Model), regras/fluxo (Controller) e exibição (View).
+ MVT (Model-View-Template):
+Padrão do Django. Model cuida do dado, View processa requisições/regras e Template renderiza.
+ MVP (Model-View-Presenter):
+Padrão em que o Presenter desacopla a regra de apresentação de uma View passiva.
+ View (no Django):
+Função/classe Python que recebe a requisição HTTP, aciona a regra e chama o template.
+ Service / Presenter:
+Camada onde a regra de negócio vive de forma pura, isolada de infraestrutura web.
+ Testável sem HTTP:
+Capacidade de testar regras de negócio diretamente em memória, sem simular servidores HTTP.
+ Camada:
+Divisão arquitetural onde cada parte do sistema tem uma única responsabilidade clara.

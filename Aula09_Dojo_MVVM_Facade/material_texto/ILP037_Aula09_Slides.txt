@@ -1,0 +1,208 @@
+
+===== Página 1 =====
+Dojo de MVVM & Facade
+ILP-037 Técnicas de Programação II • Aula 09 • 16/10/2026
+Prof. Jose Ceron Neto
+Faculdade de Tecnologia de Olímpia — Centro Paula Souza
+CST em Desenvolvimento de Software Multiplataforma
+Olímpia, SP — 2º semestre de 2026
+===== Página 2 =====
+Roteiro
+Aula de consolidação: firmar e avançar um passo
+1. Coding Dojo — o MVVM de novo, num
+cenário novo
+2. Facade — um balcão para esconder a
+bagunça de trás
+— intervalo
+3. Laboratório do Facade + no projeto de vocês
+POR QUE ESTA AULA É DIFERENTE
+Nesta semana não houve segunda de Web III (feriados de 12 e 15). Então hoje a gente
+não puxa requisito novo: firma o que já viram (MVVM) e dá um passo a mais no
+mesmo terreno dos estruturais (Facade).
+Fatec Olímpia 1/16
+===== Página 3 =====
+PARTE 1 / 3
+Dojo: MVVM de novo
+1. Dojo: MVVM de novo
+2. Facade: a recepção
+3. Laboratório e o projeto
+2/16
+===== Página 4 =====
+Coding Dojo — a regra do jogo
+Repetir o movimento até virar reflexo
+O QUE É UM DOJO
+Um treino. A gente resolve junto, revezando no teclado (Randori). Sem nota, sem
+pressa de acertar de primeira — a graça é errar em grupo e consertar em grupo. O
+movimento de hoje você já viu: extrair um ViewModel.
+Cenário novo: a recepção de manhã, o painel de check-in do dia.
+O mesmo cheiro da Aula 08: a tela decide o selo (verde/amarelo/cinza), o rótulo do
+botão e a regra (quem pode fazer check-in).
+A meta: mover isso para um CheckinViewModel . Oito minutos de conversa, o resto no
+teclado.
+PARA FIXAR Quem senta no teclado fala o que está pensando; a plateia só ajuda quando pedem.
+Fatec Olímpia 3/16
+===== Página 5 =====
+O kata
+A tela de check-in que decide tudo
+def p a i n e l _ c h e c k i n ( r es erv as ) :
+for r in re ser va s :
+if r [ " status " ] == " c o n f i r m a d a " and r [ " pago " ]:
+selo = " VERDE " ; acao = " Fazer check - in " # <- regra + tela
+elif r [ " status " ] == " c o n f i r m a d a " and not r [ " pago " ]:
+selo = " AMARELO " ; acao = " A g u a r d a n d o p a g a m e n t o "
+else :
+selo = " CINZA " ; acao = " Nao d i s p o n i v e l "
+...
+▲ para testar "quem pode fazer check-in?" sou obrigado a ler a tela
+Movimento do Dojo: extrair CheckinViewModel com pode_checkin , selo , acao_label . Quatro testes
+ficam verdes.
+Fatec Olímpia 4/16
+===== Página 6 =====
+O que o Dojo firma
+Antes de empilhar padrão novo
+O REFLEXO QUE QUEREMOS
+Reconhecer o cheiro — "a tela está decidindo" — e saber o movimento — "levo a
+decisão para o ViewModel" — sem precisar pensar do zero. É isso que separa quem
+entendeu de quem decorou.
+O ViewModel separa a exibição; o Service (Aula 07) separa a regra de negócio.
+Continuam convivendo.
+Se saiu rápido, o movimento pegou. Se travou, é agora que a gente conserta — em
+grupo, sem custo de nota.
+Firmado o MVVM, a gente avança: um novo padrão estrutural.
+Fatec Olímpia 5/16
+===== Página 7 =====
+PARTE 2 / 3
+Facade: a recepção
+1. Dojo: MVVM de novo
+2. Facade: a recepção
+3. Laboratório e o projeto
+6/16
+===== Página 8 =====
+O smell: o cliente orquestra tudo
+Fazer uma reserva mexe em quatro coisas
+def f a z e r _ r e s e r v a _ n a _ m a o ( quarto , hospede , noites , disp , tar , rep , notif ) :
+if not disp . e s t a _ l i v r e ( quarto ) : # s u b s i s t e m a 1 + regra
+return { " ok " : False , " motivo " : " i n d i s p o n i v e l " }
+total = tar . c al cul ar ( quarto , noites ) # s u b s i s t e m a 2
+rid = rep . gravar ( quarto , hospede , noites , total ) # s u b s i s t e m a 3
+notif . enviar ( hospede , f " Reserva { rid } c o n f i r m a d a ... " ) # s u b s i s t e m a 4
+return { " ok " : True , " r e s e r v a _ i d " : rid , " total " : total }
+▲ cada tela que reserva repete essa orquestracao; um 5o passo muda todas
+O cliente conhece os quatro subsistemas, a ordem e a regra. É acoplamento demais.
+Fatec Olímpia 7/16
+===== Página 9 =====
+A ideia do Facade
+Um balcão único na frente da bagunça
+FACADE
+Uma fachada: um ponto de entrada simples que esconde a orquestração de vários
+subsistemas. O cliente fala só com a fachada; ela chama os bastidores na ordem certa.
+O hóspede chega ao Resort e fala com a recepção. Uma pessoa, um balcão.
+Atrás, a recepção aciona governança, cozinha, financeiro, manobrista — na ordem.
+O hóspede não precisa conhecer os bastidores. Fala com o balcão e pronto.
+PARA FIXAR A recepção não faz as camas — ela sabe a quem pedir, e em que ordem.
+Fatec Olímpia 8/16
+===== Página 10 =====
+O Facade no código
+Um método esconde os quatro passos
+class R e c e p c a o F a c a d e :
+def __i ni t__ ( self , disp , tar , rep , notif ) : # segura os s u b s i s t e m a s
+self . _disp , self . _tar = disp , tar
+self . _rep , self . _notif = rep , notif
+def res er var ( self , quarto , hospede , noites ) : # UM ponto de entrada
+if not self . _disp . e s t a _ l i v r e ( quarto ) :
+return { " ok " : False , " motivo " : " i n d i s p o n i v e l " }
+total = self . _tar . cal cul ar ( quarto , noites )
+rid = self . _rep . gravar ( quarto , hospede , noites , total )
+self . _notif . enviar ( hospede , f " Reserva { rid } c o n f i r m a d a ... " )
+return { " ok " : True , " r e s e r v a _ i d " : rid , " total " : total }
+✓ o cliente agora chama recepcao.reservar(...) — e nada mais
+Fatec Olímpia 9/16
+===== Página 11 =====
+Facade NÃO é Adapter
+O contraste que firma os dois
+Adapter (sexta passada) Facade (hoje)
+quantos objetos um (o driver incompatível) vários subsistemas
+o que faz com a interface traduz para outra que já existe cria uma nova, mais simples
+intenção fazer a peça caber esconder a complexidade
+A FRASE PARA GUARDAR
+Adapter muda a interface de uma peça para ela encaixar. Facade inventa uma interface
+nova e simples na frente de muitas.
+Os dois "escondem" algo. Mas por motivos diferentes — não confundam. Isso cai no
+homework.
+Fatec Olímpia 10/16
+===== Página 12 =====
+Delimitação em Python
+Quando o Facade é exagero
+ÀS VEZES UMA FUNÇÃO BASTA
+Se a orquestração é simples e sem estado, uma função de módulo já é a fachada —
+não precisa de classe. A classe se justifica quando há subsistemas a segurar ou
+configuração a guardar. (GIRIDHAR)
+A FACHADA NÃO É UMA PRISÃO
+Facade não impede o acesso direto aos subsistemas — ela só oferece o caminho fácil.
+E cuidado com o Facade que incha e vira um God object que faz tudo: a fachada
+delega, não executa a regra de cada subsistema.
+Não enfileire chamadas numa fachada só por enfeite. Facade resolve acoplamento real a
+vários subsistemas.
+Fatec Olímpia 11/16
+===== Página 13 =====
+PARTE 3 / 3
+Laboratório e o projeto
+1. Dojo: MVVM de novo
+2. Facade: a recepção
+3. Laboratório e o projeto
+12/16
+===== Página 14 =====
+Laboratório — a RecepcaoFacade
+Python puro, roteiro em baby steps
+1. Você recebe os quatro subsistemas prontos e o cliente que os orquestra na mão.
+2. Constrói a RecepcaoFacade : __init__ segura os quatro; reservar() orquestra.
+3. Quarto livre: calcula, grava, notifica, devolve id e total. Ocupado: não grava, não
+notifica.
+4. Cinco testes ficam verdes — e o cliente passa a falar só com a fachada.
+A fachada orquestra, não reimplementa
+A regra de cada subsistema já existe. A fachada só chama na ordem certa. Compare com
+fazer_reserva_na_mao : é a mesma sequência, num lugar só.
+python3 -m pytest -v . Regra do Interlocutor: leia o erro em voz alta.
+Fatec Olímpia 13/16
+===== Página 15 =====
+Agora no projeto de vocês
+Identificar e decidir — sem requisito novo
+1. Procurem no projeto um ponto onde uma ação chama vários passos na ordem (uma
+view que busca + calcula + grava + responde, por exemplo).
+2. Uma Facade simplificaria a chamada? Ou já está simples e seria cerimônia?
+3. A resposta pode ser "não cabe" — e isso também é decisão de design.
+4. Registrem no Caderno de Design (ADR). Alimenta o Marco 2.
+SEM PUXAR NADA NOVO DA SEGUNDA
+Como não houve Web III nesta semana, vocês trabalham sobre o código que já têm.
+Nada de requisito novo — só design sobre o que existe.
+Fatec Olímpia 14/16
+===== Página 16 =====
+Homework
+Entrega até quarta, 22/10
+1. Individual
+Termine o laboratório do Facade (5
+testes verdes). Entregue o .py .
+2. Individual
+Em 3–5 linhas: qual a diferença
+entre Adapter e Facade? (IA
+vedada.)
+3. Da equipe
+ADR: aplicar-ou-não um Facade no
+projeto, com justificativa. (Marco 2.)
+CALENDÁRIO
+Não há aula em 30/10 (ponte do feriado). Confiram no Teams a data da próxima aula
+presencial e o andamento do Marco 2.
+Fatec Olímpia 15/16
+===== Página 17 =====
+Antes de sair
+Encaminhamentos
+Chamada nominal
+Relatores: confirmem no Teams o laboratório do Facade e o ADR do projeto
+Firmamos o MVVM no Dojo; somamos o Facade ao Adapter nos estruturais
+Próxima aula: seguimos a partir do que a segunda-feira entregar
+Fatec Olímpia 16/16
+===== Página 18 =====
+GOVERNO DO ESTADO
+DE SÃO PAULO
+Adapter faz caber. Facade esconde a bagunça atrás de um
+balcão.

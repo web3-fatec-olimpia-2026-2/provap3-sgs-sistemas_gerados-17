@@ -1,0 +1,124 @@
+
+===== Página 1 =====
+Revisão prática para a P3 individual (27/11) · Sem IA · Foco na defesa do próprio código.
+Página 1 de 3
+ILP-037 · TÉCNICAS DE PROGRAMAÇÃO II
+ FATEC OLÍMPIA — 2026/2
+Guia de Bolso para a P3: 12 Perguntas de Quem
+Vai Fazer a Prova
+ Defesa Oral sem IA
+Individual sobre o Próprio Código
+Estrutura oficial: Em resumo (resposta de 1 linha para a banca) + Detalhe (fundamentação
+prática no Resort de Olímpia) + Fonte dos slides.
+ Data da Avaliação: 27/11/2026
+Q01. Diferença entre Service e ViewModel: quem faz o quê?
+• Em resumo (1 linha): O Service separa a regra de negócio (o que é verdade no domínio); o ViewModel separa a lógica de
+exibição (como o dado aparece na tela).
+• Detalhe & Contexto: No ecossistema do Resort de Olímpia, o Service decide se uma reserva pode ser efetuada conforme a idade e
+calcula tarifas sem saber o que é web/HTML, permitindo testes ultrarrápidos sem subir servidor HTTP. Já o ViewModel (o maître)
+recebe os dados crus e formata strings visuais (ex: rótulos condicionais como 'INDISPONÍVEL' vs 'Reservar', formatação de moeda
+R$, selos de status), liberando os templates e views da tomada de decisão. Ambos convivem e retiram sobrecarga da camada visual.
+• Ancoragem / Fonte: Aula 07 (Slides 2, 6, 8, 12); Aula 08 (Slides 2, 4, 7, 9); Retomada (Card 3).
+Q02. Diferença entre Adapter e Facade: quando usar cada um?
+• Em resumo (1 linha): Adapter faz uma peça incompatível caber (traduz interface existente); Facade esconde múltiplos
+subsistemas atrás de um balcão único (cria interface nova e simples).
+• Detalhe & Contexto: O Adapter é pontual: atua sobre UM componente cuja interface não controlamos (ex: migração para
+PostgreSQL/Neon cujo driver fala execute() e fetch_one(), enquanto o sistema espera salvar() e buscar()). Já o Facade atua sobre
+VÁRIOS subsistemas complexos (orquestra disponibilidade, tarifa, banco e e-mail na RecepcaoFacade.reservar()), reduzindo o
+acoplamento do cliente sem reimplementar a lógica interna.
+• Ancoragem / Fonte: Aula 08 (Slides 11, 14); Aula 09 (Slides 6, 7, 9, 10); Gamma et al. (p. 139, 185); Retomada (Cards 4, 5).
+Q03. Diferença entre Adapter e Decorator: o que muda na interface?
+• Em resumo (1 linha): Os dois embrulham um único objeto, mas o Adapter MUDA a interface para outra esperada, enquanto
+o Decorator MANTÉM rigorosamente a mesma interface.
+• Detalhe & Contexto: O Adapter transforma a interface da peça para torná-la compatível com um cliente pré-existente (converte
+formatos e nomes de métodos incompatíveis). O Decorator mantém o mesmo contrato (métodos preco() e descricao() idênticos),
+acrescentando comportamentos ou custos antes ou após delegar para o objeto interno. Por manter a interface inalterada, o
+Decorator suporta composição recursiva (empilhamento), o que não ocorre no Adapter puro.
+• Ancoragem / Fonte: Aula 10 (Slide 9); Aula 11 (Slide 7); Gamma et al. (p. 150, 175); Retomada (Cards 4, 6).
+Q04. Por que é possível empilhar Decorators em qualquer ordem?
+• Em resumo (1 linha): Porque todo Decorator herda ou assina exatamente a mesma interface do Componente base,
+delegando a chamada e somando sua parcela.
+• Detalhe & Contexto: No Resort, ao compor ComTransfer(ComCafeDaManha(ReservaBase(200, 2))), o método preco() do decorador
+externo chama o preco() do decorador intermediário, que chama a ReservaBase (400.0) e acumula progressivamente: 400 + 40 (café)
++ 80 (transfer) = 520.0. Como o embrulho externo e o interno respondem às mesmas mensagens transparentemente, a ordem de
+aninhamento não quebra o contrato do chamador nem altera a soma final.
+• Ancoragem / Fonte: Aula 10 (Slides 7, 8); Aula 11 (Slides 7, 8); Gamma et al. (p. 175-177); Retomada (Card 6).
+===== Página 2 =====
+ILP-037 · TÉCNICAS DE PROGRAMAÇÃO II — GUIA DE DEFESA ORAL (P3)
+FATEC OLÍMPIA
+Revisão prática para a P3 individual (27/11) · Sem IA · Foco na defesa do próprio código.
+Página 2 de 3
+Q05. Qual code smell clássico indica a necessidade do padrão Strategy?
+• Em resumo (1 linha): Condicionais em cascata (if/elif/switch) baseados em tipos ou políticas que inflam a cada nova regra
+de negócio.
+• Detalhe & Contexto: Ocorre quando o cálculo do valor total da reserva possui verificações como if tipo == 'comum' ... elif tipo ==
+'fidelidade' ... elif tipo == 'parceiro'. Cada convênio novo obriga a reabrir e modificar a mesma função e classe (violando o OCP). O
+Strategy isola cada família de algoritmo numa classe própria com a mesma interface (calcular), permitindo que a Reserva apenas
+receba a estratégia e delegue a execução sem nenhum if.
+• Ancoragem / Fonte: Aula 05 (Slides 4, 5, 6); Retomada (Card 1).
+Q06. O que o Princípio Aberto/Fechado (OCP) pede na prática?
+• Em resumo (1 linha): O código deve ser aberto para extensão (acrescentar novos comportamentos) e fechado para
+modificação (sem reabrir código estável e testado).
+• Detalhe & Contexto: Na prática em Python, significa desenhar classes dependentes de interfaces ou contratos polimórficos em vez
+de classes concretas. Quando surge a TarifaParceiro ou TarifaVIP, adiciona-se uma nova classe sem alterar uma única linha da
+classe Reserva existente. Contudo, OCP não é prever todo futuro hipotético: abstrai-se apenas onde a variação real já se manifestou
+no domínio do projeto.
+• Ancoragem / Fonte: Aula 06 (Slides 5, 6, 7); Retomada (Card 2).
+Q07. O '@decorator' sintático do Python é a mesma coisa que o padrão Decorator do GoF?
+• Em resumo (1 linha): Não: o '@' do Python decora funções (callables em tempo de definição); o padrão GoF decora
+instâncias de objetos em tempo de execução.
+• Detalhe & Contexto: Embora compartilhem a intenção de embrulhar e interceptar chamadas, o mecanismo técnico é distinto. O
+@funcao do Python envolve funções ou métodos para cross-cutting concerns (autenticação, medição de tempo, @property). O
+padrão de projeto estrutural Decorator (GoF) compõe dinamicamente instâncias de classes em tempo de execução através da
+delegação de métodos sobre uma mesma interface compartilhada.
+• Ancoragem / Fonte: Aula 10 (Slide 10); Giridhar (Design Patterns in Python); Retomada (Card 6).
+Q08. "Não apliquei nenhum padrão nesta função": isso é aceitável na avaliação?
+• Em resumo (1 linha): Sim, é totalmente aceitável e valorizado, desde que fundamentado tecnicamente no Caderno de
+Design (ADR).
+• Detalhe & Contexto: Nenhum padrão é obrigatório. A competência avaliada em ILP-037 é a capacidade crítica de decidir se o padrão
+cabe ou não no problema real. Dizer 'não criamos ViewModel aqui porque a view é um CRUD trivial que apenas renderiza dados crus
+sem cálculo derivado' demonstra maturidade e evita complexidade desnecessária. Um 'não aplicamos porque...' bem justificado vale
+nota integral.
+• Ancoragem / Fonte: Aula 07 (Slide 10); Aula 08 (Slide 17); Aula 10 (Slide 5); Marco 1 (Slide 4).
+===== Página 3 =====
+ILP-037 · TÉCNICAS DE PROGRAMAÇÃO II — GUIA DE DEFESA ORAL (P3)
+FATEC OLÍMPIA
+Revisão prática para a P3 individual (27/11) · Sem IA · Foco na defesa do próprio código.
+Página 3 de 3
+Q09. Quando a aplicação de um padrão de design vira mera 'cerimônia'?
+• Em resumo (1 linha): Quando adiciona camadas e classes sem que haja variação real, complexidade de subsistemas ou
+interfaces incompatíveis no domínio.
+• Detalhe & Contexto: Exemplos clássicos de sobre-engenharia: criar Strategy para uma regra que nunca muda (onde uma função
+pura bastaria); criar Facade para embrulhar apenas 1 ou 2 chamadas simples (onde uma função de módulo resolve); usar Adapter
+formal entre duas classes que você mesmo controla (onde o duck typing do Python resolve); ou criar Decorators de objetos para
+somar valores fixos (onde uma lista de tuplas com sum() é mais limpa).
+• Ancoragem / Fonte: Aula 05 (Slide 7); Aula 08 (Slide 15); Aula 09 (Slide 11); Aula 10 (Slide 10).
+Q10. Como explicar com segurança uma função sorteada pelo professor?
+• Em resumo (1 linha): Siga o tripé obrigatório: 1. O que ela faz (papel) -> 2. Por que foi feita assim (justificativa de design) ->
+3. O que muda se for alterada.
+• Detalhe & Contexto: Evite apenas descrever sintaxe ('aqui tem um loop for que lê x'). Explique a intenção arquitetural: 'Esta função
+pertence à ReservaService; ela valida regras de negócio antes de acionar a gravação. Escolhemos isolar aqui em vez de deixar na
+View para possibilitar testes sem dependência de requisições HTTP. Se retirarmos o Service, a View fica acoplada ao Model e os
+testes unitários tornam-se lentos e frágeis.'
+• Ancoragem / Fonte: Aula 11 (Slides 3, 10); Marco 1 (Slides 3, 4); Marco 1 Apresentação (Slide 4).
+Q11. O que o professor vai perguntar na Prova Prática (P3)?
+• Em resumo (1 linha): Perguntas de reflexão e defesa individual do próprio código: identificar padrões, prever saídas de
+teste, justificar escolhas e apontar alternativas descartadas.
+• Detalhe & Contexto: O professor sorteará uma função ou trecho do repositório da equipe e exigirá que o aluno explique
+individualmente: 'Qual responsabilidade mora aqui?', 'Por que usou este padrão em vez de uma condicional?', 'O que acontece se eu
+precisar adicionar uma nova tarifa ou banco?', 'Qual alternativa foi descartada no ADR correspondente?'. Código que roda mas o
+aluno não sabe defender oralmente não pontua integralmente.
+• Ancoragem / Fonte: Aula 11 (Slides 3, 6, 10); Marco 1 (Slides 3, 4).
+Q12. O que responder à pergunta: 'O que muda no sistema se alterarmos este padrão?'
+• Em resumo (1 linha): Aponte o impacto no acoplamento, na testabilidade, na facilidade de extensão e no risco de quebra de
+testes pré-existentes.
+• Detalhe & Contexto: Demonstre raciocínio arquitetural: 'Se trocarmos o Strategy por if/elif na Reserva, o cálculo continuará
+funcionando, mas perderemos a conformidade com o OCP; toda nova tarifa exigirá reabrir a Reserva e arriscar quebrar reservas
+existentes. Se removermos a Facade, cada tela do Resort precisará importar e coordenar diretamente os 4 subsistemas, espalhando
+acoplamento e duplicando orquestração.'
+• Ancoragem / Fonte: Aula 05 (Slides 6, 8); Aula 06 (Slide 8); Aula 09 (Slide 7); Aula 11 (Slide 3).
+  A REGRA DE OURO PARA GUARDAR NA LOUSA DA P3: O TRIO ESTRUTURAL
+"Adapter faz caber; Facade esconde; Decorator soma."
+• Adapter: veste uma peça incompatível para caber no sistema (muda a interface para a esperada).
+• Facade: cria um balcão único na frente de vários subsistemas (esconde a complexidade criando uma interface nova e simples).
+• Decorator: embrulha um objeto para somar comportamento ou custos (mantém a mesma interface e empilha em qualquer ordem).

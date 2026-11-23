@@ -1,0 +1,182 @@
+
+===== Página 1 =====
+Nivelamento: firmando a base
+ILP-037 Técnicas de Programação II • Encontro Remoto 01 • 22/08/2026
+Prof. Jose Ceron Neto
+Faculdade de Tecnologia de Olímpia — Centro Paula Souza
+CST em Desenvolvimento de Software Multiplataforma
+Olímpia, SP — 2º semestre de 2026
+===== Página 2 =====
+O que é este encontro
+Sem pressa, sem presença, sem nota
+NIVELAMENTO
+Um sábado para firmar a base de tudo que vimos até aqui. Não tem conteúdo novo, não
+tem chamada, não tem homework. Você faz no seu ritmo, em casa, e sai com a base
+sólida para a próxima sexta.
+Lab 1 — Objetos
+Construir uma classe do zero.
+Firmar classe, objeto, atributo,
+método, self .
+Lab 2 — Encapsular
+Proteger um dado com @property
+e setter . A mão na massa.
+Lab 3 — Herança
+Reaproveitar uma classe com
+super() . O “é-um”.
+Cada lab tem roteiro passo a passo e um vídeo de resolução no Teams. Travou? O vídeo constrói tudo
+com você.
+Fatec Olímpia 1/14
+===== Página 3 =====
+Como fazer o nivelamento
+Três laboratórios, na ordem
+1. Baixe o pacote ILP037_Nivelamento_ER01.zip no Teams e descompacte.
+2. Entre na pasta lab1 , abra o ROTEIRO.md , e siga.
+3. Rode os testes com python3 -m pytest tests/ -v . Vermelho vira verde — essa é a
+meta.
+4. Terminou o lab1? Vá para o lab2 , depois o lab3 .
+Se algum teste não roda
+Use python3 -m pytest (com o -m ). Se aparecer ModuleNotFoundError , o arquivo pytest.ini de
+cada lab já resolve.
+Fatec Olímpia 2/14
+===== Página 4 =====
+LAB 1 / 3
+Objetos: a base
+1. Objetos: a base
+2. Encapsulamento: a fechadura
+3. Herança: reaproveitar
+3/14
+===== Página 5 =====
+O que é um objeto
+A ideia central de OO
+CLASSE
+O molde. Descreve o que uma entidade guarda e o que sabe fazer. Existe uma vez, no
+código.
+OBJETO
+Uma entidade concreta criada a partir da classe, com os próprios valores. Existe em
+execução, e podem existir muitos.
+class Hospede: a classe — o molde, um só
+ana = Hospede("Ana", "123") um objeto
+bruno = Hospede("Bruno", "456") outro objeto, independente
+PARA FIXAR A planta do apartamento-tipo (classe) e cada apartamento construído (objeto).
+Fatec Olímpia 4/14
+===== Página 6 =====
+A classe que você vai construir no Lab 1
+Cada linha tem nome
+class Hospede :
+def __i ni t__ ( self , nome , d o c u m e n t o ) :
+self . nome = nome
+self . d o c u m e n t o = d o c u m e n t o
+self . h o s p e d a d o = False
+def f a z e r _ c h e c k _ i n ( self ) :
+self . h o s p e d a d o = True
+class Hospede a classe
+__init__ o construtor: roda quando o objeto nasce
+self o próprio objeto (self.nome guarda o nome nele)
+fazer_check_in um método: uma ação do objeto
+No Lab 1 você escreve isto e vê
+4 testes ficarem verdes.
+Fatec Olímpia 5/14
+===== Página 7 =====
+O ponto que mais importa
+Estado é do objeto, não da classe
+ana . f a z e r _ c h e c k _ i n ()
+print ( ana . h o s p e d a d o ) # True
+print ( bruno . h o s p e d a d o ) # False
+O QUE ISTO MOSTRA
+Existe uma única classe Hospede , mas dois objetos em memória, cada um com o próprio
+hospedado . O check-in da Ana não mexe no Bruno. Cada objeto carrega o próprio
+estado.
+Se esta ideia ficar firme, metade da disciplina fica fácil.
+Fatec Olímpia 6/14
+===== Página 8 =====
+LAB 2 / 3
+Encapsulamento: a
+fechadura
+1. Objetos: a base
+2. Encapsulamento: a fechadura
+3. Herança: reaproveitar
+7/14
+===== Página 9 =====
+O problema
+Um atributo público aceita qualquer coisa
+h . idade = -5 # aceita ! uma idade negativa , gravada
+ENCAPSULAMENTO
+O objeto controla o acesso ao próprio dado. Em vez de deixar qualquer código gravar
+qualquer coisa, o objeto valida antes de aceitar.
+PARA FIXAR O cofre do quarto: o hóspede usa, mas não mexe na fechadura. Atributo público é cofre com a porta
+encostada.
+Fatec Olímpia 8/14
+===== Página 10 =====
+A fechadura: @property e setter
+O que você escreve no Lab 2
+@ p r o p e r t y
+def idade ( self ) :
+return self . _idade
+@idade . setter
+def idade ( self , valor ) :
+if valor < 0:
+raise V a l u e E r r o r ( " idade nao pode ser neg ati va " )
+self . _idade = valor
+self._idade o dado interno (sublinhado = “não mexa direto”)
+@property o jeito de ler h.idade
+@idade.setter o jeito de escrever, que valida antes
+No Lab 2, h.idade = -5 deixa de
+passar e vira erro.
+Fatec Olímpia 9/14
+===== Página 11 =====
+LAB 3 / 3
+Herança: reaproveitar
+1. Objetos: a base
+2. Encapsulamento: a fechadura
+3. Herança: reaproveitar
+10/14
+===== Página 12 =====
+O problema que herança resolve
+Não copiar a classe inteira
+Um hóspede VIP é um hóspede com um benefício a mais: pontos de fidelidade. Copiar a classe
+Hospede inteira e acrescentar os pontos duplicaria tudo — e viraria manutenção em dois lugares.
+HERANÇA
+Criar um tipo mais específico a partir de um mais geral, aproveitando o que já existe. O
+VIP é-um hóspede: herda tudo, e só acrescenta o que é dele.
+PARA FIXAR A categoria de quarto: a suíte é um quarto, com mais. Não se reescreve o quarto — herda-se.
+Fatec Olímpia 11/14
+===== Página 13 =====
+class HospedeVIP(Hospede)
+O que você escreve no Lab 3
+class H o s p e d e V I P ( Hospede ) : # VIP E - UM Hospede
+def __i ni t__ ( self , nome , documento , idade , pontos ) :
+super () . _ _i nit __ ( nome , documento , idade )
+self . pontos = pontos
+super()
+Chama o construtor do Hospede de dentro do HospedeVIP . O VIP ganha nome,
+documento e idade (já protegida!) de graça, e só acrescenta pontos .
+O VIP herda até o fazer_check_in — que você nunca reescreve. No Lab 3, 5 testes ficam verdes.
+Fatec Olímpia 12/14
+===== Página 14 =====
+É-um ou tem-um?
+O teste do ouvido
+É-UM → herança
+O VIP é um hóspede.
+class HospedeVIP(Hospede)
+TEM-UM → composição
+O quarto tem um frigobar.
+self.frigobar = Frigobar()
+O TESTE
+Fale em voz alta. “O VIP é um hóspede” soa certo: herança. “O quarto é um frigobar”
+soa errado: então é tem-um, composição. O ouvido decide.
+Fatec Olímpia 13/14
+===== Página 15 =====
+Terminou os três?
+Você está pronto
+Lab 1 — você construiu uma classe do zero e entendeu que cada objeto tem o próprio estado
+Lab 2 — você protegeu um dado com @property e setter
+Lab 3 — você criou um tipo novo com herança e super()
+É A BASE INTEIRA DA DISCIPLINA ATÉ AQUI
+Na próxima sexta, 28/08, a gente aprofunda herança e polimorfismo. Quem fez o
+nivelamento chega pronto — e a aula rende para todos.
+Dúvida em qualquer lab? Canal de Dúvidas no Teams, e os vídeos de resolução.
+Fatec Olímpia 14/14
+===== Página 16 =====
+GOVERNO DO ESTADO
+DE SÃO PAULO
+Bom nivelamento.

@@ -1,0 +1,18 @@
+/* Eixos de estilo (Instruções §11.10): atributos data-* no <html>, sem regenerar páginas. */
+html[data-raio="reto"] { --bs-border-radius: 0; --bs-border-radius-sm: 0; --bs-border-radius-lg: 0; }
+html[data-raio="arredondado"] { --bs-border-radius: .75rem; --bs-border-radius-lg: 1rem; }
+html[data-raio="pilula"] { --bs-border-radius: 1rem; --bs-border-radius-lg: 1.25rem; }
+html[data-raio="pilula"] .btn { border-radius: 50rem; }
+html[data-sombra="nenhuma"] .card { box-shadow: none; }
+html[data-sombra="suave"] .card { box-shadow: 0 1px 3px rgba(0, 0, 0, .08); }
+html[data-sombra="marcada"] .card { box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .18); }
+html[data-sombra="difusa"] .card { box-shadow: 0 .75rem 2rem rgba(0, 0, 0, .08); }
+html[data-movimento="expressivo"] .card { transition: transform .2s ease; }
+html[data-movimento="expressivo"] .card:hover { transform: translateY(-3px); }
+html[data-tipografia="serifa-titulos"] h1, html[data-tipografia="serifa-titulos"] .navbar-brand { font-family: Georgia, "Times New Roman", serif; }
+html[data-tipografia="arredondada"] body { font-family: "Segoe UI Rounded", "Nunito", system-ui, sans-serif; }
+html[data-acessivel="sim"] body { font-size: 1.0625rem; }
+html[data-acessivel="sim"] .form-control, html[data-acessivel="sim"] .form-select { border-width: 2px; }
+html[data-acessivel="sim"] :focus-visible { outline: 3px solid var(--sgs-destaque); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+.apresentacao { margin-bottom: 1rem; }

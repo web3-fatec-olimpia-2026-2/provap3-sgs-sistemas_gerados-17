@@ -1,0 +1,23 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0c0c0c">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="{% static 'pedidos/icone-192.png' %}">
+  <title>Loja Virtual</title>
+</head>
+<body>
+  <h1>Loja Virtual</h1>
+  <p><a href="{% url 'pedidos:criar' %}">Cadastrar Pedido</a> · <a href="{% url 'pedidos:api' %}">API (JSON)</a></p>
+  <ul>
+  {% for item in painel.itens %}
+    <li>{{ item.titulo }} · {{ item.tipo_label }} · {{ item.valor_formatado }} ({{ item.selo }})</li>
+  {% endfor %}
+  </ul>
+  <p>{{ painel.rodape }}</p>
+  <script>if ("serviceWorker" in navigator) { navigator.serviceWorker.register("/sw.js"); }</script>
+</body>
+</html>

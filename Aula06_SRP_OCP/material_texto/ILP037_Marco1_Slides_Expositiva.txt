@@ -1,0 +1,164 @@
+
+===== Página 1 =====
+O que eu quero no Marco 1
+ILP-037 Técnicas de Programação II • com exemplos do Resort
+Prof. Jose Ceron Neto
+Faculdade de Tecnologia de Olímpia — Centro Paula Souza
+CST em Desenvolvimento de Software Multiplataforma
+Olímpia, SP — 2º semestre de 2026
+===== Página 2 =====
+Por que esta aula
+Vamos alinhar o que é uma entrega pronta
+A entrega do Marco 1 foi estendida para 18/09. Vamos usar esse tempo para alinhar exatamente o
+que eu espero do Caderno de Design — com exemplos do projeto do Resort, o mesmo que a gente
+vem usando o semestre todo.
+O COMBINADO
+Ao fim desta aula, você vai saber olhar um ADR e dizer se ele está pronto ou não. E vai
+ter visto, lado a lado, um que tira nota máxima e um que tira nota baixa — a mesma
+decisão, escrita de dois jeitos.
+Material completo (guia + rúbrica + exemplos) no canal 4.Entrega dos Marcos .
+Fatec Olímpia 1/11
+===== Página 3 =====
+O que o Marco 1 avalia
+E o que ele NÃO avalia
+Avalia
+Se as decisões estão registradas e justificadas
+Se vocês pensaram em alternativas
+Se sabem defender cada decisão
+Se o Caderno está versionado no GitHub
+NÃO avalia
+Se o código roda (isso é Web III)
+Quantas linhas de código tem
+Se o design é "perfeito"
+Se vocês usaram muitos padrões
+O Marco não pergunta O QUE você fez. Pergunta POR QUÊ.
+Fatec Olímpia 2/11
+===== Página 4 =====
+A estrutura de um ADR
+As cinco seções — vocês já conhecem
+# ADR 00 X - titulo da decisao
+# # Co nt ext o -> qual era o problema , e por que era um pro ble ma
+# # Decisao -> o que voces d e c i d i r a m fazer
+# # A l t e r n a t i v a d e s c a r t a d a -> o que NAO escolheram , e por que
+# # C o n s e q u e n c i a -> o que mudou , o que melhorou , o que custou
+# # Commit -> o hash do commit onde a decisao entrou
+A SEÇÃO QUE MAIS VALE
+Alternativa descartada. É ela que prova que houve uma decisão — uma escolha entre
+caminhos — e não só a primeira ideia que apareceu. ADR sem alternativa parece que
+ninguém decidiu nada.
+Fatec Olímpia 3/11
+===== Página 5 =====
+A rúbrica — como eu dou a nota
+Transparência total
+Critério Peso
+Cinco seções preenchidas 25%
+Justifica, não só descreve 30%
+Alternativa descartada real 20%
+Rastreabilidade (commit) 10%
+Defesa oral (sem consulta) 15%
+ZERA a entrega: Caderno fora do GitHub · ADRs todos vazios · IA não declarada · ninguém
+sabe defender.
+Fatec Olímpia 4/11
+===== Página 6 =====
+Divisória
+Agora o que interessa: os exemplos
+A mesma decisão do Resort,
+escrita de dois jeitos.
+Nota baixa × Nota máxima
+Fatec Olímpia 5/11
+===== Página 7 =====
+Exemplo: proteção do valor da diária
+✗ VERSÃO NOTA BAIXA
+# ADR 001 - P rot eca o do valor da diaria
+# # Co nt ext o
+O valor da diaria p r e c i s a v a ser p r o t e g i d o .
+# # Decisao
+Usamos @ p r o p e r t y com setter .
+# # A l t e r n a t i v a d e s c a r t a d a
+( vazio )
+# # C o n s e q u e n c i a
+Ficou mais seguro .
+# # Commit
+( a p r e e n c h e r )
+✗ Descreve ("usamos @property"), não diz por quê ✗ Alternativa vazia ✗ "Mais seguro" não diz
+nada ✗ Sem commit
+Fatec Olímpia 6/11
+===== Página 8 =====
+Exemplo: proteção do valor da diária
+✓ VERSÃO NOTA MÁXIMA
+# ADR 001 - P ro te ca o do campo v a l o r _ d i a r i a
+# # C on te xt o
+O campo era publico : qu al qu er codigo gravava q ua lq ue r numero , ate -50. Uma
+diaria neg at iv a bagunca o total . A regra existia so na cabeca da equipe .
+# # Decisao
+@ p r o p e r t y com setter que valida antes de gravar : ne ga ti vo levanta V a l u e E r r o r .
+O objeto protege o proprio estado - nenhum caminho grava valor in va li do .
+# # A l t e r n a t i v a d e s c a r t a d a
+Validar so na tela . D e s c a r t a d a : nao protege quem cria pelo shell , i m p o r t a c a o
+ou teste . A p ro te ca o no objeto vale para TODOS os ca mi nh os .
+# # C o n s e q u e n c i a
+Reserva cuida da propria i n t e g r i d a d e . Custo : classe maior , exige e nt en de r
+@ p r o p e r t y . Troca valida : custo pequeno , pr ot ec ao total .
+# # Commit
+a3f9c21 - " protege v a l o r _ d i a r i a com @ p r o p e r t y e setter "
+✓ Diz por quê ✓ Alternativa real com motivo ✓ Consequência honesta (ganho e custo) ✓
+Commit
+Fatec Olímpia 7/11
+===== Página 9 =====
+Exemplo: política de tarifa
+✗ NOTA BAIXA — a armadilha do "é o certo"
+# ADR 004 - Tarifas
+# # Decisao
+Usamos o padrao St rat eg y porque e o certo .
+# # A l t e r n a t i v a d e s c a r t a d a
+Nao usar padrao nenhum .
+# # C o n s e q u e n c i a
+Ficou mais o r g a n i z a d o e p r o f i s s i o n a l .
+"Porque é o certo" / "porque é boa prática" é o OPOSTO do que a disciplina cobra.
+✗ Padrão aplicado por status, não por necessidade ✗ "Não usar padrão" não é uma alternativa
+pensada ✗ "Profissional" não diz nada técnico
+Fatec Olímpia 8/11
+===== Página 10 =====
+Exemplo: política de tarifa
+✓ NOTA MÁXIMA
+# ADR 004 - P ol it ic a de tarifa com S tr at eg y
+# # C on te xt o
+D es con to varia por tipo de hospede ( 0 / 1 0 / 2 0 % ) . Estava num if / elif no total () .
+A pousada vai lancar c o n v e n i o s novos ; cada um o b r i g a r i a a abrir a Reserva e
+por mais um elif - mexendo em codigo que f un ci on a e a r r i s c a n d o quebrar .
+# # Decisao
+S tr ate gy : cada po li ti ca numa classe com aplicar ( base ) . A Reserva delega , sem if .
+# # A l t e r n a t i v a d e s c a r t a d a
+(1) Manter if / elif : cresce a cada convenio , risco num ponto so .
+(2) S u b c l a s s e s de Reserva por tipo ( heranca ) : o d es co nt o nao define um tipo de
+reserva , e heranca a m a r r a r i a rigido . St ra te gy ( c o m p o s i c a o ) deixa t ro ca ve l .
+# # C o n s e q u e n c i a
+C on ven io novo nao toca na Reserva . Custo : mais classes pe qu en as . ( Em Python
+poderia ser funcao ; usamos classe porque p o l i t i c a s futuras podem ter estado .)
+✓ Smell concreto ✓ Duas alternativas com motivo técnico ✓ Consequência madura
+Fatec Olímpia 9/11
+===== Página 11 =====
+O teste rápido antes de entregar
+Passe em cada ADR
+1. A Decisão diz "por quê", ou só "o quê"? Se só o quê, reescreva.
+2. A Alternativa descartada tem uma opção real, com motivo? Se vazia, pense no que
+descartaram.
+3. Alguém de fora entenderia só lendo? Se precisa de vocês junto, falta no texto.
+4. Tem o commit? Se não, git log , pega o hash, cola.
+5. Cada um sabe defender sem o papel? A defesa é sem consulta.
+SE OS CINCO DEREM "SIM"
+o ADR está pronto. Façam isso em cada um antes de entregar dia 18.
+Fatec Olímpia 10/11
+===== Página 12 =====
+Encaminhamento
+O que fazer agora
+Nova data de entrega: 18/09
+Guia completo com a rúbrica e os exemplos: canal 4.Entrega dos Marcos
+Passem o teste rápido em cada ADR do Caderno de vocês
+Dúvida: canal 1.Dúvidas . A defesa continua sendo sem consulta
+Não é sobre escrever bonito. É sobre mostrar que vocês decidiram — e sabem por quê.
+Fatec Olímpia 11/11
+===== Página 13 =====
+GOVERNO DO ESTADO
+DE SÃO PAULO
+Decidir e saber por quê.

@@ -1,0 +1,217 @@
+
+===== Página 1 =====
+Sprint 3 & Decorator
+ILP-037 Técnicas de Programação II • Aula 10 • 06/11/2026
+Prof. Jose Ceron Neto
+Faculdade de Tecnologia de Olímpia — Centro Paula Souza
+CST em Desenvolvimento de Software Multiplataforma
+Olímpia, SP — 2º semestre de 2026
+===== Página 2 =====
+Roteiro
+Começamos a reta final
+1. Onde a disciplina está — e a abertura do
+Sprint 3
+2. Decorator — o último padrão estrutural
+— intervalo
+3. Laboratório do Decorator + no projeto de
+vocês
+A RETA FINAL
+O Sprint 2 foi avaliado na Feira (Conecta Fatec) — parabéns a todos os grupos. Hoje
+abrimos o Sprint 3, o último, para encerrar a disciplina na semana de 07/12.
+Fatec Olímpia 1/17
+===== Página 3 =====
+PARTE 1 / 3
+Onde estamos & Sprint 3
+1. Onde estamos & Sprint 3
+2. Decorator
+3. Laboratório e o projeto
+2/17
+===== Página 4 =====
+Parabéns pela Feira
+Sprint 2 avaliado no Conecta Fatec
+O QUE ACONTECEU
+Com o tempo apertado do fim de semestre e as segundas de Web III perdidas por
+feriados e eventos, o Sprint 2 foi avaliado pelas apresentações da Feira (Conecta
+Fatec). Vocês levaram o projeto ao público — e isso vale como entrega.
+Apresentar para banca e visitantes é a prova real do produto: se explica em voz alta,
+está entendido.
+O que foi mostrado na Feira é a base do que o Sprint 3 vai fechar.
+PARA FIXAR Levar o Resort para a Feira foi o Sprint 2. Agora é fechar com capricho.
+Fatec Olímpia 3/17
+===== Página 5 =====
+O caminho que percorremos
+De "código que funciona" a "código que se defende"
+Bloco O que aprendemos A pergunta que ele responde
+Fundamentos OO encapsulamento, herança, polimorfismo como organizar o código
+Comportamento Strategy como trocar um comportamento
+Princípios SRP, OCP onde cortar e como estender
+Arquitetura MVC, MVT, MVP, MVVM onde mora cada decisão
+Estruturais Adapter, Facade, Decorator (hoje) como as peças se encaixam
+O FIO DE TUDO
+Nenhum padrão é obrigatório. A competência do semestre é decidir se ele cabe — e
+saber dizer por quê. É isso que o Caderno de Design registra.
+Fatec Olímpia 4/17
+===== Página 6 =====
+Sprint 3 — o último
+Encerrar o produto e o Caderno, na semana de 07/12
+META DO SPRINT 3
+Fechar o que ficou em aberto no produto e consolidar o Caderno de Design — todos
+os padrões, aplicados ou recusados, com seus ADRs. Nada de requisito novo: é lapidar
+o que já existe.
+Produto: terminar o pendente; estabilizar o que foi à Feira.
+Caderno de Design (P1): ADRs completos — de Strategy a Decorator.
+Prova prática (P3): na Semana de Avaliações (27/11) — cada um defende o próprio
+código.
+Portfólio (P4): homeworks, dojos e autoavaliação organizados.
+O checklist do Sprint 3 está no Teams. A reta é curta — organizem as entregas.
+Fatec Olímpia 5/17
+===== Página 7 =====
+Cronograma até o fim
+As sextas que faltam
+Data O que acontece
+06/11 (hoje) Abertura do Sprint 3 + Decorator
+13/11 Sprint 3 em andamento — atendimento aos grupos
+20/11 sem aula — feriado/emenda (Consciência Negra)
+27/11 P3 — Prova Prática individual (Semana de Avaliações)
+04/12 Fechamento do Caderno de Design
+11/12 Encerramento da disciplina
+Datas conforme o calendário acadêmico; confirmem sempre no Teams.
+Fatec Olímpia 6/17
+===== Página 8 =====
+PARTE 2 / 3
+Decorator
+1. Onde estamos & Sprint 3
+2. Decorator
+3. Laboratório e o projeto
+7/17
+===== Página 9 =====
+O smell: uma pilha de flags
+Somar extras a uma reserva
+def p r e c o _ c o m _ e x t r a s ( diaria , noites , cafe = False , t ra nsf er = False , late = False
+) :
+total = diaria * noites
+if cafe : total += 40.0 # mais um if por extra
+if t ran sf er : total += 80.0
+if late : total += 60.0
+return total
+▲ cada extra novo: mais um parametro, mais um if, e mexer em todo mundo que chama
+E a descrição do que foi contratado fica espalhada. Não dá para combinar extras dinamicamente. (A
+saída por subclasses seria pior: uma classe por combinação.)
+Fatec Olímpia 8/17
+===== Página 10 =====
+A ideia do Decorator
+Embrulhar para acrescentar
+DECORATOR
+Cada extra vira um embrulho que recebe uma reserva (ou outro extra já embrulhado),
+implementa a mesma interface (preco /descricao ) e acrescenta a sua parte. Você
+empilha os embrulhos em qualquer ordem, em tempo de execução.
+A reserva é o presente; cada serviço extra é mais uma camada de papel em volta.
+Quem abre vê a camada de fora, que por dentro chama a próxima, até a reserva-base.
+Somar um extra = mais uma camada. Nada do que está dentro precisa mudar.
+PARA FIXAR O embrulho não troca o presente — ele acrescenta por cima.
+Fatec Olímpia 9/17
+===== Página 11 =====
+O Decorator no código
+Cada camada chama a de dentro e soma a sua
+class S e r v i c o E x t r a : # base : em br ulh a e , por padrao , delega
+def __i ni t__ ( self , reserva ) : self . _ re ser va = reserva
+def preco ( self ) : return self . _r ese rv a . preco ()
+def d e s c r i c a o ( self ) : return self . _ res er va . d e s c r i c a o ()
+class C o m C a f e D a M a n h a ( S e r v i c o E x t r a ) :
+def preco ( self ) : return self . _r ese rv a . preco () + 40.0 # soma a sua
+parte
+def d e s c r i c a o ( self ) : return self . _ res er va . d e s c r i c a o () + " + cafe da
+manha "
+✓ ComTransfer(ComCafeDaManha(ReservaBase(200,2))) – empilha em qualquer ordem
+Fatec Olímpia 10/17
+===== Página 12 =====
+O trio estrutural, lado a lado
+Adapter, Facade, Decorator
+Padrão O que faz Intenção
+Adapter traduz a interface de uma peça fazer caber
+Facade cria interface nova para vários subsistemas esconder a complexidade
+Decorator embrulha um objeto e soma responsabilidade acrescentar sem alterar
+A DIFERENÇA PARA O ADAPTER
+Os dois embrulham um objeto. Mas o Adapter muda a interface (para outra); o Decorator
+mantém a mesma interface e só soma comportamento — por isso dá para empilhar.
+Fatec Olímpia 11/17
+===== Página 13 =====
+Delimitação em Python
+Onde o Decorator encolhe — e o @ que confunde
+O @decorator DO PYTHON É OUTRA COISA
+O @ do Python decora funções (embrulha um callable). O padrão Decorator do GoF
+decora objetos para somar responsabilidade. Mesma ideia de "embrulhar", mecanismos
+diferentes. (GIRIDHAR)
+QUANDO NÃO USAR
+Se os extras só somam um número fixo, uma lista de extras + soma já resolve — não
+precisa de decorador. Ele ganha quando cada extra também muda comportamento. E
+cadeias muito profundas ficam difíceis de depurar.
+Antifachada de novo: a competência não é escrever o Decorator. É decidir se há
+responsabilidade a somar.
+Fatec Olímpia 12/17
+===== Página 14 =====
+PARTE 3 / 3
+Laboratório e o projeto
+1. Onde estamos & Sprint 3
+2. Decorator
+3. Laboratório e o projeto
+13/17
+===== Página 15 =====
+Laboratório — os serviços extras
+Python puro, roteiro em baby steps
+1. Você recebe a ReservaBase , a base ServicoExtra (que delega) e três decoradores a
+completar.
+2. Em cada um, implemente preco() e descricao() : chamar o de dentro e somar a sua
+parte.
+3. Empilhe: ComTransfer(ComCafeDaManha(ReservaBase(...))) . Seis testes ficam
+verdes.
+Ambiente
+python3 -m venv .venv && source .venv/bin/activate · pip install -r requirements.txt ·
+python3 -m pytest -v
+Regra do Interlocutor: leia o erro em voz alta antes de me chamar.
+Fatec Olímpia 14/17
+===== Página 16 =====
+Agora no projeto de vocês
+O último ADR do Caderno
+1. Procurem no projeto um ponto que ganharia com somar responsabilidades
+opcionais a algo (extras, descontos, formatações, logs) — cabe um Decorator? Ou é
+só uma lista?
+2. A resposta pode ser "não cabe" — e isso também é decisão de design.
+3. Registrem o ADR no Caderno de Design. É o fecho do catálogo de padrões do Sprint
+3.
+SOBRE O CADERNO
+Com o Decorator, vocês viram os padrões todos do semestre. O Caderno de Design
+completo — com os ADRs de cada um, aplicado ou recusado — é a peça central do P1.
+Caprichem: é o que mais pesa na média.
+Fatec Olímpia 15/17
+===== Página 17 =====
+Homework
+Entrega até quarta, 12/11
+1. Individual
+Termine o laboratório do Decorator
+(6 testes verdes). Entregue o .py .
+2. Individual
+Em 3–5 linhas: por que o Decorator
+mantém a interface e o Adapter a
+muda? (IA vedada.)
+3. Da equipe
+ADR do Decorator + checklist do
+Sprint 3 preenchido. (P1 / Marco
+final.)
+RETA FINAL
+Próxima aula 13/11. Dia 20/11 não há aula. P3 (prova prática) em 27/11. Encerramento
+em 11/12. Organizem-se.
+Fatec Olímpia 16/17
+===== Página 18 =====
+Antes de sair
+Encaminhamentos
+Chamada nominal
+Relatores: confirmem no Teams o laboratório e o ADR do Decorator
+Sprint 3 aberto — o checklist está no Teams; comecem a fechar o Caderno de Design
+P3 em 27/11 — cada um defende o próprio código; revisem o que escreveram
+Fatec Olímpia 17/17
+===== Página 19 =====
+GOVERNO DO ESTADO
+DE SÃO PAULO
+Fechamos os padrões. Agora é fechar o produto — e o
+Caderno.

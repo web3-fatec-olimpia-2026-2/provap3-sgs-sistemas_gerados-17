@@ -1,0 +1,151 @@
+{
+  "atributos": [
+    {
+      "max": null,
+      "min": null,
+      "nome": "aluno",
+      "regra": "obrigatorio",
+      "tipo": "str"
+    },
+    {
+      "max": null,
+      "min": 1,
+      "nome": "turma",
+      "regra": "minimo",
+      "tipo": "int"
+    },
+    {
+      "max": 24,
+      "min": 1,
+      "nome": "meses",
+      "regra": "faixa",
+      "tipo": "int"
+    },
+    {
+      "max": null,
+      "min": 0,
+      "nome": "mensalidade",
+      "regra": "minimo",
+      "tipo": "float"
+    },
+    {
+      "max": null,
+      "min": null,
+      "nome": "objetivo",
+      "regra": "livre",
+      "tipo": "str"
+    }
+  ],
+  "categorias": {
+    "base": [
+      "Musculacao",
+      "Musculação",
+      100.0
+    ],
+    "nova": [
+      "Pilates",
+      "Pilates",
+      160.0
+    ],
+    "subtipos": [
+      [
+        "Natacao",
+        "Natação",
+        150.0
+      ],
+      [
+        "Crossfit",
+        "Crossfit",
+        180.0
+      ]
+    ],
+    "unidade": "mês"
+  },
+  "comentarios": true,
+  "django": false,
+  "entidade": "Matricula",
+  "estudo": true,
+  "extras": {
+    "fixos": [
+      [
+        "Personal",
+        80.0,
+        "personal trainer"
+      ],
+      [
+        "Armario",
+        15.0,
+        "armário"
+      ],
+      [
+        "Avaliacao",
+        40.0,
+        "avaliação física"
+      ]
+    ],
+    "percentual": [
+      "Promocao",
+      0.85,
+      "-15% promoção"
+    ]
+  },
+  "gateway": "CobraJa",
+  "ident": "aluno",
+  "nomes": [
+    "Fernanda",
+    "Gustavo",
+    "Helena",
+    "Igor"
+  ],
+  "padroes": [
+    "encapsulamento",
+    "adapter",
+    "strategy"
+  ],
+  "painel": {
+    "acao_livre": "Matricular",
+    "acao_ocupado": "(lista de espera)",
+    "contagem": "turma(s) com vaga",
+    "livre": "vagas abertas",
+    "ocupado": "LOTADA",
+    "titulo": "Turma",
+    "zero": "SEM VAGAS - todas as turmas lotadas"
+  },
+  "preco": "mensalidade",
+  "precos_exemplo": [
+    100.0,
+    150.0,
+    89.9,
+    0.0
+  ],
+  "quantidade": "meses",
+  "recurso": "turma",
+  "recursos": [
+    10,
+    20,
+    30
+  ],
+  "sistema": "Academia Fit",
+  "unidade": "mês(es)",
+  "variantes": {
+    "conceito": "tipo de plano",
+    "itens": [
+      [
+        "Mensal",
+        1.0
+      ],
+      [
+        "Universitario",
+        0.7
+      ],
+      [
+        "Corporativo",
+        0.8
+      ]
+    ],
+    "nova": [
+      "Familia",
+      0.6
+    ]
+  }
+}

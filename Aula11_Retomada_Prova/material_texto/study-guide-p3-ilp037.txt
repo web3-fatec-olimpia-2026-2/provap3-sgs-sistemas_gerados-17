@@ -1,0 +1,140 @@
+
+===== Página 1 =====
+ILP-037 Técnicas de Programação II · FATEC Olímpia (2026/2) — Study Guide P3 (Folha
+Única de Revisão)
+ Critério da P3: Justificar o porquê da decisão de design sem IA
+Revisão estruturada dos padrões de projeto e princípios aplicados ao ecossistema do Resort de Olímpia (Aulas 05 a 11)
+ Prof. Jose Ceron Neto • Prova Prática Individual
+ Padrão / Princípio
+ Problema que resolve
+ Smell que o indica
+ Como se reconhece no código
+ Quando NÃO usar (delimitação Python)
+Strategy
+Comportamental (GoF)
+Variações de uma mesma regra/algoritmo (ex:
+cálculo de tarifas de hóspede: comum,
+fidelidade, parceiro) que mudam com frequência
+sem alterar o cliente (Reserva).
+Condicionais em cascata (if/elif/switch)
+baseados no tipo do cliente, inflados a cada
+novo pacote de hospedagem ou convênio
+comercial.
+O contexto recebe a estratégia no __init__ e delega
+a execução (self.tarifa.calcular(...)) de forma
+polimórfica, eliminando os if.
+Quando o cálculo nunca varia ou tem apenas uma
+regra fixa. Em Python, se a variação for
+puramente funcional, passe uma função direta
+(callable), sem cerimônia de classes.
+SRP
+Princípio de Design (SOLID)
+Acoplamento de papéis distintos na mesma
+classe (regras de negócio do resort, formatação
+de comprovantes e persistência técnica de
+arquivos).
+'Classe que faz tudo': a classe possui
+múltiplos motivos para mudar. Alterar layout
+visual, regras de desconto ou driver de banco
+toca o mesmo arquivo.
+Separação estrita em classes com
+responsabilidade única: Reserva (dados/cálculo),
+ReciboFormatter (apresentação) e
+ReservaRepository (persistência).
+Não confundir com 'uma classe por método'.
+Fragmentar classes coesas e simples em
+dezenas de pequenos arquivos gera
+complexidade acidental e dificulta manutenção.
+OCP
+Princípio de Design (SOLID)
+Risco de quebrar código estável e testado
+sempre que surge um novo requisito de negócio
+(ex: lançamento de nova tarifa de alta
+temporada).
+Necessidade recorrente de reabrir e modificar
+classes/funções já existentes e validadas
+para incluir comportamentos ou variantes
+novas.
+Código aberto para extensão, fechado para
+modificação: novas regras são adicionadas criando
+novas classes ou módulos, sem alterar a classe
+consumidora.
+Não crie abstrações antecipadas para o 'e se' que
+talvez nunca aconteça. Abstraia apenas onde a
+variação real já se manifestou no domínio do
+sistema.
+Service × ViewModel
+Arquitetura / Camadas
+Confusão de fronteiras entre regra de negócio e
+lógica visual, prendendo regras na tela ou
+poluindo o domínio com formatações de
+interface.
+Views 'gordas' que calculam valores
+financeiros no meio de laços de tela e
+misturam lógica com f-strings, HTML e
+rótulos condicionais (ex: 'LOTADO').
+• Service: executa regra pura sem saber o que é
+web/UI (testável sem HTTP).
+• ViewModel: prepara dados crus para a tela
+(status_label, preco_formatado) sem desenhar.
+Em telas de consulta direta/CRUD trivial (listar
+quartos sem cálculos nem estados derivados). No
+backend Python/Django, use funções/classes
+simples sem criar observables artificiais.
+Adapter
+Estrutural (GoF)
+Incompatibilidade de interfaces entre o sistema e
+componentes externos (ex: migração para
+PostgreSQL/Neon cujo driver fala execute() e a
+aplicação espera salvar()).
+Código de infraestrutura ou APIs de terceiros
+vazando para o Service, ou condicionais
+espalhados no código (if self.usa_neon: ...).
+Classe intermediária (NeonAdapter) que embrulha
+o componente incompatível, expõe a interface
+esperada pela aplicação e traduz as chamadas
+internamente.
+Quando você controla as duas pontas do código
+ou as interfaces já coincidem. Em Python, o duck
+typing nativo dispensa a criação de classes
+adaptadoras formais desnecessárias.
+Facade
+Estrutural (GoF)
+Alto acoplamento e complexidade do cliente, que
+precisa orquestrar manualmente múltiplos
+subsistemas (checar disponibilidade, calcular
+diária, gravar banco, disparar WhatsApp/e-mail).
+Telas ou controladores repetindo chamadas
+sequenciais para 4 ou mais subsistemas;
+qualquer alteração de ordem ou novo passo
+quebra múltiplos pontos.
+Ponto de entrada único e simplificado
+(RecepcaoFacade.reservar(...)) que orquestra e
+delega as chamadas para os subsistemas na
+ordem necessária.
+Quando a coordenação for simples (1 ou 2
+passos diretos) — uma função de módulo já
+basta. Cuidado para não transformar a fachada
+em um God Object que executa lógica em vez de
+delegar.
+Decorator
+Estrutural (GoF)
+Explosão combinatória de subclasses ou
+proliferação de parâmetros para acrescentar
+comodidades extras opcionais a uma reserva
+(café da manhã, transfer, berço extra).
+Funções infladas com pilhas de parâmetros
+booleanos opcionais (cafe=False,
+transfer=False, late=False) e múltiplos if
+cumulativos.
+Classes embrulhadoras (ComCafeDaManha) que
+mantêm rigorosamente a mesma interface do
+objeto base (preco(), descricao()), chamam o
+objeto interno e somam sua parte.
+Quando os extras forem apenas itens fixos
+numéricos (uma lista de tuplas com sum() é mais
+limpa). Não confundir o padrão de objetos com o
+@decorator de funções do Python.
+ “Adapter faz caber; Facade esconde; Decorator soma”
+ Distinção Crítica para a Defesa Oral: • Adapter: veste uma peça incompatível para caber (muda a interface).   |   • Facade: cria um balcão único na frente de vários subsistemas para esconder a complexidade (interface
+ nova e simples).   |   • Decorator: embrulha um objeto e soma responsabilidades (mantém a mesma interface, permitindo empilhar).

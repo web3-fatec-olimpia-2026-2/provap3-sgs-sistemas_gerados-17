@@ -1,0 +1,484 @@
+{
+  "versao_especificacao": "LNNL-1",
+  "pesos": [
+    71,
+    63,
+    76,
+    57,
+    31,
+    1,
+    11,
+    15,
+    37,
+    13,
+    58,
+    2
+  ],
+  "modulo": 79,
+  "tipo_reservado": "93",
+  "validos": [
+    {
+      "dados_12": "K12WFMT5RQ7L",
+      "soma_ponderada": 4118,
+      "resto_mod_79": 10,
+      "verificadores": "22",
+      "canonico": "K12WF22MT5RQ7L",
+      "formatado": "K12W-F22M-T5R-Q7L",
+      "tipo": "12"
+    },
+    {
+      "dados_12": "Y88HATC2JD8A",
+      "soma_ponderada": 4345,
+      "resto_mod_79": 0,
+      "verificadores": "11",
+      "canonico": "Y88HA11TC2JD8A",
+      "formatado": "Y88H-A11T-C2J-D8A",
+      "tipo": "88"
+    },
+    {
+      "dados_12": "C62RRJJ8EU5A",
+      "soma_ponderada": 3317,
+      "resto_mod_79": 78,
+      "verificadores": "97",
+      "canonico": "C62RR97JJ8EU5A",
+      "formatado": "C62R-R97J-J8E-U5A",
+      "tipo": "62"
+    },
+    {
+      "dados_12": "W66ONCM9PD7Q",
+      "soma_ponderada": 5121,
+      "resto_mod_79": 65,
+      "verificadores": "83",
+      "canonico": "W66ON83CM9PD7Q",
+      "formatado": "W66O-N83C-M9P-D7Q",
+      "tipo": "66"
+    },
+    {
+      "dados_12": "Z87QINS8QQ1S",
+      "soma_ponderada": 5419,
+      "resto_mod_79": 47,
+      "verificadores": "63",
+      "canonico": "Z87QI63NS8QQ1S",
+      "formatado": "Z87Q-I63N-S8Q-Q1S",
+      "tipo": "87"
+    },
+    {
+      "dados_12": "H31WQVD7PE8H",
+      "soma_ponderada": 3979,
+      "resto_mod_79": 29,
+      "verificadores": "43",
+      "canonico": "H31WQ43VD7PE8H",
+      "formatado": "H31W-Q43V-D7P-E8H",
+      "tipo": "31"
+    },
+    {
+      "dados_12": "D88WRIR7VJ9Z",
+      "soma_ponderada": 5095,
+      "resto_mod_79": 39,
+      "verificadores": "54",
+      "canonico": "D88WR54IR7VJ9Z",
+      "formatado": "D88W-R54I-R7V-J9Z",
+      "tipo": "88"
+    },
+    {
+      "dados_12": "U98ZMNG5IA1E",
+      "soma_ponderada": 5131,
+      "resto_mod_79": 75,
+      "verificadores": "94",
+      "canonico": "U98ZM94NG5IA1E",
+      "formatado": "U98Z-M94N-G5I-A1E",
+      "tipo": "98"
+    },
+    {
+      "dados_12": "U89PLGI8OQ8Z",
+      "soma_ponderada": 5481,
+      "resto_mod_79": 30,
+      "verificadores": "44",
+      "canonico": "U89PL44GI8OQ8Z",
+      "formatado": "U89P-L44G-I8O-Q8Z",
+      "tipo": "89"
+    },
+    {
+      "dados_12": "N91JKOZ2OW9I",
+      "soma_ponderada": 4273,
+      "resto_mod_79": 7,
+      "verificadores": "18",
+      "canonico": "N91JK18OZ2OW9I",
+      "formatado": "N91J-K18O-Z2O-W9I",
+      "tipo": "91"
+    },
+    {
+      "dados_12": "O37XPCU5PL2G",
+      "soma_ponderada": 4837,
+      "resto_mod_79": 18,
+      "verificadores": "31",
+      "canonico": "O37XP31CU5PL2G",
+      "formatado": "O37X-P31C-U5P-L2G",
+      "tipo": "37"
+    },
+    {
+      "dados_12": "X73OACA8SR2T",
+      "soma_ponderada": 4486,
+      "resto_mod_79": 62,
+      "verificadores": "79",
+      "canonico": "X73OA79CA8SR2T",
+      "formatado": "X73O-A79C-A8S-R2T",
+      "tipo": "73"
+    },
+    {
+      "dados_12": "Z44DTBY9IV6E",
+      "soma_ponderada": 4639,
+      "resto_mod_79": 57,
+      "verificadores": "74",
+      "canonico": "Z44DT74BY9IV6E",
+      "formatado": "Z44D-T74B-Y9I-V6E",
+      "tipo": "44"
+    },
+    {
+      "dados_12": "A68WXER4PS3T",
+      "soma_ponderada": 4428,
+      "resto_mod_79": 4,
+      "verificadores": "15",
+      "canonico": "A68WX15ER4PS3T",
+      "formatado": "A68W-X15E-R4P-S3T",
+      "tipo": "68"
+    },
+    {
+      "dados_12": "W95CNVF3ZZ5Q",
+      "soma_ponderada": 4942,
+      "resto_mod_79": 44,
+      "verificadores": "59",
+      "canonico": "W95CN59VF3ZZ5Q",
+      "formatado": "W95C-N59V-F3Z-Z5Q",
+      "tipo": "95"
+    },
+    {
+      "dados_12": "N73QZGM1DM2B",
+      "soma_ponderada": 4040,
+      "resto_mod_79": 11,
+      "verificadores": "23",
+      "canonico": "N73QZ23GM1DM2B",
+      "formatado": "N73Q-Z23G-M1D-M2B",
+      "tipo": "73"
+    },
+    {
+      "dados_12": "L61AQPK5OK2P",
+      "soma_ponderada": 2948,
+      "resto_mod_79": 25,
+      "verificadores": "38",
+      "canonico": "L61AQ38PK5OK2P",
+      "formatado": "L61A-Q38P-K5O-K2P",
+      "tipo": "61"
+    },
+    {
+      "dados_12": "O33SQGN6OT4V",
+      "soma_ponderada": 4434,
+      "resto_mod_79": 10,
+      "verificadores": "22",
+      "canonico": "O33SQ22GN6OT4V",
+      "formatado": "O33S-Q22G-N6O-T4V",
+      "tipo": "33"
+    },
+    {
+      "dados_12": "W29MBGU3BU9B",
+      "soma_ponderada": 4402,
+      "resto_mod_79": 57,
+      "verificadores": "74",
+      "canonico": "W29MB74GU3BU9B",
+      "formatado": "W29M-B74G-U3B-U9B",
+      "tipo": "29"
+    },
+    {
+      "dados_12": "O48WVAE9GZ9E",
+      "soma_ponderada": 5238,
+      "resto_mod_79": 24,
+      "verificadores": "37",
+      "canonico": "O48WV37AE9GZ9E",
+      "formatado": "O48W-V37A-E9G-Z9E",
+      "tipo": "48"
+    },
+    {
+      "dados_12": "F37INRN2MJ3L",
+      "soma_ponderada": 3105,
+      "resto_mod_79": 24,
+      "verificadores": "37",
+      "canonico": "F37IN37RN2MJ3L",
+      "formatado": "F37I-N37R-N2M-J3L",
+      "tipo": "37"
+    },
+    {
+      "dados_12": "F58PYNJ8FK9P",
+      "soma_ponderada": 4199,
+      "resto_mod_79": 12,
+      "verificadores": "24",
+      "canonico": "F58PY24NJ8FK9P",
+      "formatado": "F58P-Y24N-J8F-K9P",
+      "tipo": "58"
+    },
+    {
+      "dados_12": "O29ZQZI2GH1C",
+      "soma_ponderada": 4466,
+      "resto_mod_79": 42,
+      "verificadores": "57",
+      "canonico": "O29ZQ57ZI2GH1C",
+      "formatado": "O29Z-Q57Z-I2G-H1C",
+      "tipo": "29"
+    },
+    {
+      "dados_12": "O67RZVF1LF6R",
+      "soma_ponderada": 4816,
+      "resto_mod_79": 76,
+      "verificadores": "95",
+      "canonico": "O67RZ95VF1LF6R",
+      "formatado": "O67R-Z95V-F1L-F6R",
+      "tipo": "67"
+    },
+    {
+      "dados_12": "V94DTWI9YS4S",
+      "soma_ponderada": 4980,
+      "resto_mod_79": 3,
+      "verificadores": "14",
+      "canonico": "V94DT14WI9YS4S",
+      "formatado": "V94D-T14W-I9Y-S4S",
+      "tipo": "94"
+    },
+    {
+      "dados_12": "J59EDZI2NF2V",
+      "soma_ponderada": 3029,
+      "resto_mod_79": 27,
+      "verificadores": "41",
+      "canonico": "J59ED41ZI2NF2V",
+      "formatado": "J59E-D41Z-I2N-F2V",
+      "tipo": "59"
+    },
+    {
+      "dados_12": "B63UUDQ6IS2J",
+      "soma_ponderada": 3593,
+      "resto_mod_79": 38,
+      "verificadores": "53",
+      "canonico": "B63UU53DQ6IS2J",
+      "formatado": "B63U-U53D-Q6I-S2J",
+      "tipo": "63"
+    },
+    {
+      "dados_12": "K35ICAN5NA1D",
+      "soma_ponderada": 2783,
+      "resto_mod_79": 18,
+      "verificadores": "31",
+      "canonico": "K35IC31AN5NA1D",
+      "formatado": "K35I-C31A-N5N-A1D",
+      "tipo": "35"
+    },
+    {
+      "dados_12": "H15DDVR6KY8T",
+      "soma_ponderada": 2909,
+      "resto_mod_79": 65,
+      "verificadores": "83",
+      "canonico": "H15DD83VR6KY8T",
+      "formatado": "H15D-D83V-R6K-Y8T",
+      "tipo": "15"
+    },
+    {
+      "dados_12": "U17KTGT8NV2V",
+      "soma_ponderada": 4644,
+      "resto_mod_79": 62,
+      "verificadores": "79",
+      "canonico": "U17KT79GT8NV2V",
+      "formatado": "U17K-T79G-T8N-V2V",
+      "tipo": "17"
+    },
+    {
+      "dados_12": "L95MJLB7AJ6J",
+      "soma_ponderada": 3524,
+      "resto_mod_79": 48,
+      "verificadores": "64",
+      "canonico": "L95MJ64LB7AJ6J",
+      "formatado": "L95M-J64L-B7A-J6J",
+      "tipo": "95"
+    },
+    {
+      "dados_12": "X25YNKS1RK4R",
+      "soma_ponderada": 5381,
+      "resto_mod_79": 9,
+      "verificadores": "21",
+      "canonico": "X25YN21KS1RK4R",
+      "formatado": "X25Y-N21K-S1R-K4R",
+      "tipo": "25"
+    },
+    {
+      "dados_12": "B23TDDB3QL5A",
+      "soma_ponderada": 2908,
+      "resto_mod_79": 64,
+      "verificadores": "82",
+      "canonico": "B23TD82DB3QL5A",
+      "formatado": "B23T-D82D-B3Q-L5A",
+      "tipo": "23"
+    },
+    {
+      "dados_12": "N36NMMH7VH3F",
+      "soma_ponderada": 4150,
+      "resto_mod_79": 42,
+      "verificadores": "57",
+      "canonico": "N36NM57MH7VH3F",
+      "formatado": "N36N-M57M-H7V-H3F",
+      "tipo": "36"
+    },
+    {
+      "dados_12": "R19VRMI3HA1I",
+      "soma_ponderada": 4379,
+      "resto_mod_79": 34,
+      "verificadores": "48",
+      "canonico": "R19VR48MI3HA1I",
+      "formatado": "R19V-R48M-I3H-A1I",
+      "tipo": "19"
+    },
+    {
+      "dados_12": "R87IKEU2FR1U",
+      "soma_ponderada": 3990,
+      "resto_mod_79": 40,
+      "verificadores": "55",
+      "canonico": "R87IK55EU2FR1U",
+      "formatado": "R87I-K55E-U2F-R1U",
+      "tipo": "87"
+    },
+    {
+      "dados_12": "Q56UQYX6BV1U",
+      "soma_ponderada": 4541,
+      "resto_mod_79": 38,
+      "verificadores": "53",
+      "canonico": "Q56UQ53YX6BV1U",
+      "formatado": "Q56U-Q53Y-X6B-V1U",
+      "tipo": "56"
+    },
+    {
+      "dados_12": "H81HVQE7WL4R",
+      "soma_ponderada": 3738,
+      "resto_mod_79": 25,
+      "verificadores": "38",
+      "canonico": "H81HV38QE7WL4R",
+      "formatado": "H81H-V38Q-E7W-L4R",
+      "tipo": "81"
+    },
+    {
+      "dados_12": "I64LLOU8RZ8Z",
+      "soma_ponderada": 4263,
+      "resto_mod_79": 76,
+      "verificadores": "95",
+      "canonico": "I64LL95OU8RZ8Z",
+      "formatado": "I64L-L95O-U8R-Z8Z",
+      "tipo": "64"
+    },
+    {
+      "dados_12": "V54FUNE8AL9W",
+      "soma_ponderada": 4124,
+      "resto_mod_79": 16,
+      "verificadores": "28",
+      "canonico": "V54FU28NE8AL9W",
+      "formatado": "V54F-U28N-E8A-L9W",
+      "tipo": "54"
+    },
+    {
+      "dados_12": "N13CJLR5EW2A",
+      "soma_ponderada": 2653,
+      "resto_mod_79": 46,
+      "verificadores": "62",
+      "canonico": "N13CJ62LR5EW2A",
+      "formatado": "N13C-J62L-R5E-W2A",
+      "tipo": "13"
+    },
+    {
+      "dados_12": "R45SBMM9QZ3Q",
+      "soma_ponderada": 4521,
+      "resto_mod_79": 18,
+      "verificadores": "31",
+      "canonico": "R45SB31MM9QZ3Q",
+      "formatado": "R45S-B31M-M9Q-Z3Q",
+      "tipo": "45"
+    },
+    {
+      "dados_12": "D23XMKR5JB4F",
+      "soma_ponderada": 3333,
+      "resto_mod_79": 15,
+      "verificadores": "27",
+      "canonico": "D23XM27KR5JB4F",
+      "formatado": "D23X-M27K-R5J-B4F",
+      "tipo": "23"
+    }
+  ],
+  "invalidos": [
+    {
+      "entrada": "K12W-F22M-T5R-Q7",
+      "erro": "TAMANHO_INVALIDO",
+      "nota": "13 caracteres"
+    },
+    {
+      "entrada": "K12W-F22M-T5R-Q7LX",
+      "erro": "TAMANHO_INVALIDO",
+      "nota": "15 caracteres"
+    },
+    {
+      "entrada": "K10W-F22M-T5R-Q7L",
+      "erro": "FORMATO_INVALIDO",
+      "nota": "dígito 0 não pertence ao alfabeto"
+    },
+    {
+      "entrada": "K12W-F22M-T5R-QOL",
+      "erro": "FORMATO_INVALIDO",
+      "nota": "letra O digitada no lugar de um dígito"
+    },
+    {
+      "entrada": "1K2W-F22M-T5R-Q7L",
+      "erro": "FORMATO_INVALIDO",
+      "nota": "classe L/N trocada"
+    },
+    {
+      "entrada": "K93W-F52M-T5R-Q7L",
+      "erro": "TIPO_RESERVADO",
+      "nota": "tipo 93 é reservado (mesmo com verificadores corretos)"
+    },
+    {
+      "entrada": "K12W-F22M-T5R-Q7M",
+      "erro": "VERIFICADOR_INVALIDO",
+      "nota": "última letra trocada (L→M)"
+    },
+    {
+      "entrada": "K12W-F22M-T5R-7QL",
+      "erro": "FORMATO_INVALIDO",
+      "nota": "transposição de vizinhos de classes diferentes"
+    },
+    {
+      "entrada": "K12W-F22M-T5Q-R7L",
+      "erro": "VERIFICADOR_INVALIDO",
+      "nota": "transposição de vizinhos (R↔Q) atravessando o separador"
+    },
+    {
+      "entrada": "K21W-F22M-T5R-Q7L",
+      "erro": "VERIFICADOR_INVALIDO",
+      "nota": "tipo transposto (12→21)"
+    },
+    {
+      "entrada": "K12W-F98M-T5R-Q7L",
+      "erro": "VERIFICADOR_INVALIDO",
+      "nota": "par 98 nunca é emitido (restos vão de 0 a 78)"
+    }
+  ],
+  "normalizacao": [
+    {
+      "entrada": " k12w f22m-t5r q7l ",
+      "canonico": "K12WF22MT5RQ7L",
+      "nota": "normalização: minúsculas, espaços e hífens"
+    }
+  ],
+  "tipo_esperado": [
+    {
+      "entrada": "K12WF22MT5RQ7L",
+      "tipo_esperado": "12",
+      "erro": null
+    },
+    {
+      "entrada": "K12WF22MT5RQ7L",
+      "tipo_esperado": "14",
+      "erro": "TIPO_INCOMPATIVEL"
+    }
+  ]
+}

@@ -1,0 +1,160 @@
+{
+  "atributos": [
+    {
+      "max": null,
+      "min": null,
+      "nome": "espectador",
+      "regra": "obrigatorio",
+      "tipo": "str"
+    },
+    {
+      "max": null,
+      "min": 1,
+      "nome": "sessao",
+      "regra": "minimo",
+      "tipo": "int"
+    },
+    {
+      "max": 10,
+      "min": 1,
+      "nome": "quantidade",
+      "regra": "faixa",
+      "tipo": "int"
+    },
+    {
+      "max": null,
+      "min": 0,
+      "nome": "preco",
+      "regra": "minimo",
+      "tipo": "float"
+    },
+    {
+      "max": null,
+      "min": null,
+      "nome": "poltrona",
+      "regra": "livre",
+      "tipo": "str"
+    }
+  ],
+  "categorias": {
+    "base": [
+      "Sala",
+      "Sala 2D",
+      30.0
+    ],
+    "nova": [
+      "SalaVip",
+      "Sala VIP",
+      80.0
+    ],
+    "subtipos": [
+      [
+        "SalaImersiva",
+        "Sala 3D",
+        40.0
+      ],
+      [
+        "Imax",
+        "Sala IMAX",
+        60.0
+      ]
+    ],
+    "unidade": "ingresso"
+  },
+  "comentarios": false,
+  "django": false,
+  "entidade": "Ingresso",
+  "estudo": false,
+  "extras": {
+    "fixos": [
+      [
+        "Pipoca",
+        25.0,
+        "pipoca"
+      ],
+      [
+        "Refrigerante",
+        12.0,
+        "refrigerante"
+      ],
+      [
+        "Oculos",
+        5.0,
+        "óculos 3D"
+      ]
+    ],
+    "percentual": [
+      "TercaPromo",
+      0.5,
+      "-50% terça"
+    ]
+  },
+  "gateway": "TicketPag",
+  "ident": "espectador",
+  "nomes": [
+    "Natália",
+    "Otávio",
+    "Paula",
+    "Rafael"
+  ],
+  "padroes": [
+    "encapsulamento",
+    "chain",
+    "command",
+    "interpreter",
+    "iterator",
+    "mediator",
+    "memento",
+    "observer",
+    "state",
+    "strategy",
+    "template_method",
+    "visitor"
+  ],
+  "painel": {
+    "acao_livre": "Comprar",
+    "acao_ocupado": "(esgotada)",
+    "contagem": "sessão(ões) disponível(is)",
+    "livre": "disponível",
+    "ocupado": "ESGOTADA",
+    "titulo": "Sessão",
+    "zero": "ESGOTADO - nenhuma sessão disponível"
+  },
+  "preco": "preco",
+  "precos_exemplo": [
+    30.0,
+    40.0,
+    25.5,
+    0.0
+  ],
+  "quantidade": "quantidade",
+  "recurso": "sessão",
+  "recursos": [
+    1,
+    2,
+    3
+  ],
+  "sistema": "Cine Olímpia",
+  "unidade": "ingresso(s)",
+  "variantes": {
+    "conceito": "tipo de ingresso",
+    "itens": [
+      [
+        "Inteira",
+        1.0
+      ],
+      [
+        "Meia",
+        0.5
+      ],
+      [
+        "Clube",
+        0.8
+      ]
+    ],
+    "nova": [
+      "Promocional",
+      0.6
+    ]
+  }
+}

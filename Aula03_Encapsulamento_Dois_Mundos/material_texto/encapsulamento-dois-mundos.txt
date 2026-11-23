@@ -1,0 +1,90 @@
+
+===== Página 1 =====
+FATEC OLÍMPIA • CURSO DE DSM • COMPONENTE ILP-037 TÉCNICAS DE PROGRAMAÇÃO II
+AULA 03 • 2026/2
+Guia de Estudo: Prática em Dois Mundos (Python Puro x Django)
+Página 1 de 2
+GUIA DE REFERÊNCIA: ENCAPSULAMENTO
+AULA 03 • O MESMO CONCEITO EM DOIS MUNDOS (PYTHON PURO VS. DJANGO)
+1. O PRINCÍPIO DO ENCAPSULAMENTO
+O Princípio em 2 linhas: O encapsulamento garante que o objeto seja o único responsável por gerenciar e proteger
+seu próprio estado interno. Em vez de permitir acesso direto e descontrolado, o objeto expõe uma interface pública
+segura e valida os dados antes de gravá-los.
+Para Fixar (Analogia do Cofre): No quarto de um resort de Olímpia, o hóspede usa o cofre através de uma
+interface pública (o painel digital onde digita a senha). Ele não mexe nas engrenagens físicas ou na fechadura
+interna (os dados privados). Se o hóspede tentar digitar um caractere inválido ou ultrapassar o limite, a própria
+interface impede a ação física de trancamento. O cofre protege a si mesmo e a seu conteúdo de estados
+inconsistentes.
+2. TABELA COMPARATIVA: PYTHON PURO VS. DJANGO MODEL
+Embora o objetivo de design seja o mesmo (proteger a consistência dos dados), a forma como implementamos essa
+proteção muda drasticamente conforme o ambiente (ou o 'terreno') onde estamos programando:
+Característica
+Python Puro (Em Memória)
+Django Model (Banco de Dados)
+Como proteger um valor
+Usa-se decoradores @property + @atributo.setter
+para interceptar a escrita no atributo.
+Usa-se o argumento
+validators=[MinValueValidator(0)] diretamente na
+declaração do campo.
+Por que usar esse
+caminho
+É a ferramenta nativa do Python. Valida o dado no
+instante em que ele é atribuído na memória em
+tempo de execução.
+O método save() do Django não roda validações
+sozinho por performance. Os validadores são
+acionados pelo ModelForm ou full_clean().
+Para que serve a
+@property
+Serve tanto para ler valores protegidos por
+convenção (_nome) quanto para aplicar validações
+na escrita.
+Deve ser reservada exclusivamente para dados
+calculados (ex: total_da_estadia), que não
+persistem no banco de dados.
+===== Página 2 =====
+FATEC OLÍMPIA • CURSO DE DSM • COMPONENTE ILP-037 TÉCNICAS DE PROGRAMAÇÃO II
+AULA 03 • 2026/2
+Guia de Estudo: Prática em Dois Mundos (Python Puro x Django)
+Página 2 de 2
+3. EXEMPLOS DE CÓDIGO: DOIS MUNDOS, UMA REGRA (VALOR >= 0)
+Considere a regra de negócio do resort: a diária de um Quarto não pode ser negativa (valor >= 0). Veja como
+essa mesma regra é instalada na 'fechadura' do código de duas formas completamente diferentes:
+Mundo A: Classe Python Puro (Garante em Memória)
+ class Quarto:
+    def __init__(self, numero, diaria):
+        self.numero = numero
+        self.diaria = diaria # Aciona o setter automaticamente!
+    @property
+    def diaria(self):
+        return self._diaria # Atributo 'privado' por convenção (_)
+    @diaria.setter
+    def diaria(self, valor):
+        if valor < 0:
+            raise ValueError("A diária do quarto não pode ser negativa!")
+        self._diaria = valor
+Mundo B: Model do Django (Garante no Banco e Formulários)
+ from django.db import models
+from django.core.validators import MinValueValidator
+class QuartoModel(models.Model):
+    numero = models.IntegerField()
+    diaria = models.DecimalField(
+        max_digits=8, decimal_places=2,
+        validators=[MinValueValidator(0)] # Regra de negócio no campo
+    )
+4. ERRO COMUM: O CHOQUE DOS DOIS MUNDOS
+ATENÇÃO: Nunca misture as ferramentas! Se você declarar um campo de banco de dados no Django (como diaria =
+models.DecimalField(...)) e depois tentar escrever uma @property com setter usando o mesmo nome diaria, você quebrará a
+aplicação!
+Isso ocorre porque a property sobrescreve o descritor nativo do Django Field. Como resultado, o Django Admin não exibirá o
+campo, a validação automática do ModelForm será ignorada, e o ORM falhará ao salvar ou recuperar o dado do banco. No
+Django, use validators para campos do banco de dados, e guarde a @property exclusivamente para ler dados calculados.
+5. GLOSSÁRIO DE TERMOS TÉCNICOS
+• Encapsulamento: Princípio onde o objeto esconde seus dados e força a validação por meio de métodos públicos.
+• @property: Decorador Python que transforma um método em atributo de leitura, mascarando o funcionamento interno.
+• Setter: Método acionado automaticamente ao tentar gravar um valor, permitindo validar antes de aceitar a gravação.
+• Validator: Chamável no Django que valida os valores de campos e lança ValidationError se a validação falhar.
+• full_clean(): Método do Django que valida o modelo manualmente, disparando todos os validators definidos nos campos.
+• ModelForm: Ferramenta do Django que constrói formulários HTML de um modelo e executa as validações automaticamente.
+• Dado Calculado: Atributo gerado dinamicamente em tempo de execução (ex: diária × dias) que não necessita ir para o banco.

@@ -1,0 +1,56 @@
+
+===== Página 1 =====
+GUIA DE FECHAMENTO: MARCO 1 (CHECKLIST EXPLICADO)
+ VALIDE AS DECISÕES DE DESIGN DO SEU PROJETO
+ ILP-037 Técnicas de Programação II  FATEC Olímpia  Prof. José Ceron Neto
+O que o Marco 1 avalia (em 2 linhas): O Marco 1 avalia única e exclusivamente a decisão de design da equipe registrada nos ADRs
+(Architecture Decision Records), e não o funcionamento do código. Não importa se o sistema está rodando sem erros para esta nota, mas sim o
+porquê de cada estrutura escolhida.
+A Analogia do Olímpia Resort: Pense no seu Caderno de Design como o 'livro de decisões da gerência' do resort. Se uma auditoria externa
+abrir esse livro, ela precisa entender por que a gerência decidiu trocar o modelo de fechadura ou adotar uma tarifa dinâmica, quais alternativas
+foram estudadas e qual o impacto disso. Um livro que só diz 'trocamos as fechaduras' sem justificar o motivo é inútil para o resort. Seus ADRs
+são as decisões dessa gerência!
+As Cinco Seções de um ADR (O Livro de Decisões)
+Seção do ADR
+O que colocar (Diretriz de Escrita da Seção)
+1. Contexto
+Descreva o problema real do resort (ex.: o campo 'valor_diaria' aceitava números negativos e quebrava o caixa).
+2. Decisão
+Explique a solução técnica adotada e como ela protege a regra de negócio (ex.: uso de @property com setter).
+3. Alternativa Descartada
+Mostre o que a equipe considerou e NÃO escolheu, explicando o porquê técnico (ex.: rejeitar validação apenas na tela).
+4. Consequência
+Apresente o trade-off real: o que o sistema ganhou (segurança) e o que custou (mais classes, código maior).
+5. Commit
+Insira o hash curto do Git (ex.: a3f9c21) que conecta a decisão descrita diretamente ao código alterado.
+Por que a 'Alternativa Descartada' é a seção que mais conta na nota?
+Esta seção é o termômetro de uma decisão real de engenharia. Se o seu ADR não tem uma alternativa descartada, não houve decisão — a
+equipe apenas implementou a primeira coisa que veio à mente sem refletir. Ao descrever o que vocês ponderaram e por que jogaram aquela
+ideia fora (como descartar a validação puramente na tela de cadastro porque ela seria burlada se alguém criasse reservas via terminal ou carga
+de dados), vocês provam que agiram como engenheiros pensantes.
+O Grande Diferencial: Justificar vs. Descrever
+Estilo Errado: Descrever (Diz apenas O QUE fez)
+Estilo Correto: Justificar (Explica o PORQUÊ e o que NÃO fez)
+"Para o preço, criamos um campo Django model e usamos @property para
+garantir que o valor não seja negativo."
+Por que é ruim? Apenas narra o código escrito e comete o erro teórico de
+misturar @property em models Django (o que quebra o admin e
+formulários).
+"Definimos validar valor_diaria no model usando MinValueValidator.
+Descartamos o uso de @property direto no model porque isso quebra as
+ferramentas nativas do Django (formulários e painel admin)."
+Por que é excelente? Justifica a escolha baseada nos limites do
+framework e no impacto de desenvolvimento.
+Checklist Final de Entrega (Check antes de enviar!)
+[ ] Pasta docs/design/ no Git: O Caderno está versionado no repositório, visível no GitHub (não local no laptop de alguém).
+[ ] Cinco seções preenchidas: Cada ADR do projeto (do ADR 001 ao 004) possui Contexto, Decisão, Alternativa Descartada, Consequência e
+Commit.
+[ ] Decisões JUSTIFICADAS: Os textos respondem aos porquês teóricos e de negócio, e não apenas descrevem os nomes de variáveis ou
+classes.
+[ ] Commits rastreáveis: Cada ADR possui o hash do commit exato que inseriu a mudança no código, provando a ligação
+design-implementação.
+[ ] Arguição Oral (Defesa Sem Consulta): Cada integrante sabe explicar e defender verbalmente cada escolha técnica cara a cara com o
+professor.
+■■ PRAZO FINAL DE ENTREGA: 11/09 (Quinta-feira) às 23h59
+Consolide seu Caderno de Design com antecedência. Evite gargalos no Git de última hora. A arguição oral do Marco 1 avaliará a maturidade da
+equipe em defender as escolhas do seu resort!

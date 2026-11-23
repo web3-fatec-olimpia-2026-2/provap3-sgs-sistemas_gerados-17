@@ -1,0 +1,56 @@
+[
+  {
+    "id": "intro",
+    "title": "Introdução e terminal",
+    "label": "Fundamentos",
+    "icon": "terminal"
+  },
+  {
+    "id": "models",
+    "title": "Models e banco de dados",
+    "label": "Banco de dados",
+    "icon": "database"
+  },
+  {
+    "id": "urls",
+    "title": "Rotas e URLs",
+    "label": "Navegação",
+    "icon": "route"
+  },
+  {
+    "id": "views",
+    "title": "Views",
+    "label": "Requisições",
+    "icon": "window"
+  },
+  {
+    "id": "orm",
+    "title": "ORM e consultas",
+    "label": "Banco de dados",
+    "icon": "filter"
+  },
+  {
+    "id": "templates",
+    "title": "Templates HTML",
+    "label": "Interface",
+    "icon": "code"
+  },
+  {
+    "id": "forms",
+    "title": "Forms e validação",
+    "label": "Formulários",
+    "icon": "form"
+  },
+  {
+    "id": "drf",
+    "title": "Django REST Framework",
+    "label": "APIs",
+    "icon": "api"
+  },
+  {
+    "id": "testes",
+    "title": "Testes com pytest",
+    "label": "Qualidade",
+    "icon": "check"
+  }
+]

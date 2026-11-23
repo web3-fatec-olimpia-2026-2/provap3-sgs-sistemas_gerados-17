@@ -1,0 +1,189 @@
+[
+  {
+    "id": "view",
+    "category": "views",
+    "title": "Criar uma View",
+    "code": "from django.shortcuts import render\nfrom .models import Quarto\n\ndef lista_quartos(request):\n    quartos = Quarto.objects.all()\n    return render(request, \"quartos/lista.html\", {\"quartos\": quartos})",
+    "description": "Uma view recebe uma requisição HTTP e retorna uma resposta. render combina template e contexto em uma resposta.",
+    "explanation": "Uma view recebe uma requisição HTTP e retorna uma resposta. render combina template e contexto em uma resposta.",
+    "when": "Em views.py, conectada a uma rota.",
+    "keywords": [
+      "criar view",
+      "function based view",
+      "render",
+      "listar",
+      "resposta",
+      "html"
+    ],
+    "synonyms": [
+      "criar view",
+      "function based view",
+      "render",
+      "listar",
+      "resposta",
+      "html"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "from django.shortcuts import render\nfrom .models import Quarto\n\ndef lista_quartos(request):\n    quartos = Quarto.objects.all()\n    return render(request, \"quartos/lista.html\", {\"quartos\": quartos})",
+    "source": "https://docs.djangoproject.com/en/5.2/topics/http/views/",
+    "version": "Django 5.2",
+    "syntax": "from django.shortcuts import render\nfrom .models import Quarto\n\ndef lista_quartos(request):\n    quartos = Quarto.objects.all()\n    return render(request, \"quartos/lista.html\", {\"quartos\": quartos})",
+    "kind": "Função",
+    "related": [
+      "path",
+      "template",
+      "all"
+    ]
+  },
+  {
+    "id": "detail",
+    "category": "views",
+    "title": "Buscar um registro ou retornar 404",
+    "code": "from django.shortcuts import get_object_or_404, render\nfrom .models import Quarto\n\ndef detalhe_quarto(request, pk):\n    quarto = get_object_or_404(Quarto, pk=pk)\n    return render(request, \"quartos/detalhe.html\", {\"quarto\": quarto})",
+    "description": "Busca um objeto e gera Http404 se ele não existir; a rota precisa fornecer pk.",
+    "explanation": "Busca um objeto e gera Http404 se ele não existir; a rota precisa fornecer pk.",
+    "when": "Em páginas de detalhe e edição.",
+    "keywords": [
+      "buscar um registro especifico",
+      "get_object_or_404",
+      "detalhe",
+      "nao encontrado",
+      "404"
+    ],
+    "synonyms": [
+      "buscar um registro especifico",
+      "get_object_or_404",
+      "detalhe",
+      "nao encontrado",
+      "404"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "from django.shortcuts import get_object_or_404, render\nfrom .models import Quarto\n\ndef detalhe_quarto(request, pk):\n    quarto = get_object_or_404(Quarto, pk=pk)\n    return render(request, \"quartos/detalhe.html\", {\"quarto\": quarto})",
+    "source": "https://docs.djangoproject.com/en/5.2/topics/http/shortcuts/#get-object-or-404",
+    "version": "Django 5.2",
+    "syntax": "from django.shortcuts import get_object_or_404, render\nfrom .models import Quarto\n\ndef detalhe_quarto(request, pk):\n    quarto = get_object_or_404(Quarto, pk=pk)\n    return render(request, \"quartos/detalhe.html\", {\"quarto\": quarto})",
+    "kind": "Função",
+    "related": [
+      "path",
+      "get"
+    ]
+  },
+  {
+    "id": "request",
+    "category": "views",
+    "title": "Receber dados da requisição",
+    "code": "if request.method == \"POST\":\n    nome = request.POST.get(\"nome\")\nbusca = request.GET.get(\"q\", \"\")",
+    "description": "request.method indica o método HTTP; GET contém parâmetros de consulta e POST dados enviados em formulários. Arquivos vêm em request.FILES.",
+    "explanation": "request.method indica o método HTTP; GET contém parâmetros de consulta e POST dados enviados em formulários. Arquivos vêm em request.FILES.",
+    "when": "Na view que processa uma requisição.",
+    "keywords": [
+      "request",
+      "request.method",
+      "request.post",
+      "request.get",
+      "request.files",
+      "receber dados formulario"
+    ],
+    "synonyms": [
+      "request",
+      "request.method",
+      "request.post",
+      "request.get",
+      "request.files",
+      "receber dados formulario"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "if request.method == \"POST\":\n    nome = request.POST.get(\"nome\")\nbusca = request.GET.get(\"q\", \"\")",
+    "source": "https://docs.djangoproject.com/en/5.2/ref/request-response/",
+    "version": "Django 5.2",
+    "syntax": "if request.method == \"POST\":\n    nome = request.POST.get(\"nome\")\nbusca = request.GET.get(\"q\", \"\")",
+    "kind": "Conceito",
+    "related": []
+  },
+  {
+    "id": "redirect",
+    "category": "views",
+    "title": "Redirecionar página",
+    "code": "from django.shortcuts import redirect\nreturn redirect(\"quartos:lista\")",
+    "description": "Retorna uma resposta HTTP de redirecionamento para uma URL ou nome de rota.",
+    "explanation": "Retorna uma resposta HTTP de redirecionamento para uma URL ou nome de rota.",
+    "when": "Após salvar um formulário para evitar reenvio ao atualizar a página.",
+    "keywords": [
+      "redirecionar pagina",
+      "redirect",
+      "voltar"
+    ],
+    "synonyms": [
+      "redirecionar pagina",
+      "redirect",
+      "voltar"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "from django.shortcuts import redirect\nreturn redirect(\"quartos:lista\")",
+    "source": "https://docs.djangoproject.com/en/5.2/topics/http/shortcuts/#redirect",
+    "version": "Django 5.2",
+    "syntax": "from django.shortcuts import redirect\nreturn redirect(\"quartos:lista\")",
+    "kind": "Função",
+    "related": []
+  },
+  {
+    "id": "cbv",
+    "category": "views",
+    "title": "Views baseadas em classe",
+    "code": "from django.views.generic import ListView\nfrom .models import Quarto\n\nclass QuartoListView(ListView):\n    model = Quarto",
+    "description": "Views baseadas em classe permitem compor comportamentos reutilizáveis; na URL, use QuartoListView.as_view().",
+    "explanation": "Views baseadas em classe permitem compor comportamentos reutilizáveis; na URL, use QuartoListView.as_view().",
+    "when": "Quando views genéricas forem adequadas.",
+    "keywords": [
+      "class based view",
+      "cbv",
+      "listview",
+      "as_view"
+    ],
+    "synonyms": [
+      "class based view",
+      "cbv",
+      "listview",
+      "as_view"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "from django.views.generic import ListView\nfrom .models import Quarto\n\nclass QuartoListView(ListView):\n    model = Quarto",
+    "source": "https://docs.djangoproject.com/en/5.2/topics/class-based-views/",
+    "version": "Django 5.2",
+    "syntax": "from django.views.generic import ListView\nfrom .models import Quarto\n\nclass QuartoListView(ListView):\n    model = Quarto",
+    "kind": "Conceito",
+    "related": []
+  },
+  {
+    "id": "crud",
+    "category": "views",
+    "title": "Criação, edição e exclusão",
+    "code": "form = QuartoForm(request.POST if request.method == \"POST\" else None, instance=quarto)\nif request.method == \"POST\" and form.is_valid():\n    form.save()",
+    "description": "Uma view de edição recupera o objeto, instancia o form com instance e valida antes de salvar. Para excluir, confirme e utilize POST, não GET.",
+    "explanation": "Uma view de edição recupera o objeto, instancia o form com instance e valida antes de salvar. Para excluir, confirme e utilize POST, não GET.",
+    "when": "Ao implementar CRUD.",
+    "keywords": [
+      "criar",
+      "atualizar",
+      "editar",
+      "excluir",
+      "crud",
+      "delete"
+    ],
+    "synonyms": [
+      "criar",
+      "atualizar",
+      "editar",
+      "excluir",
+      "crud",
+      "delete"
+    ],
+    "error": "Confira o nome dos arquivos, os imports e as configurações antes de executar.",
+    "example": "form = QuartoForm(request.POST if request.method == \"POST\" else None, instance=quarto)\nif request.method == \"POST\" and form.is_valid():\n    form.save()",
+    "source": "https://docs.djangoproject.com/en/5.2/topics/forms/modelforms/",
+    "version": "Django 5.2",
+    "syntax": "form = QuartoForm(request.POST if request.method == \"POST\" else None, instance=quarto)\nif request.method == \"POST\" and form.is_valid():\n    form.save()",
+    "kind": "Conceito",
+    "related": []
+  }
+]

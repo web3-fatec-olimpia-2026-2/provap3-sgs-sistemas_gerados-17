@@ -1,0 +1,14 @@
+{% extends "pharns/base.html" %}
+{% block title %}{{ item.titulo }} — Pharmas{% endblock %}
+{% block page_title %}{{ item.titulo }}{% endblock %}
+{% block content %}
+<aside class="apresentacao" data-apresentacao><strong>Apresentação ·</strong> Detalhe = view <code>detalhe</code> (fina) + <code>DetalheVM</code>, que prepara cada campo com rótulo e valor legível (MVVM). O valor final vem do Service com o Strategy do núcleo.</aside>
+<dl>
+{% for rotulo, valor in item.campos %}
+  <dt>{{ rotulo }}</dt><dd>{{ valor }}</dd>
+{% endfor %}
+  <dt>Valor final</dt><dd>{{ item.valor_formatado }} ({{ item.selo }})</dd>
+</dl>
+<p class="acoes"><a href="{% url 'pharns:editar' item.id %}">Editar</a>
+  <a href="{% url 'pharns:excluir' item.id %}">Excluir</a> <a href="{% url 'pharns:lista' %}">Voltar</a></p>
+{% endblock %}

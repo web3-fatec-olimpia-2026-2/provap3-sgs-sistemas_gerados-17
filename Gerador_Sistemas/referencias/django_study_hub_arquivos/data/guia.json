@@ -1,0 +1,361 @@
+[
+  {
+    "title": "Prepare a pasta e o ambiente",
+    "scenario": "A equipe do resort precisa de uma área isolada para criar o projeto sem misturar bibliotecas.",
+    "prereq": "Python instalado. Abra um terminal na pasta onde deseja criar exemplo/.",
+    "parts": [
+      {
+        "title": "Crie a pasta e o ambiente",
+        "text": "Estes comandos criam exemplo/ e entram nela. Os demais passos assumem essa pasta como raiz.",
+        "code": "mkdir exemplo\ncd exemplo\npython -m venv .venv",
+        "location": {
+          "file": "Não é arquivo: terminal",
+          "folder": "Diretório escolhido para o projeto; depois exemplo/",
+          "action": "Execute uma linha por vez. Não use se a pasta exemplo já existir; nesse caso entre nela.",
+          "responsibility": "Executa comandos do sistema e do Django no diretório informado."
+        },
+        "language": "bash",
+        "explain": "O ambiente virtual é um diretório de dependências, não um aplicativo Django."
+      },
+      {
+        "title": "Ative o ambiente",
+        "text": "Escolha somente o comando correspondente ao seu sistema e terminal.",
+        "code": "# macOS / Linux (bash ou zsh)\nsource .venv/bin/activate\n# Windows PowerShell\n.venv\\Scripts\\Activate.ps1",
+        "location": {
+          "file": "Não é arquivo: terminal",
+          "folder": "exemplo/",
+          "action": "Execute somente o comando adequado ao seu sistema.",
+          "responsibility": "Executa comandos do sistema e do Django no diretório informado."
+        },
+        "language": "bash",
+        "explain": "A ativação seleciona o Python e o pip desse ambiente no terminal atual."
+      }
+    ],
+    "result": "O terminal está na raiz exemplo/ com o ambiente ativo."
+  },
+  {
+    "title": "Instale as dependências",
+    "scenario": "O projeto de quartos usa Django; a API e os testes precisam de bibliotecas separadas.",
+    "prereq": "Ambiente virtual ativo, dentro de exemplo/.",
+    "parts": [
+      {
+        "title": "Instalação",
+        "text": "Instale os pacotes para o exemplo.",
+        "code": "python -m pip install \"Django>=5.2,<5.3\" \"djangorestframework>=3.16,<3.17\" \"pytest>=8,<9\" \"pytest-django>=4.8,<5\"",
+        "location": {
+          "file": "Não é arquivo: terminal",
+          "folder": "exemplo/",
+          "action": "Execute no terminal com o ambiente ativo.",
+          "responsibility": "Executa comandos do sistema e do Django no diretório informado."
+        },
+        "language": "bash",
+        "explain": "python -m pip instala no interpretador selecionado; Django, DRF e pytest-django são projetos distintos."
+      }
+    ],
+    "result": "Os pacotes ficam disponíveis no ambiente virtual."
+  },
+  {
+    "title": "Crie o projeto e o aplicativo",
+    "scenario": "O projeto coordena o sistema; o aplicativo quartos concentra a funcionalidade de hospedagem.",
+    "prereq": "exemplo/ já existe e está vazia, exceto pelo ambiente virtual; pacotes instalados.",
+    "parts": [
+      {
+        "title": "Geradores",
+        "text": "O ponto final cria o projeto na pasta atual, sem criar outra pasta externa resort/.",
+        "code": "django-admin startproject resort .\npython manage.py startapp quartos",
+        "location": {
+          "file": "Não é arquivo: terminal",
+          "folder": "exemplo/",
+          "action": "Execute em sequência; não repita se o projeto e o app já existirem.",
+          "responsibility": "Executa comandos do sistema e do Django no diretório informado."
+        },
+        "language": "bash",
+        "explain": "O primeiro cria manage.py e o pacote resort/; o segundo cria quartos/. Django também gera arquivos adicionais que o exemplo mínimo não precisa usar."
+      }
+    ],
+    "result": "exemplo/manage.py, exemplo/resort/ e exemplo/quartos/ existem."
+  },
+  {
+    "title": "Registre os aplicativos",
+    "scenario": "O Django precisa saber que quartos e DRF participam do projeto.",
+    "prereq": "Projeto e aplicativo criados; localize INSTALLED_APPS existente.",
+    "parts": [
+      {
+        "title": "Ativação",
+        "text": "Depois da lista INSTALLED_APPS existente, adicione estas linhas. Não apague nem duplique a lista padrão.",
+        "code": "INSTALLED_APPS += [\"quartos\", \"rest_framework\"]",
+        "location": {
+          "file": "exemplo/resort/settings.py",
+          "folder": "exemplo/resort/",
+          "action": "Acrescente após a definição existente de INSTALLED_APPS.",
+          "responsibility": "Configura apps, templates e banco do projeto."
+        },
+        "language": "python",
+        "explain": "O settings gerado já configura SQLite e APP_DIRS=True; confirme antes de continuar."
+      }
+    ],
+    "result": "Django encontra models e templates do app; DRF fica habilitado."
+  },
+  {
+    "title": "Defina a ficha do quarto",
+    "scenario": "A recepção precisa guardar número, tipo e disponibilidade em cada cadastro.",
+    "prereq": "quartos registrado em INSTALLED_APPS.",
+    "parts": [
+      {
+        "title": "Model",
+        "text": "O model determina os campos e a representação da ficha.",
+        "code": "from django.db import models\n\nclass Quarto(models.Model):\n    numero = models.PositiveIntegerField(unique=True)\n    tipo = models.CharField(max_length=80)\n    disponivel = models.BooleanField(default=True)\n\n    def __str__(self):\n        return f'Quarto {self.numero} — {self.tipo}'\n",
+        "location": {
+          "file": "exemplo/quartos/models.py",
+          "folder": "exemplo/quartos/",
+          "action": "Substitua o conteúdo inicial do arquivo gerado pelo exemplo completo, ou adapte a classe no projeto existente.",
+          "responsibility": "Define as entidades e campos do aplicativo."
+        },
+        "language": "python",
+        "explain": "models.Model é a base; unique impede duplicação de número; default atribui disponibilidade inicial; __str__ dá um texto legível."
+      }
+    ],
+    "result": "Quarto existe no código; o banco ainda não recebeu essa estrutura."
+  },
+  {
+    "title": "Crie e aplique a migração",
+    "scenario": "A ficha escrita em Python precisa tornar-se estrutura no banco SQLite.",
+    "prereq": "Model salvo; app registrado; terminal em exemplo/.",
+    "parts": [
+      {
+        "title": "Migrações",
+        "text": "Crie primeiro a migração e depois aplique ao banco.",
+        "code": "python manage.py makemigrations\npython manage.py migrate",
+        "location": {
+          "file": "Não é arquivo: terminal",
+          "folder": "exemplo/",
+          "action": "Execute em sequência, na pasta de manage.py.",
+          "responsibility": "Executa comandos do sistema e do Django no diretório informado."
+        },
+        "language": "bash",
+        "explain": "makemigrations cria o histórico da mudança; migrate executa as alterações pendentes."
+      }
+    ],
+    "result": "A tabela do quarto existe no banco de desenvolvimento."
+  },
+  {
+    "title": "Crie o formulário",
+    "scenario": "O funcionário precisa preencher e validar os dados antes do cadastro.",
+    "prereq": "Model Quarto definido.",
+    "parts": [
+      {
+        "title": "ModelForm",
+        "text": "Crie forms.py, que startapp normalmente não cria.",
+        "code": "from django import forms\nfrom .models import Quarto\n\nclass QuartoForm(forms.ModelForm):\n    class Meta:\n        model = Quarto\n        fields = ['numero', 'tipo', 'disponivel']\n\n    def clean_numero(self):\n        numero = self.cleaned_data['numero']\n        if numero < 1:\n            raise forms.ValidationError('O número deve ser maior que zero.')\n        return numero\n",
+        "location": {
+          "file": "exemplo/quartos/forms.py",
+          "folder": "exemplo/quartos/",
+          "action": "Crie o arquivo e adicione o conteúdo completo.",
+          "responsibility": "Define campos e validação para a entrada de dados HTML."
+        },
+        "language": "python",
+        "explain": "Meta associa os campos ao model; clean_numero rejeita zero e devolve o número aceito. Essa regra não protege automaticamente a API."
+      }
+    ],
+    "result": "A view poderá instanciar QuartoForm e executar is_valid()."
+  },
+  {
+    "title": "Crie as views",
+    "scenario": "A solicitação da recepção precisa ser atendida, consultar dados e produzir uma resposta.",
+    "prereq": "Model, form e migrações prontos; os templates serão criados no próximo passo.",
+    "parts": [
+      {
+        "title": "Lógica de listagem, detalhe e cadastro",
+        "text": "A função da lista filtra a disponibilidade; a função de detalhe busca um id; a de cadastro processa o formulário.",
+        "code": "from django.shortcuts import get_object_or_404, redirect, render\nfrom .forms import QuartoForm\nfrom .models import Quarto\n\ndef lista_quartos(request):\n    quartos = Quarto.objects.filter(disponivel=True).order_by('numero')\n    return render(request, 'quartos/lista.html', {'quartos': quartos})\n\ndef detalhe_quarto(request, pk):\n    quarto = get_object_or_404(Quarto, pk=pk)\n    return render(request, 'quartos/detalhe.html', {'quarto': quarto})\n\ndef criar_quarto(request):\n    form = QuartoForm(request.POST if request.method == 'POST' else None)\n    if request.method == 'POST' and form.is_valid():\n        form.save()\n        return redirect('quartos:lista')\n    return render(request, 'quartos/form.html', {'form': form})\n",
+        "location": {
+          "file": "exemplo/quartos/views.py",
+          "folder": "exemplo/quartos/",
+          "action": "Substitua o conteúdo inicial do arquivo gerado ou integre as três funções ao arquivo existente.",
+          "responsibility": "Orquestra as requisições, ORM, formulário e resposta HTML."
+        },
+        "language": "python",
+        "explain": "A URL fornece pk; get_object_or_404 converte ausência em 404; render envia contexto ao template; o POST válido salva e redireciona."
+      }
+    ],
+    "result": "As views existem, mas ainda dependem de templates e rotas."
+  },
+  {
+    "title": "Crie os templates",
+    "scenario": "O navegador precisa de páginas para exibir a lista, o detalhe e o formulário.",
+    "prereq": "Views já escritas; APP_DIRS=True e app quartos ativo.",
+    "parts": [
+      {
+        "title": "Lista",
+        "text": "Crie a pasta templates/quartos/ dentro do app. O nome lógico usado pela view é quartos/lista.html.",
+        "code": "<!doctype html><html lang=\"pt-br\"><meta charset=\"utf-8\"><title>Quartos disponíveis</title>\n<h1>Quartos disponíveis</h1>\n<a href=\"{% url 'quartos:criar' %}\">Cadastrar quarto</a>\n<ul>\n{% for quarto in quartos %}\n  <li><a href=\"{% url 'quartos:detalhe' quarto.pk %}\">{{ quarto.numero }} — {{ quarto.tipo }}</a></li>\n{% empty %}\n  <li>Nenhum quarto disponível.</li>\n{% endfor %}\n</ul></html>\n",
+        "location": {
+          "file": "exemplo/quartos/templates/quartos/lista.html",
+          "folder": "exemplo/quartos/templates/quartos/",
+          "action": "Crie as pastas e o arquivo com este conteúdo.",
+          "responsibility": "Renderiza a coleção quartos recebida da view."
+        },
+        "language": "html",
+        "explain": "for percorre a chave quartos; url gera as rotas pelo nome; empty lida com ausência de objetos."
+      },
+      {
+        "title": "Detalhe",
+        "text": "A view de detalhe passa a variável quarto.",
+        "code": "<!doctype html><html lang=\"pt-br\"><meta charset=\"utf-8\"><title>Detalhe do quarto</title>\n<h1>Quarto {{ quarto.numero }}</h1><p>Tipo: {{ quarto.tipo }}</p>\n<a href=\"{% url 'quartos:lista' %}\">Voltar</a></html>\n",
+        "location": {
+          "file": "exemplo/quartos/templates/quartos/detalhe.html",
+          "folder": "exemplo/quartos/templates/quartos/",
+          "action": "Crie este arquivo no mesmo diretório.",
+          "responsibility": "Apresenta uma ficha individual."
+        },
+        "language": "html",
+        "explain": "{{ quarto.numero }} acessa o valor enviado pela view; não é uma requisição independente ao banco."
+      },
+      {
+        "title": "Cadastro",
+        "text": "O formulário precisa enviar POST e incluir proteção CSRF.",
+        "code": "<!doctype html><html lang=\"pt-br\"><meta charset=\"utf-8\"><title>Novo quarto</title>\n<h1>Novo quarto</h1>\n<form method=\"post\">{% csrf_token %}{{ form.as_p }}<button type=\"submit\">Salvar</button></form>\n</html>\n",
+        "location": {
+          "file": "exemplo/quartos/templates/quartos/form.html",
+          "folder": "exemplo/quartos/templates/quartos/",
+          "action": "Crie este arquivo no mesmo diretório.",
+          "responsibility": "Exibe os campos e mensagens do formulário."
+        },
+        "language": "html",
+        "explain": "csrf_token participa da proteção CSRF; form.as_p renderiza os campos e erros."
+      }
+    ],
+    "result": "Os três caminhos lógicos renderizados pelas views existem."
+  },
+  {
+    "title": "Crie as URLs do aplicativo",
+    "scenario": "O Django precisa associar cada endereço à função correta.",
+    "prereq": "Views existentes; template usa os nomes de rota definidos aqui.",
+    "parts": [
+      {
+        "title": "Rotas do app",
+        "text": "urls.py não é criado automaticamente pelo startapp.",
+        "code": "from django.urls import path\nfrom . import views\n\napp_name = 'quartos'\nurlpatterns = [\n    path('quartos/', views.lista_quartos, name='lista'),\n    path('quartos/novo/', views.criar_quarto, name='criar'),\n    path('quartos/<int:pk>/', views.detalhe_quarto, name='detalhe'),\n]\n",
+        "location": {
+          "file": "exemplo/quartos/urls.py",
+          "folder": "exemplo/quartos/",
+          "action": "Crie o arquivo com estes imports, app_name e urlpatterns.",
+          "responsibility": "Mapeia caminhos do app para as funções em views.py."
+        },
+        "language": "python",
+        "explain": "A rota novo/ deve aparecer antes do conversor inteiro; pk é enviado ao argumento da view; app_name fornece o namespace quartos."
+      }
+    ],
+    "result": "As rotas do app existem, mas ainda não estão incluídas no projeto."
+  },
+  {
+    "title": "Defina a API",
+    "scenario": "O sistema parceiro precisa consultar e criar quartos em JSON.",
+    "prereq": "DRF instalado e registrado; model Quarto pronto.",
+    "parts": [
+      {
+        "title": "Serializer e ViewSet",
+        "text": "Nesta arquitetura os dois ficam juntos em api.py; é uma escolha, não uma regra do Django.",
+        "code": "from rest_framework import serializers, viewsets\nfrom .models import Quarto\n\nclass QuartoSerializer(serializers.ModelSerializer):\n    class Meta:\n        model = Quarto\n        fields = ['id', 'numero', 'tipo', 'disponivel']\n\nclass QuartoViewSet(viewsets.ModelViewSet):\n    queryset = Quarto.objects.all().order_by('numero')\n    serializer_class = QuartoSerializer\n",
+        "location": {
+          "file": "exemplo/quartos/api.py",
+          "folder": "exemplo/quartos/",
+          "action": "Crie o arquivo e adicione o conteúdo completo.",
+          "responsibility": "Define a representação dos dados e as ações da API."
+        },
+        "language": "python",
+        "explain": "O serializer escolhe os campos; o ViewSet combina queryset e serializer para listar e criar. O Form não é usado automaticamente pela API."
+      }
+    ],
+    "result": "O projeto ainda precisa registrar o ViewSet em um router."
+  },
+  {
+    "title": "Conecte as rotas ao projeto",
+    "scenario": "A requisição precisa chegar ao aplicativo certo, seja HTML ou API.",
+    "prereq": "quartos/urls.py e quartos/api.py criados.",
+    "parts": [
+      {
+        "title": "URLconf principal",
+        "text": "Esse arquivo inclui o app e o router, além do admin.",
+        "code": "from django.contrib import admin\nfrom django.urls import include, path\nfrom rest_framework.routers import DefaultRouter\nfrom quartos.api import QuartoViewSet\n\nrouter = DefaultRouter()\nrouter.register('quartos', QuartoViewSet)\nurlpatterns = [\n    path('admin/', admin.site.urls),\n    path('', include('quartos.urls')),\n    path('api/', include(router.urls)),\n]\n",
+        "location": {
+          "file": "exemplo/resort/urls.py",
+          "folder": "exemplo/resort/",
+          "action": "Substitua o urlpatterns de exemplo pelo conteúdo completo ou integre os imports e padrões ao existente.",
+          "responsibility": "Encaminha URLs para o app, admin e API."
+        },
+        "language": "python",
+        "explain": "include(\"quartos.urls\") encaminha rotas HTML; router.register cria as rotas da API; path(\"api/\", ...) aplica o prefixo. Os caminhos URL não são caminhos de arquivos."
+      }
+    ],
+    "result": "O navegador pode pedir /quartos/ e outro cliente pode pedir /api/quartos/."
+  },
+  {
+    "title": "Execute e confira",
+    "scenario": "Agora a recepção pode cadastrar um quarto e consultar a lista.",
+    "prereq": "Todos os arquivos anteriores salvos; migrações aplicadas.",
+    "parts": [
+      {
+        "title": "Servidor",
+        "text": "Com o terminal na raiz do projeto, inicie o servidor de desenvolvimento.",
+        "code": "python manage.py runserver",
+        "location": {
+          "file": "Não é arquivo: terminal",
+          "folder": "exemplo/",
+          "action": "Execute no terminal; mantenha-o aberto enquanto testa.",
+          "responsibility": "Executa comandos do sistema e do Django no diretório informado."
+        },
+        "language": "bash",
+        "explain": "O servidor é de desenvolvimento, não de produção."
+      }
+    ],
+    "result": "Abra http://127.0.0.1:8000/quartos/novo/, cadastre um quarto disponível e volte à lista em /quartos/. Confira também /api/quartos/."
+  },
+  {
+    "title": "Configure e execute os testes",
+    "scenario": "Uma vistoria automática verifica se as camadas continuam funcionando.",
+    "prereq": "pytest e pytest-django instalados; projeto e rotas prontos.",
+    "parts": [
+      {
+        "title": "Configuração do pytest",
+        "text": "Crie o arquivo ao lado de manage.py.",
+        "code": "[pytest]\nDJANGO_SETTINGS_MODULE = resort.settings\npython_files = test_*.py\n",
+        "location": {
+          "file": "exemplo/pytest.ini",
+          "folder": "exemplo/./",
+          "action": "Crie o arquivo na raiz do projeto.",
+          "responsibility": "Indica o settings module e o padrão de descoberta para pytest-django."
+        },
+        "language": "ini",
+        "explain": "DJANGO_SETTINGS_MODULE aponta para resort.settings."
+      },
+      {
+        "title": "Testes de model, view e API",
+        "text": "Crie quartos/tests/ e um arquivo __init__.py vazio antes de criar o teste.",
+        "code": "import pytest\nfrom django.urls import reverse\nfrom quartos.models import Quarto\n\n@pytest.mark.django_db\ndef test_model():\n    quarto = Quarto.objects.create(numero=101, tipo='Standard')\n    assert str(quarto) == 'Quarto 101 — Standard'\n\n@pytest.mark.django_db\ndef test_view_lista(client):\n    Quarto.objects.create(numero=102, tipo='Luxo', disponivel=True)\n    response = client.get(reverse('quartos:lista'))\n    assert response.status_code == 200\n    assert b'Luxo' in response.content\n\n@pytest.mark.django_db\ndef test_api_post(client):\n    response = client.post('/api/quartos/', data='{\"numero\": 103, \"tipo\": \"Suite\", \"disponivel\": true}', content_type='application/json')\n    assert response.status_code == 201\n    assert response.json()['numero'] == 103\n    assert Quarto.objects.filter(numero=103).exists()\n",
+        "location": {
+          "file": "exemplo/quartos/tests/test_quartos.py",
+          "folder": "exemplo/quartos/tests/",
+          "action": "Crie a pasta tests/, __init__.py vazio e este arquivo de teste.",
+          "responsibility": "Testa model, resposta HTML e POST da API."
+        },
+        "language": "python",
+        "explain": "django_db permite banco de testes; client simula requisições; assert verifica resultado e status."
+      },
+      {
+        "title": "Execução",
+        "text": "Abra outro terminal com ambiente ativo na pasta do projeto.",
+        "code": "pytest -v",
+        "location": {
+          "file": "Não é arquivo: terminal",
+          "folder": "exemplo/",
+          "action": "Execute no terminal.",
+          "responsibility": "Executa comandos do sistema e do Django no diretório informado."
+        },
+        "language": "bash",
+        "explain": "pytest descobre test_*.py e reporta o resultado."
+      }
+    ],
+    "result": "Os três testes devem passar. O banco de teste é separado do banco de desenvolvimento."
+  }
+]

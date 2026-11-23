@@ -1,0 +1,66 @@
+
+===== Página 1 =====
+FATEC Olímpia • ILP-037 Técnicas de Programação II • Strategy Pattern Quick Reference
+Página 1 de 1
+FATEC OLÍMPIA • CST EM DESENVOLVIMENTO DE SOFTWARE MULTIPLATAFORMA
+ILP-037 TÉCNICAS DE PROGRAMAÇÃO II • CLASSE DE 31 ALUNOS • 2026/2 • AULA 05
+GUIA DE BOLSO: PADRÃO DE PROJETO STRATEGY (O PRIMEIRO DO
+SEMESTRE)
+Base Teórica — Polimorfismo Organizado: Polimorfismo é quando tipos diferentes respondem à mesma chamada de método, cada um à sua
+maneira, permitindo tratá-los por uma interface única, sem checar tipos (ex: Quarto, Suite e Presidencial respondem a preco_noite()) (Slides da Aula
+04; Slides da Aula 05). O Code Smell em 2 Linhas: Surge quando condicionais (if/elif) controlam comportamentos que crescem a cada novo tipo de
+hóspede, forçando-nos a abrir a classe Reserva para adicionar novas tarifas, violando o Princípio do Aberto/Fechado (OCP) (Slides da Aula 05).
+O Padrão de Projeto Strategy: É um padrão comportamental que define uma família de algoritmos, encapsula cada um em uma classe própria e os
+torna intercambiáveis em tempo de execução (Refactoring.Guru). A classe original (o Contexto) mantém uma referência para a interface da Estratégia
+e delega a execução, removendo as condicionais (Slides da Aula 05; Refactoring.Guru).
+ Visualização da Oficina (Composição & Delegação):
+  Contexto (Reserva) ──[tem uma]──> Estratégia (Interface informal: aplicar)
+                                      ▲
+                                      │ (implementado por)
+               ┌──────────────────────┼──────────────────────┐
+               ▼                      ▼                      ▼
+         TarifaComum          TarifaFidelidade        TarifaParceiro
+Implementação Prática — As Políticas de Tarifa do Resort de Olímpia:
+ # 1. ESTRATÉGIAS (Classes independentes com o mesmo método 'aplicar')
+class TarifaComum:
+    def aplicar(self, base): return base
+class TarifaFidelidade:
+    def aplicar(self, base): return base * 0.90  # 10% desconto (Slides Aula 05)
+class TarifaParceiro:
+    def aplicar(self, base): return base * 0.80  # 20% desconto (Slides Aula 05)
+# 2. CONTEXTO (A Reserva recebe qualquer tarifa e delega o cálculo sem ifs!)
+class Reserva:
+    def __init__(self, diarias, valor_diaria, tarifa):
+        self.diarias = diarias
+        self.valor_diaria = valor_diaria
+        self.tarifa = tarifa  # Recebe o objeto estratégia correspondente
+    def total(self):
+        base = self.diarias * self.valor_diaria
+        return self.tarifa.aplicar(base)  # DELEGAÇÃO: o acoplamento rígido sumiu!
+Critério de Decisão Antifachada: Quando usar e quando NÃO usar?
+QUANDO USAR (Existe variação real)
+QUANDO NÃO USAR (Evite a cerimônia inútil)
+Variação de regras de negócio: Quando você possui múltiplos
+comportamentos que mudam dinamicamente e deseja mantê-los
+desacoplados e fáceis de estender sem quebrar o código existente
+(Refactoring.Guru).
+Comportamento único ou estático: Se a política de tarifa do Resort de
+Olímpia nunca varia ou não tem alteração futura, criar classes de estratégia é
+mero exagero e inchaço desnecessário de arquivos e classes vazias (Slides
+da Aula 05).
+Peculiaridade em Python: Em linguagens funcionais ou dinâmicas, uma estratégia pode ser apenas uma função pura passada como argumento
+diretamente ao construtor (ex: passar lambda b: b * 0.90 para Reserva) — o que elimina totalmente a necessidade de criar classes de estratégia formais
+(Refactoring.Guru). Na nossa FATEC Olímpia, usamos classes e métodos comuns nos exemplos para consolidar de forma clara os conceitos OOP
+clássicos de visibilidade, estrutura e desacoplamento profissional.
+Glossário Essencial de Bolso:
+ESTRATÉGIA (Strategy)
+A interface informal ou classe comum que agrupa e encapsula os comportamentos que variam (Refactoring.Guru).
+CONTEXTO (Context)
+A classe que executa a regra de negócio central (Reserva) e mantém uma referência à estratégia, delegando o trabalho
+(Refactoring.Guru).
+DELEGAR (Delegation)
+O ato de um objeto transferir a responsabilidade de executar uma tarefa para um objeto especializado
+(Refactoring.Guru).
+ABERTO/FECHADO (OCP)
+Princípio de design (SOLID): o código deve ser aberto para novas extensões (tarifa nova) e fechado para modificação de
+código existente (Chetan Giridhar, 2016).

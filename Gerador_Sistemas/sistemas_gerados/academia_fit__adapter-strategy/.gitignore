@@ -1,0 +1,17 @@
+# Conjunto mínimo das Instruções de desenvolvimento DJANGO (§4.7) + SQLite local.
+.venv/
+.env
+*.pyc
+__pycache__/
+*.log
+.DS_Store
+media/
+staticfiles/
+db.sqlite3
+.env.*
+!.env.example
+.pytest_cache/
+# Marcas do Windows ao baixar/copiar arquivos.
+*Zone.Identifier
+*.identifier
+*.Identifier

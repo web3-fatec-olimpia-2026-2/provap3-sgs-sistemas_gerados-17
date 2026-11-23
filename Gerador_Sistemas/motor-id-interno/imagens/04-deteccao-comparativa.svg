@@ -1,0 +1,73 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 960 500' width='960' height='500' role='img' aria-labelledby='t'>
+<title id='t'>Comparação de detecção de erros: mód. 9 × mód. 79</title>
+<rect width='100%' height='100%' fill='#FFFFFF'/>
+<text x='40' y='40' font-size='20' fill='#111827' font-weight='700' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >Erros que passam despercebidos, por esquema de verificador (menor é melhor)</text>
+<text x='40' y='66' font-size='13' fill='#4B5563' font-weight='400' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >Cálculo exato sobre os 12 caracteres de dados (contagem de todos os casos, sem amostragem).</text>
+<line x1='90' x2='930' y1='380.0' y2='380.0' stroke='#D1D5DB' stroke-width='1'/>
+<text x='82' y='384.0' font-size='11' fill='#4B5563' font-weight='400' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >0%</text>
+<line x1='90' x2='930' y1='326.15384615384613' y2='326.15384615384613' stroke='#D1D5DB' stroke-width='1'/>
+<text x='82' y='330.15384615384613' font-size='11' fill='#4B5563' font-weight='400' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >5%</text>
+<line x1='90' x2='930' y1='272.3076923076923' y2='272.3076923076923' stroke='#D1D5DB' stroke-width='1'/>
+<text x='82' y='276.3076923076923' font-size='11' fill='#4B5563' font-weight='400' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >10%</text>
+<line x1='90' x2='930' y1='218.46153846153845' y2='218.46153846153845' stroke='#D1D5DB' stroke-width='1'/>
+<text x='82' y='222.46153846153845' font-size='11' fill='#4B5563' font-weight='400' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >15%</text>
+<line x1='90' x2='930' y1='164.6153846153846' y2='164.6153846153846' stroke='#D1D5DB' stroke-width='1'/>
+<text x='82' y='168.6153846153846' font-size='11' fill='#4B5563' font-weight='400' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >20%</text>
+<line x1='90' x2='930' y1='110.76923076923077' y2='110.76923076923077' stroke='#D1D5DB' stroke-width='1'/>
+<text x='82' y='114.76923076923077' font-size='11' fill='#4B5563' font-weight='400' text-anchor='end' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >25%</text>
+<rect x='105.0' y='297.15976331360946' width='34' height='82.84023668639054' rx='3' fill='#9CA3AF'/>
+<text x='122.0' y='291.15976331360946' font-size='10' fill='#4B5563' font-weight='700' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >7,7%</text>
+<rect x='143.0' y='297.15976331360946' width='34' height='82.84023668639054' rx='3' fill='#6B7280'/>
+<text x='160.0' y='291.15976331360946' font-size='10' fill='#6B7280' font-weight='700' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >7,7%</text>
+<rect x='181.0' y='378' width='34' height='2' fill='#047857'/>
+<text x='198.0' y='374.0' font-size='10' fill='#047857' font-weight='700' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >0%</text>
+<text x='160.0' y='402' font-size='12' fill='#111827' font-weight='600' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >Troca de</text>
+<text x='160.0' y='418' font-size='12' fill='#111827' font-weight='600' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >1 letra</text>
+<rect x='245.0' y='378' width='34' height='2' fill='#9CA3AF'/>
+<text x='262.0' y='374.0' font-size='10' fill='#4B5563' font-weight='700' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >0%</text>
+<rect x='283.0' y='378' width='34' height='2' fill='#6B7280'/>
+<text x='300.0' y='374.0' font-size='10' fill='#6B7280' font-weight='700' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >0%</text>
+<rect x='321.0' y='378' width='34' height='2' fill='#047857'/>
+<text x='338.0' y='374.0' font-size='10' fill='#047857' font-weight='700' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >0%</text>
+<text x='300.0' y='402' font-size='12' fill='#111827' font-weight='600' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >Troca de</text>
+<text x='300.0' y='418' font-size='12' fill='#111827' font-weight='600' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >1 dígito</text>
+<rect x='385.0' y='300.109564026478' width='34' height='79.89043597352202' rx='3' fill='#9CA3AF'/>
+<text x='402.0' y='294.109564026478' font-size='10' fill='#4B5563' font-weight='700' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >7,4%</text>
+<rect x='423.0' y='300.109564026478' width='34' height='79.89043597352202' rx='3' fill='#6B7280'/>
+<text x='440.0' y='294.109564026478' font-size='10' fill='#6B7280' font-weight='700' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >7,4%</text>
+<rect x='461.0' y='378' width='34' height='2' fill='#047857'/>
+<text x='478.0' y='374.0' font-size='10' fill='#047857' font-weight='700' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >0%</text>
+<text x='440.0' y='402' font-size='12' fill='#111827' font-weight='600' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >Transposição</text>
+<text x='440.0' y='418' font-size='12' fill='#111827' font-weight='600' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >de vizinhos</text>
+<rect x='525.0' y='111.8096244674175' width='34' height='268.1903755325825' rx='3' fill='#9CA3AF'/>
+<text x='542.0' y='105.8096244674175' font-size='10' fill='#4B5563' font-weight='700' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >24,9%</text>
+<rect x='563.0' y='254.6903590183968' width='34' height='125.3096409816032' rx='3' fill='#6B7280'/>
+<text x='580.0' y='248.6903590183968' font-size='10' fill='#6B7280' font-weight='700' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >11,6%</text>
+<rect x='601.0' y='378' width='34' height='2' fill='#047857'/>
+<text x='618.0' y='374.0' font-size='10' fill='#047857' font-weight='700' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >0%</text>
+<text x='580.0' y='402' font-size='12' fill='#111827' font-weight='600' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >Transposição de</text>
+<text x='580.0' y='418' font-size='12' fill='#111827' font-weight='600' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >2 posições quaisquer</text>
+<rect x='665.0' y='258.5370888580901' width='34' height='121.46291114190993' rx='3' fill='#9CA3AF'/>
+<text x='682.0' y='252.5370888580901' font-size='10' fill='#4B5563' font-weight='700' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >11,3%</text>
+<rect x='703.0' y='344.31362710726336' width='34' height='35.68637289273663' rx='3' fill='#6B7280'/>
+<text x='720.0' y='338.31362710726336' font-size='10' fill='#6B7280' font-weight='700' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >3,3%</text>
+<rect x='741.0' y='366.5436048287319' width='34' height='13.456395171268111' rx='3' fill='#047857'/>
+<text x='758.0' y='360.5436048287319' font-size='10' fill='#047857' font-weight='700' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >1,2%</text>
+<text x='720.0' y='402' font-size='12' fill='#111827' font-weight='600' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >2 caracteres</text>
+<text x='720.0' y='418' font-size='12' fill='#111827' font-weight='600' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >errados</text>
+<rect x='805.0' y='260.34188034188037' width='34' height='119.65811965811966' rx='3' fill='#9CA3AF'/>
+<text x='822.0' y='254.34188034188037' font-size='10' fill='#4B5563' font-weight='700' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >11,1%</text>
+<rect x='843.0' y='366.70465337132003' width='34' height='13.295346628679962' rx='3' fill='#6B7280'/>
+<text x='860.0' y='360.70465337132003' font-size='10' fill='#6B7280' font-weight='700' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >1,2%</text>
+<rect x='881.0' y='366.70465337132003' width='34' height='13.295346628679962' rx='3' fill='#047857'/>
+<text x='898.0' y='360.70465337132003' font-size='10' fill='#047857' font-weight='700' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >1,2%</text>
+<text x='860.0' y='402' font-size='12' fill='#111827' font-weight='600' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >Código</text>
+<text x='860.0' y='418' font-size='12' fill='#111827' font-weight='600' text-anchor='middle' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >aleatório</text>
+<line x1='40' x2='930' y1='446' y2='446' stroke='#D1D5DB'/>
+<rect x='90' y='460' width='14' height='14' rx='3' fill='#9CA3AF' stroke='#9CA3AF' stroke-width='1' />
+<text x='112' y='472' font-size='13' fill='#111827' font-weight='400' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >1 verificador, mód. 9</text>
+<rect x='380' y='460' width='14' height='14' rx='3' fill='#6B7280' stroke='#6B7280' stroke-width='1' />
+<text x='402' y='472' font-size='13' fill='#111827' font-weight='400' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >2 verificadores mód. 9 (pesos distintos)</text>
+<rect x='670' y='460' width='14' height='14' rx='3' fill='#047857' stroke='#047857' stroke-width='1' />
+<text x='692' y='472' font-size='13' fill='#111827' font-weight='700' text-anchor='start' font-family='Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif' >2 verificadores, mód. 79 (LNNL)</text>
+</svg>

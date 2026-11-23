@@ -1,0 +1,84 @@
+
+===== Página 1 =====
+ILP-037 Técnicas de Programação II — FATEC Olímpia
+Página 1
+10 Dúvidas Frequentes: Facade × Adapter
+Guia Rápido de Esclarecimento Didático  ILP-037
+Contexto: FATEC Olímpia  3º Semestre  CST em Desenvolvimento de Software Multiplataforma
+Universo de Analogias: O Resort de Olímpia (A Recepção como Facade vs. O Adaptador de Tomada)
+Q1. O que é um Facade, em uma frase?
+Em resumo: É um ponto de entrada único e simplificado que esconde a complexidade e a
+orquestração de vários subsistemas.
+Detalhe & Analogia: A Recepção do Resort de Olímpia serve como fachada: em vez do hóspede ir
+pessoalmente conversar com a governança, a cozinha, o financeiro e o manobrista, ele fala apenas com o
+balcão da recepção, que aciona os bastidores na ordem correta.
+Fonte: ILP037_Aula09_Slides.pdf (Slide 8) / Design Patterns GoF (pág. 185)
+Q2. Qual a diferença entre Adapter e Facade?
+Em resumo: O Adapter faz UMA peça incompatível caber (traduz interface); o Facade esconde a
+bagunça de VÁRIAS peças (cria interface nova).
+Detalhe & Analogia: O Adapter é o adaptador de tomada no quarto do Resort para fazer o plugue europeu
+(ClienteNeon) encaixar na parede. O Facade é a Recepção única que atende o hóspede e coordena diversos
+departamentos.
+Fonte: ILP037_Aula09_Slides.pdf (Slide 10) / ILP037_Aula08_Slides.pdf (Slide 14)
+Q3. O Facade pode chamar um Adapter?
+Em resumo: Sim, eles são padrões perfeitamente complementares e trabalham juntos na mesma
+arquitetura.
+Detalhe & Analogia: A Recepção do Resort (Facade) orquestra a reserva chamando a governança e o
+financeiro; ao gravar no banco de dados em nuvem, ela aciona o NeonReservaAdapter (Adapter) para
+traduzir as chamadas ao driver do PostgreSQL.
+Fonte: ILP037_Aula08_Slides.pdf (Slide 14) / ILP037_Aula09_Slides.pdf (Slide 9)
+Q4. Facade não é a mesma coisa que juntar tudo numa função?
+Em resumo: Não, pois a fachada apenas DELEGA as chamadas para os subsistemas existentes,
+sem reimplementar as regras deles.
+Detalhe & Analogia: A recepcionista do Resort não vai até o quarto arrumar a cama nem cozinha o almoço;
+ela apenas telefona para a governança e para a cozinha na ordem correta. A regra de arrumar o quarto
+continua na governança.
+Fonte: ILP037_Aula09_Slides.pdf (Slide 13) / Design Patterns GoF (pág. 187)
+===== Página 2 =====
+ILP-037 Técnicas de Programação II — FATEC Olímpia
+Página 2
+Q5. Preciso sempre de uma classe para o Facade?
+Em resumo: Não, em linguagens como Python, uma simples função de módulo já é a fachada
+quando não há estado a guardar.
+Detalhe & Analogia: Se a recepção precisa apenas disparar um fluxo direto e sem configurações salvas (ex:
+acionar o aviso sonoro de emergência do hotel), uma função simples de módulo cumpre o papel de fachada
+sem necessidade de instanciar uma classe.
+Fonte: ILP037_Aula09_Slides.pdf (Slide 11)
+Q6. O Facade esconde os subsistemas de vez?
+Em resumo: Não, o Facade oferece o caminho fácil para o uso comum, mas não impede o acesso
+direto por quem precisa de customização.
+Detalhe & Analogia: Se um organizador de grandes eventos no Resort precisar negociar um cardápio
+altamente personalizado diretamente com o chef da cozinha, ele pode ir até lá. O Facade facilita o dia a dia,
+mas não é uma prisão isolante.
+Fonte: ILP037_Aula09_Slides.pdf (Slide 11) / Design Patterns GoF (pág. 188)
+Q7. O que é um God object e por que é ruim?
+Em resumo: É uma classe gigante que tenta fazer tudo sozinha, gerando alto acoplamento e
+tornando o sistema impossível de manter.
+Detalhe & Analogia: Ocorre se a recepção do Resort resolvesse cozinhar os pratos, limpar os quartos,
+manobrar os carros e emitir notas fiscais ela mesma, em vez de delegar. O balcão fica sobrecarregado, nada
+funciona direito e o hotel para.
+Fonte: ILP037_Aula09_Slides.pdf (Slide 11)
+Q8. Quando NÃO usar Facade?
+Em resumo: Quando a orquestração é trivial (poucos passos simples) ou quando cria uma
+camada intermediária sem acoplamento real a resolver.
+Detalhe & Analogia: Se o hóspede quer apenas pedir um copo d'água no bar da piscina, ele não precisa
+passar pela recepção central para isso. Criar uma fachada para chamadas simples gera apenas burocracia e
+código inútil.
+Fonte: ILP037_Aula09_Slides.pdf (Slide 11)
+===== Página 3 =====
+ILP-037 Técnicas de Programação II — FATEC Olímpia
+Página 3
+Q9. Isso cai no Marco 2 do Projeto?
+Em resumo: Sim, as equipes devem registrar no Caderno de Design (ADR) a decisão justificando
+se aplicaram ou não o Facade no projeto.
+Detalhe & Analogia: As equipes analisarão seu sistema: se houver uma ação na tela que aciona vários
+passos na ordem (buscar + calcular + gravar + notificar), um Facade (como a Recepção) cabe ali. Se não
+houver, a justificativa do 'não aplicar' vale nota integral.
+Fonte: ILP037_Aula09_Slides.pdf (Slide 14)
+Q10. Facade tem a ver com MVVM?
+Em resumo: Não diretamente; o MVVM foi trabalhado no Dojo da aula para consolidar a
+separação da exibição antes de apresentar o Facade.
+Detalhe & Analogia: O MVVM é o maître preparando a vitrine de pratos para o garçom (View) apenas servir;
+o Facade é o balcão da Recepção integrando governança, cozinha e financeiro. São padrões para problemas
+totalmente distintos.
+Fonte: ILP037_Aula09_Slides.pdf (Slides 2 e 5) / ILP037_Aula08_Slides.pdf (Slide 5)

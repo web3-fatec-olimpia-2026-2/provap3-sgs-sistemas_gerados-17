@@ -1,0 +1,23 @@
+# =============================================================================
+# .gitignore da pasta sistemas_gerados/ (todos os sistemas gerados pelo SGS).
+# Cada sistema já sai com o próprio .gitignore (gerar_sistema.py); este cobre a pasta inteira,
+# inclusive sistemas antigos, com o conjunto mínimo das Instruções Django (§4.7) + SQLite local.
+# =============================================================================
+.venv/
+.env
+*.pyc
+__pycache__/
+*.log
+.DS_Store
+media/
+staticfiles/
+db.sqlite3
+.env.*
+!.env.example
+.pytest_cache/
+*Zone.Identifier
+*.identifier
+*.Identifier
+
+# sites no ar (pid/porta desta máquina) — o .sgs_registro.json (números fixos) SOBE
+.sgs_servidores.json
