@@ -72,6 +72,7 @@ Principais comandos `sgs`:
 | `sgs app NN <pedido> [entidade=Nome] [padroes=a,b] [ligar=Classe.campo] [-sv]` | **funcionalidade nova** (módulo): mais uma app Django (form, CRUD, API REST, padrões, settings, models, views, testes); com “Perguntar”, pergunta o nome dela, versão ou edição e a ligação |
 | `sgs ligar NN Classe.campo Alvo [-sv]` | campo de **referência** opcional entre duas classes do sistema (ex.: `Viagcert.destino → Destino`) |
 | `sgs incrementar NN Classe.campo <padrão> [-sv]` | **incrementar/modificar** um campo com um padrão (`inteiro>=0`, `inteiro:1..30`, `lista:a,b,c`…), no @property e no Django |
+| `sgs api config NN [<endpoint> campo=sim\|nao …]` | os **campos de cada endpoint** da API (v1 e resumo de cada app): expor ou ocultar, campo a campo |
 | `sgs comandos NN` | comandos de terminal para rodar o sistema fora da tela |
 | `sgs comand [n]` · `sgs exit` | help numerado da esteira de desenvolvimento · volta à tela principal |
 | `sgs estilo [simples\|cmd\|bootstrap\|web]` · `sgs tema [T01…T10] [tom] [P01…P20]` | formatação das páginas geradas |
@@ -173,7 +174,33 @@ Toda app Django gerada (a principal e os módulos) traz, além das telas do CRUD
 |---|---|
 | `api.py` | API REST em JSON, só com Django: `api/v1/` (GET lista com `?limite=N`, POST cria) e `api/v1/<id>/` (GET, PUT, PATCH, DELETE). Valida com o **mesmo** ModelForm das telas, devolve `total` e `valor_final` (Strategy do núcleo), responde 400 com os erros por campo, 404 em JSON e 405 nos outros métodos. O CSRF continua ligado (sem `csrf_exempt`). |
 | `settings.py` | as configurações da app: `API_LIMITE` (100) e `API_ESCRITA` (True), trocáveis no `config/settings.py` do projeto com o prefixo da app (ex.: `RESERVAS_API_ESCRITA = False` deixa a API só de leitura). |
-| `tests/test_api.py` | criar, listar, ler, PUT, PATCH, DELETE, 400, 404, 405, os dois settings e o CSRF (403 sem o token). |
+| `tests/test_api.py` | criar, listar, ler, PUT, PATCH, DELETE, 400, 404, 405, os settings, os campos de cada endpoint e o CSRF (403 sem o token). |
+
+**Campos de cada endpoint (`sgs api config`).** Cada app tem dois endpoints de leitura:
+
+| Endpoint | Rota | Campos que mostra por padrão |
+|---|---|---|
+| **v1** (REST) | `/api/v1/` e `/api/v1/<id>/` | id, todos os campos do model (inclusive ligações e `id_interno`), `total` e `valor_final` |
+| **resumo** (o link “API” do site) | `/api/` | id, `codigo`, `titulo` e `valor` |
+
+Nos módulos, as rotas têm o nome da app na frente (`/destinos/api/v1/`). O `sgs api config NN` mostra cada endpoint,
+campo a campo, com um clique para **ocultar** ou **expor**. Também dá para escrever direto:
+
+```
+sgs api config 16 /api/v1/ observacao=nao titulo=sim
+sgs api config 16 /api/ noites=sim codigo=nao
+sgs api config 16 /destinos/api/v1/ todos=nao id=sim cidade=sim
+sgs api config 16 /api/v1/ padrao                     ← volta ao padrão
+```
+
+A escolha vai para o `config/settings.py` do sistema (`VIAGCERTS_API_CAMPOS = {…}`, só o que mudou do padrão).
+Campo que entrar depois, por `incrementar` ou `ligar`, segue o padrão do endpoint.
+
+Quem chama a API ainda pode pedir só alguns campos, entre os expostos: `/api/v1/?campos=viajante,valor_final`. Um
+campo oculto não aparece nem pedindo, e `/api/v1/campos/` lista os disponíveis e os expostos de cada endpoint.
+
+Os testes da app conferem sempre o padrão, por isso a sua escolha não os quebra. Uma app gerada antes deste
+recurso é refeita na primeira mudança, com as mesmas regras e as ligações de volta.
 
 ### Módulos (`sgs app`) e versões (`sgs editar`)
 

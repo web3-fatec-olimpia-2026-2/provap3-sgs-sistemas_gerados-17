@@ -720,6 +720,51 @@ def test_ligar_e_incrementar_explicam_o_que_fazer(ctx):
     assert m["padroes"] == ["encapsulamento", "strategy"]                              # sem palavra de padrão: mínimo
 
 
+def test_sgs_api_config_escolhe_os_campos_de_cada_endpoint(ctx):
+    pytest.importorskip("django")
+    import ast as ast_mod
+    rodar(ctx, "sgs gerar loja com extras opcionais", django=True, testar=False)
+    rodar(ctx, "sgs app 01 -sp destinos de viagem -sv", testar=False)
+    pasta = ctx.pasta_do_numero(1)
+    principal = next(c for c in gs.entidades_do_projeto(pasta) if c != "Destino")
+    app = gs.entidades_do_projeto(pasta)[principal]["app"]
+    campo = gs.classes_do_projeto(pasta)[principal]["atributos"][0]["nome"]
+    tabela = textos(rodar(ctx, "sgs api config 01"))
+    assert all(rota in tabela for rota in ("/api/v1/", "/api/", "/destinos/api/v1/", "/destinos/api/"))
+    r = rodar(ctx, f"sgs api config 01 /api/v1/ {campo}=nao titulo=sim")
+    assert r["ok"] and r["blocos"][0]["texto"].startswith("✓ /api/v1/"), textos(r)
+    assert rodar(ctx, "sgs api config 01 destinos.resumo total=sim")["ok"]
+    settings = (pasta / "web" / "config" / "settings.py").read_text(encoding="utf-8")
+
+    def bloco_de(prefixo):
+        return ast_mod.literal_eval(re.search(rf"^{prefixo}_API_CAMPOS = (.+)$", settings, re.M).group(1))
+    assert bloco_de(app.upper()) == {"v1": {campo: False, "titulo": True}}
+    assert bloco_de("DESTINOS") == {"resumo": {"total": True}}
+    assert gs.ler_api_campos(pasta)[app]["v1"][campo] is False
+    erro = rodar(ctx, "sgs api config 01 /nada/ total=nao")
+    assert erro["ok"] is False and "não existe" in textos(erro)
+    assert "não é campo" in textos(rodar(ctx, "sgs api config 01 /api/v1/ voar=nao"))
+    testes = gs.executar_testes(pasta, type("S", (), {"exercicio": False, "django": True})())
+    assert all(t["codigo"] == 0 for t in testes), testes                        # a escolha não quebra os testes
+    rodar(ctx, "sgs api config 01 /api/v1/ padrao")                                 # volta ao padrão
+    assert app not in gs.ler_api_campos(pasta)
+
+
+def test_sgs_api_config_atualiza_uma_app_de_antes(ctx):
+    """App gerada antes dos campos configuráveis (sem API_CAMPOS): a 1ª mudança refaz a classe e tudo passa."""
+    pytest.importorskip("django")
+    rodar(ctx, "sgs gerar hotel strategy", django=True, testar=False)
+    pasta = ctx.pasta_do_numero(1)
+    app = gs.entidades_do_projeto(pasta)["Reserva"]["app"]
+    configuracao = pasta / "web" / app / "settings.py"
+    configuracao.write_text(configuracao.read_text(encoding="utf-8").replace('"API_CAMPOS": {},', ""), encoding="utf-8")
+    assert "vieram de uma versão anterior" in textos(rodar(ctx, "sgs api config 01"))
+    r = rodar(ctx, "sgs api config 01 /api/v1/ observacao=nao")
+    assert r["ok"] and "foi refeita" in textos(r), textos(r)
+    assert '"API_CAMPOS": {}' in configuracao.read_text(encoding="utf-8")
+    assert all(t["codigo"] == 0 for t in gs.executar_testes(pasta, type("S", (), {"exercicio": False, "django": True})()))
+
+
 def test_sgs_ligar_lista_as_classes_e_liga_numa_versao(ctx):
     pytest.importorskip("django")
     rodar(ctx, "sgs gerar loja com extras opcionais", django=True, testar=False)

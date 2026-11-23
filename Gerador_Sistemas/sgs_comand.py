@@ -181,6 +181,13 @@ CATALOGO = [
      "ganha teste; o site que já subiu ganha a migration.", "sgs ligar NN [Classe.campo Alvo] [-sv]",
      "sgs ligar 16 Viagcert.destino Destino", "✓ campo Viagcert.destino acrescentado",
      "sgs ligar NN sozinho lista as classes. Apagar o Alvo só limpa o campo (SET_NULL).", "comando sgs"),
+    ("sgs api config NN", "8 · SGS",
+     "CAMPOS DA API: que campos cada endpoint expõe — o v1 (REST, /api/v1/) e o resumo (/api/, o link “API” do "
+     "site) de cada app; nos módulos, /destinos/api/v1/…", "sgs api config NN [<endpoint> campo=sim|nao … | todos=nao | "
+     "padrao]", "sgs api config 16 /api/v1/ observacao=nao titulo=sim",
+     "✓ /api/v1/: expostos agora — id, viajante, voo, noites, valor_noite, tipo, total, valor_final, titulo",
+     "Grava em config/settings.py (<APP>_API_CAMPOS). Quem chama escolhe entre os expostos: /api/v1/?campos=id,total.",
+     "comando sgs"),
     ("sgs incrementar NN Classe.campo <padrão>", "8 · SGS",
      "INCREMENTAR (campo novo) ou MODIFICAR (campo que existe) um campo com um padrão: inteiro>=0, inteiro:1..30, "
      "decimal>=0, lista:a,b,c, texto, texto-livre, simnao, data. A classe é refeita: o @property do núcleo, o "

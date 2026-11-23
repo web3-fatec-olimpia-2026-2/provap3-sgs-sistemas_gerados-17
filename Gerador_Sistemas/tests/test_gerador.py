@@ -312,6 +312,8 @@ def test_toda_app_django_tem_api_rest_e_settings_da_app(tmp_path):
     assert "csrf_exempt" not in api and "ReservaForm(para_form(dados)" in api     # o MESMO form valida a API
     assert "enforce_csrf_checks=True" in (app / "tests" / "test_api.py").read_text(encoding="utf-8")
     assert "RESERVAS_API_ESCRITA=False" in (app / "tests" / "test_api.py").read_text(encoding="utf-8")
+    assert 'path("api/v1/campos/", api.campos' in urls and 'path("api/", api.resumo' in urls      # campos por endpoint
+    assert '"API_CAMPOS": {}' in (app / "settings.py").read_text(encoding="utf-8") and "?campos=" in api
 
 
 def test_modulo_entra_no_projeto_e_tudo_passa(tmp_path):

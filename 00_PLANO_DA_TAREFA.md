@@ -131,3 +131,5 @@ cd "Treino_Prova/exercicios/ex01_strategy_frete" && ALVO=exercicio ../../../.ven
       o form, a API e os testes); perguntado com "Perguntar"; versão ou `-sv`
 - [x] Intellisense na tela (até 5 sugestões enquanto se digita, a sugestão em cinza na linha completa com TAB, clique
       escolhe) e verificação de todos os comandos listados, com e sem `sgs`
+- [x] `sgs api config NN`: os campos de cada endpoint da API (v1 e resumo de cada app) expostos ou ocultos, campo a
+      campo (gravado no `config/settings.py`); `?campos=` escolhe entre os expostos; `/api/v1/campos/` lista

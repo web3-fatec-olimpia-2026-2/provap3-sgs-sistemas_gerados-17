@@ -521,6 +521,7 @@ POR_SISTEMA = [   # (comando, o que faz) para cada número de sistema: o intelli
     ("cd {n}", "entra na pasta"), ("sgs comandos {n}", "comandos de terminal"), ("sgs parar {n}", "derruba o site"),
     ("sgs editar {n}", "cria a versão (cópia)"), ("sgs app {n} ", "funcionalidade nova (módulo)"),
     ("sgs ligar {n}", "classes e ligações"), ("sgs incrementar {n}", "campos e padrões"),
+    ("sgs api config {n}", "campos de cada endpoint da API"),
 ]
 
 
@@ -1074,6 +1075,8 @@ COMANDOS_SGS = [
     ("sgs ligar NN Classe.campo Alvo", "campo de REFERÊNCIA opcional entre duas classes (ex.: sgs ligar 16 "
                                        "Viagcert.destino Destino) · -sv = sem versão · sgs ligar NN lista as classes",
      True),
+    ("sgs api config NN", "CAMPOS DA API: o que cada endpoint (/api/v1/, /api/, /destinos/api/v1/…) expõe — "
+                          "sgs api config NN <endpoint> campo=sim|nao · quem chama escolhe com ?campos=a,b", True),
     ("sgs incrementar NN Classe.campo <padrão>", "INCREMENTAR/MODIFICAR um campo com um padrão: inteiro>=0 "
                                                  "(negativo e letras recusados), inteiro:1..30, lista:a,b,c, texto… "
                                                  "— vale no @property e no Django · -sv = sem versão · sozinho lista "
@@ -1818,6 +1821,122 @@ def _aplicar_incremento(ctx, destino, n, classe, campo, regra, sem_versao, testa
                                f"o campo {plano['classe']}.{plano['campo']} ({plano['acao']})")
 
 
+def _achar_endpoint(endpoints, alvo):
+    """"/api/v1/", "/destinos/api/v1/", "destinos", "destinos.resumo", "v1" ou "resumo" (da app principal)."""
+    alvo = alvo.strip()
+    rota = alvo.strip("/")
+    for ep in endpoints:
+        if rota and rota == ep["rota"].strip("/"):
+            return ep
+    app, _, endpoint = alvo.replace(":", ".").partition(".")
+    if app in ("v1", "resumo") and not endpoint:
+        app, endpoint = endpoints[0]["app"] if endpoints else "", app
+    endpoint = endpoint or "v1"
+    return next((ep for ep in endpoints if ep["app"] == app.lower() and ep["endpoint"] == endpoint), None)
+
+
+def _tabela_api(ctx, destino, n, endpoints, so=None):
+    linhas = []
+    for ep in endpoints:
+        if so is not None and ep is not so:
+            continue
+        for campo, exposto, mudado in ep["campos"]:
+            linhas.append([ep["rota"], campo,
+                           {"texto": ("sim" if exposto else "não") + (" · mudado" if mudado else ""),
+                            "cor": "ok" if exposto else "suave"},
+                           cmd("ocultar" if exposto else "expor",
+                               f"sgs api config {n} {ep['rota']} {campo}={'nao' if exposto else 'sim'}")])
+    try:
+        porta = ctx.porta_do(numero_de(destino, ctx.saida))
+    except (ValueError, TypeError):
+        porta = "PORTA"
+    antigas = sorted({ep["app"] for ep in endpoints if not ep["suporta"]})
+    blocos = [texto(f"Campos de cada endpoint da API do sistema {n} — clique em ocultar/expor (o padrão: o v1 mostra o "
+                    "registro inteiro + total e valor_final; o resumo, que é o link “API” do site, mostra id, codigo, "
+                    "titulo e valor):"),
+              bloco("tabela", colunas=["endpoint", "campo", "exposto", ""], linhas=linhas),
+              texto(f"Formato: sgs api config {n} <endpoint> campo=sim|nao [campo=sim|nao…] · todos=sim|nao · padrao "
+                    "(volta ao padrão). Quem chama ainda escolhe entre os expostos: "
+                    f"http://127.0.0.1:{porta}/api/v1/?campos=id,total · os campos de cada endpoint: "
+                    f"http://127.0.0.1:{porta}/api/v1/campos/", "suave")]
+    if antigas:
+        blocos.append(texto(f"a(s) app(s) {', '.join(antigas)} vieram de uma versão anterior do gerador: a primeira "
+                            "mudança refaz a classe (mesmas regras, campos configuráveis na API) — determinístico, as "
+                            "ligações continuam", "aviso"))
+    return blocos
+
+
+def sgs_api(ctx, args, opcoes=None):
+    """sgs api config NN [<endpoint> campo=sim|nao …] — que campos cada endpoint da API expõe.
+
+    Endpoints de cada app: o v1 (REST: /api/v1/ e /api/v1/<id>/) e o resumo (/api/, o link "API" do site); nos
+    módulos, com o nome da app na frente (/destinos/api/v1/). A escolha vai para o config/settings.py do sistema
+    (<APP>_API_CAMPOS). É configuração: vale no próprio sistema (para testar numa cópia: sgs editar NN antes)."""
+    c = dict(ctx.config.valores)
+    c.update({k: bool(v) for k, v in (opcoes or {}).items() if k in OPCOES_CAIXA})
+    if args and args[0].lower() in ("config", "configurar"):
+        args = args[1:]
+    destino, n = escolher(ctx, args[0] if args else None)
+    info = info_sistema(destino)
+    if not info["django"]:
+        return falha(f"o sistema {n} não tem o site Django — não há API para configurar")
+    endpoints = gs.endpoints_do_projeto(destino)
+    if len(args) < 2:
+        return ok(*_tabela_api(ctx, destino, n, endpoints))
+    ep = _achar_endpoint(endpoints, args[1])
+    if ep is None:
+        return falha(f"endpoint {args[1]!r} não existe no sistema {n} — use um destes: "
+                     + ", ".join(e["rota"] for e in endpoints), *_tabela_api(ctx, destino, n, endpoints))
+    if len(args) < 3:
+        return ok(*_tabela_api(ctx, destino, n, endpoints, so=ep))
+    nomes = [campo for campo, _, _ in ep["campos"]]
+    mudancas, erros = {}, []
+    for par in args[2:]:
+        chave, sinal, valor = par.partition("=")
+        chave = chave.strip().lower()
+        if chave == "padrao" and not sinal:
+            mudancas = {nome: None for nome in nomes}           # volta tudo ao padrão
+            continue
+        if not sinal or valor.strip().lower() not in SIM | NAO:
+            erros.append(f"{par}: use campo=sim ou campo=nao")
+            continue
+        exposto = valor.strip().lower() in SIM
+        if chave == "todos":
+            mudancas.update({nome: exposto for nome in nomes})
+        elif chave in nomes:
+            mudancas[chave] = exposto
+        else:
+            erros.append(f"{chave}: não é campo do {ep['rota']} (campos: {', '.join(nomes)})")
+    if erros:
+        return falha(" · ".join(erros), *_tabela_api(ctx, destino, n, endpoints, so=ep))
+    refeita = []
+    if not ep["suporta"]:                                       # app de antes: ganha os campos configuráveis
+        refeita = gs.refazer_classe(destino, ep["classe"], comentarios=info["comentarios"])
+    escolhas = gs.ler_api_campos(destino)
+    do_endpoint = escolhas.setdefault(ep["app"], {}).setdefault(ep["endpoint"], {})
+    for campo, exposto in mudancas.items():
+        if exposto is None or exposto == gs.exposto_por_padrao(ep["endpoint"], campo):
+            do_endpoint.pop(campo, None)                        # igual ao padrão: não precisa anotar
+        else:
+            do_endpoint[campo] = exposto
+    gs.gravar_api_campos(destino, escolhas)
+    endpoints = gs.endpoints_do_projeto(destino)
+    ep = _achar_endpoint(endpoints, ep["rota"])
+    blocos = [texto(f"✓ {ep['rota']}: expostos agora — {', '.join(c for c, e, _ in ep['campos'] if e) or 'nenhum'}", "ok")]
+    if refeita:
+        blocos.append(texto(f"a classe {ep['classe']} foi refeita pelo gerador de hoje para ter os campos configuráveis "
+                            f"({len(refeita)} arquivo(s) atualizado(s); as regras e as ligações são as mesmas)", "aviso"))
+    blocos += _tabela_api(ctx, destino, n, endpoints, so=ep)
+    if ctx.servidores.ativos().get(destino.name):
+        blocos.append(texto(f"o site do {n} está no ar com a configuração antiga — sgs parar {n} · sgs rodar {n}", "aviso"))
+    resposta = ok(*blocos)
+    if refeita and c["testar"]:
+        testes = gs.executar_testes(destino, SimpleNamespace(exercicio=info["exercicio"], django=True))
+        resposta["blocos"].append(bloco("tabela", colunas=["testes", "resultado"],
+                                        linhas=[[t["rotulo"], t["resumo"]] for t in testes]))
+    return resposta
+
+
 def _como_ligar(n, entidades):
     """O passo a passo do sgs ligar, com as classes que o sistema tem e exemplos já com o número dele."""
     classes = sorted(entidades)
@@ -1901,7 +2020,7 @@ SGS = {"ajuda": sgs_ajuda, "help": sgs_ajuda, "gerar": sgs_gerar, "listar": sgs_
        "cancelar": sgs_cancelar, "estilo": sgs_estilo, "tema": sgs_tema, "temas": sgs_tema, "tipos": sgs_tipos,
        "tipo": sgs_tipos, "editar": sgs_editar, "versao": sgs_editar, "versão": sgs_editar, "app": sgs_app,
        "modulo": sgs_app, "módulo": sgs_app, "ligar": sgs_ligar, "incrementar": sgs_incrementar,
-       "modificar": sgs_incrementar}
+       "modificar": sgs_incrementar, "api": sgs_api}
 
 
 def executar_linha(linha, ctx, opcoes=None):

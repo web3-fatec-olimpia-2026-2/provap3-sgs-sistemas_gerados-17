@@ -5790,6 +5790,10 @@ def gerar_api_rest(s):
         PADROES = {
             "API_LIMITE": 100,    # máximo de registros que a lista da API REST devolve por vez (?limite=N)
             "API_ESCRITA": True,  # False = API só de leitura (POST, PUT, PATCH e DELETE respondem 405)
+            # Campos de cada endpoint — só o que MUDOU do padrão: {"v1": {"campo": False}, "resumo": {"campo": True}}.
+            # Padrão: o v1 (REST) mostra id, os campos do model, total e valor_final; o resumo (api/) mostra id,
+            # codigo, titulo e valor. O `sgs api config` grava a escolha no config/settings.py do projeto.
+            "API_CAMPOS": {},
         }
 
 
@@ -5807,6 +5811,12 @@ def gerar_api_rest(s):
             PUT    api/v1/<pk>/     troca TODOS os campos                             → 200 | 400
             PATCH  api/v1/<pk>/     troca só os campos enviados                       → 200 | 400
             DELETE api/v1/<pk>/     apaga                                             → 204
+            GET    api/v1/campos/   os campos de cada endpoint (disponíveis e expostos)  → 200
+            GET    api/             RESUMO do painel (o link "API" do site): itens + total → 200
+
+        CAMPOS DE CADA ENDPOINT: cada endpoint ("v1" e "resumo") mostra só os campos EXPOSTOS. O projeto escolhe
+        campo a campo em config/settings.py (@@PREFIXO@@_API_CAMPOS — o que o `sgs api config` escreve), e quem
+        chama ainda pode pedir só alguns, entre os expostos: ?campos=a,b (campo oculto não aparece nem pedindo).
 
         A validação é a MESMA das telas: o @@ENT@@Form (ModelForm com os validators do model). O valor final
         vem do @@ENT@@Service (Strategy do núcleo). O CSRF continua ligado: quem chama de fora manda o cookie
@@ -5821,19 +5831,71 @@ def gerar_api_rest(s):
         from .forms import @@ENT@@Form
         from .models import @@ENT@@
         from .services import @@ENT@@Service
+        from .viewmodels import ItemVM, PainelVM
+
+        ENDPOINTS = ("v1", "resumo")
+        CALCULADOS = ("total", "valor_final", "codigo", "titulo", "valor")
+        PADRAO_RESUMO = ("id", "codigo", "titulo", "valor")
 
 
-        def serializar(obj):
-            """Model → dict pronto para JSON (decimal, data e UUID viram texto) + os valores CALCULADOS."""
-            dados = {"id": obj.pk if isinstance(obj.pk, int) else str(obj.pk)}
-            for campo in obj._meta.fields:
-                if campo.primary_key:
-                    continue
-                valor = getattr(obj, campo.attname)
-                dados[campo.name] = valor if valor is None or isinstance(valor, (bool, int, str)) else str(valor)
-            dados["total"] = str(obj.total)
-            dados["valor_final"] = round(@@ENT@@Service().valor_final(obj), 2)
+        def campos_disponiveis():
+            """Tudo o que um endpoint PODE mostrar: o id, os campos do model e os valores calculados."""
+            return ["id"] + [c.name for c in @@ENT@@._meta.fields if not c.primary_key] + list(CALCULADOS)
+
+
+        def exposto_por_padrao(endpoint, campo):
+            if endpoint == "resumo":
+                return campo in PADRAO_RESUMO
+            return campo not in ("codigo", "titulo", "valor")   # v1: o registro inteiro + total e valor_final
+
+
+        def campos_expostos(endpoint, request=None):
+            """Os campos do endpoint: o padrão + o que o projeto mudou (API_CAMPOS) e, com ?campos=, só os pedidos."""
+            escolhas = (config_app.valor("API_CAMPOS") or {}).get(endpoint, {})
+            campos = [c for c in campos_disponiveis() if escolhas.get(c, exposto_por_padrao(endpoint, c))]
+            pedidos = request.GET.get("campos") if request is not None else None
+            if pedidos:
+                quer = {c.strip() for c in pedidos.split(",") if c.strip()}
+                campos = [c for c in campos if c in quer]
+            return campos
+
+
+        def serializar(obj, campos=None):
+            """Model → dict pronto para JSON (decimal, data e UUID viram texto), só com os campos expostos."""
+            campos = campos_expostos("v1") if campos is None else campos
+            dados, calculado = {}, None
+            for campo in campos:
+                if campo == "id":
+                    dados["id"] = obj.pk if isinstance(obj.pk, int) else str(obj.pk)
+                elif campo == "total":
+                    dados["total"] = str(obj.total)
+                elif campo in ("valor_final", "valor", "codigo", "titulo"):
+                    if calculado is None:                     # calcula uma vez só (Strategy do núcleo)
+                        final = @@ENT@@Service().valor_final(obj)
+                        calculado = (ItemVM(obj, final), round(final, 2))
+                    vm, final = calculado
+                    dados[campo] = {"valor_final": final, "valor": vm.valor_formatado, "codigo": vm.codigo,
+                                    "titulo": vm.titulo}[campo]
+                else:
+                    valor = getattr(obj, obj._meta.get_field(campo).attname)
+                    dados[campo] = valor if valor is None or isinstance(valor, (bool, int, str)) else str(valor)
             return dados
+
+
+        def resumo(request):
+            """GET api/: o RESUMO do painel (o link "API" do site) — itens com os campos do endpoint resumo + total."""
+            if request.method != "GET":
+                return HttpResponseNotAllowed(["GET"])
+            objetos = @@ENT@@.objects.order_by("pk")
+            campos = campos_expostos("resumo", request)
+            painel = PainelVM(objetos, @@ENT@@Service())
+            return JsonResponse({"itens": [serializar(o, campos) for o in objetos], "total": painel.total_formatado})
+
+
+        def campos(request):
+            """GET api/v1/campos/: o que cada endpoint PODE mostrar e o que mostra agora."""
+            return JsonResponse({"disponiveis": campos_disponiveis(),
+                                 "expostos": {endpoint: campos_expostos(endpoint) for endpoint in ENDPOINTS}})
 
 
         def ler_corpo(request):
@@ -5879,7 +5941,8 @@ def gerar_api_rest(s):
                     limite = maximo
                 limite = max(1, min(limite, maximo))
                 objetos = @@ENT@@.objects.order_by("pk")[:limite]
-                return JsonResponse({"itens": [serializar(o) for o in objetos], "limite": limite,
+                campos_v1 = campos_expostos("v1", request)
+                return JsonResponse({"itens": [serializar(o, campos_v1) for o in objetos], "limite": limite,
                                      "total_registros": @@ENT@@.objects.count()})
             dados = ler_corpo(request)
             if dados is None:
@@ -5899,7 +5962,7 @@ def gerar_api_rest(s):
             if obj is None:
                 return JsonResponse({"erro": "registro não encontrado"}, status=404)
             if request.method == "GET":
-                return JsonResponse(serializar(obj))
+                return JsonResponse(serializar(obj, campos_expostos("v1", request)))
             if request.method == "DELETE":
                 obj.delete()
                 return HttpResponse(status=204)
@@ -5926,6 +5989,12 @@ def gerar_api_rest(s):
 
         pytestmark = pytest.mark.django_db
         VALIDO = @@VALIDO@@
+
+
+        @pytest.fixture(autouse=True)
+        def api_no_padrao(settings):
+            """Estes testes conferem o PADRÃO: o que o projeto escolheu no sgs api config não muda o resultado deles."""
+            settings.@@PREFIXO@@_API_CAMPOS = {}
 
 
         def enviar(client, metodo, url, dados):
@@ -5988,6 +6057,33 @@ def gerar_api_rest(s):
         def test_csrf_continua_valendo_na_api():
             """Sem o token CSRF, escrever é recusado (403): a API não abre uma porta nos fundos."""
             assert enviar(Client(enforce_csrf_checks=True), "post", colecao(), VALIDO).status_code == 403
+
+
+        # ---------------------------------------------------------------- campos de cada endpoint (sgs api config)
+        def test_campos_de_cada_endpoint_vem_do_settings(client):
+            enviar(client, "post", colecao(), VALIDO)
+            padrao = client.get(colecao()).json()["itens"][0]
+            assert "@@IDENT@@" in padrao and "valor_final" in padrao and "titulo" not in padrao
+            resumo = client.get(reverse("@@APP@@:api")).json()["itens"][0]
+            assert set(resumo) == {"id", "codigo", "titulo", "valor"}           # o resumo do painel (link "API")
+            escolha = {"v1": {"@@IDENT@@": False, "titulo": True}, "resumo": {"@@QTD@@": True, "codigo": False}}
+            with override_settings(@@PREFIXO@@_API_CAMPOS=escolha):
+                item = client.get(colecao()).json()["itens"][0]
+                assert "@@IDENT@@" not in item and "titulo" in item
+                resumo = client.get(reverse("@@APP@@:api")).json()["itens"][0]
+                assert resumo["@@QTD@@"] == VALIDO["@@QTD@@"] and "codigo" not in resumo
+                campos = client.get(reverse("@@APP@@:api_campos")).json()
+                assert "@@IDENT@@" in campos["disponiveis"] and "@@IDENT@@" not in campos["expostos"]["v1"]
+
+
+        def test_quem_chama_escolhe_entre_os_campos_expostos(client):
+            criado = enviar(client, "post", colecao(), VALIDO).json()
+            item = client.get(colecao(), {"campos": "@@IDENT@@,total"}).json()["itens"][0]
+            assert set(item) == {"@@IDENT@@", "total"}
+            um = client.get(reverse("@@APP@@:api_item", args=[criado["id"]]), {"campos": "id"}).json()
+            assert um == {"id": criado["id"]}
+            with override_settings(@@PREFIXO@@_API_CAMPOS={"v1": {"total": False}}):   # oculto não volta nem pedindo
+                assert set(client.get(colecao(), {"campos": "@@IDENT@@,total"}).json()["itens"][0]) == {"@@IDENT@@"}
         ''', APP=app, ENT=ent, VALIDO=django_json(s), IDENT=s.ident, QTD=s.qtd, PREFIXO=prefixo)
     return arq
 
@@ -6489,7 +6585,6 @@ def gerar_web(s):
         VIEWS (o "V" do MVT = a lógica/orquestração; o "Controller" do MVC). FINAS:
         buscam os dados, delegam a regra ao Service e a exibição ao ViewModel, e renderizam.
         """
-        from django.http import JsonResponse
         from django.shortcuts import get_object_or_404, redirect, render
 
         from .forms import @@ENT@@Form
@@ -6535,13 +6630,6 @@ def gerar_web(s):
                 obj.delete()
                 return redirect("@@APP@@:lista")
             return render(request, "@@APP@@/confirmar_exclusao.html", {"obj": obj})
-
-
-        def api_lista(request):
-            painel = PainelVM(@@ENT@@.objects.order_by("pk"), @@ENT@@Service())
-            itens = [{"id": str(i.id), "codigo": i.codigo, "titulo": i.titulo, "valor": i.valor_formatado}
-                     for i in painel.itens]
-            return JsonResponse({"itens": itens, "total": painel.total_formatado})
         @@VIEW_EXERCICIOS@@
         ''', ENT=ent, APP=app, VIEW_EXERCICIOS="\n\n" + render(r'''
             def exercicios(request):
@@ -6561,13 +6649,15 @@ def gerar_web(s):
             path("<@@CONV@@:pk>/", views.detalhe, name="detalhe"),
             path("<@@CONV@@:pk>/editar/", views.editar, name="editar"),
             path("<@@CONV@@:pk>/excluir/", views.excluir, name="excluir"),
-            # API REST (JSON): a coleção (GET lista, POST cria) e um registro (GET, PUT, PATCH, DELETE)
+            # API REST (JSON): a coleção (GET lista, POST cria) e um registro (GET, PUT, PATCH, DELETE);
+            # os campos de cada endpoint são configuráveis (sgs api config) e quem chama escolhe com ?campos=
             path("api/v1/", api.colecao, name="api_colecao"),
+            path("api/v1/campos/", api.campos, name="api_campos"),
             path("api/v1/<@@CONV@@:pk>/", api.item, name="api_item"),
             @@ROTAS_FINAIS@@
         ]
         ''', APP=app, CONV="uuid" if s.web["id_publico"] == "uuid" else "int",
-        ROTAS_FINAIS='path("api/", views.api_lista, name="api"),  # resumo do painel (itens + total)' + (
+        ROTAS_FINAIS='path("api/", api.resumo, name="api"),  # resumo do painel (itens + total) — o link "API"' + (
             '\npath("exercicios/", views.exercicios, name="exercicios"),  # questionário (modo exercício)'
             if s.exercicio else ""))
     arq.update(gerar_api_rest(s))
@@ -8754,17 +8844,18 @@ def _escrever_ligacao(projeto, lig, comentarios=True):
         @@TESTE_API@@
         ''', O=lig["origem"], A=lig["alvo"], CAMPO=campo, PKO=o["pacote"], PKA=a["pacote"], APPO=o["app"],
         APPA=a["app"], REL=f"{o['app']}_{campo}", TESTE_API="" if not api else "\n\n" + render(r'''
-            def test_a_api_le_e_grava_a_referencia(client):
+            def test_a_api_le_e_grava_a_referencia(client, settings):
                 import json
 
                 from django.urls import reverse
 
+                setattr(settings, "@@PREFIXO@@_API_CAMPOS", {})    # o padrão (o sgs api config pode ter ocultado)
                 alvo = @@A@@.objects.create(**dados_@@APPA@@())
                 obj = @@O@@.objects.create(**dados_@@APPO@@())
                 url = reverse("@@APPO@@:api_item", args=[obj.pk])
                 resposta = client.patch(url, data=json.dumps({"@@CAMPO@@": str(alvo.pk)}), content_type="application/json")
                 assert resposta.status_code == 200 and str(resposta.json()["@@CAMPO@@"]) == str(alvo.pk)
-            ''', A=lig["alvo"], O=lig["origem"], APPA=a["app"], APPO=o["app"], CAMPO=campo))
+            ''', A=lig["alvo"], O=lig["origem"], APPA=a["app"], APPO=o["app"], CAMPO=campo, PREFIXO=o["app"].upper()))
     if not comentarios:
         teste = remover_comentarios(teste)
     ast.parse(teste)
@@ -8915,18 +9006,7 @@ def planejar_incremento(projeto, classe, campo, regra):
         posicao = max([i + 1 for i, a in enumerate(atributos) if a["regra"] != "livre"] or [0])
         atributos.insert(posicao, novo)
     try:
-        if info["principal"]:
-            espec = json.loads((projeto / "especificacao.json").read_text(encoding="utf-8"))
-            espec["atributos"] = atributos
-            s = montar_spec(spec=espec, exercicio=(projeto / "exercicios.html").exists())
-            arquivos = montar_arquivos(s, projeto.name)
-            for intocavel in ("README.md", "iniciar.sh", "web/config/settings.py", "web/config/urls.py"):
-                arquivos.pop(intocavel, None)           # têm o que os módulos acrescentaram: ficam como estão
-        else:
-            m = info["modulo"]
-            s = _spec_do_modulo(projeto, m["assunto"], m["entidade"], [], m.get("padroes"), m.get("dominio") or None,
-                                atributos=atributos)
-            arquivos, _ = _arquivos_do_modulo(projeto, s, m["assunto"])
+        s, arquivos = _classe_refeita(projeto, info, atributos)
     except ErroGerador as erro:
         raise ErroGerador(f"{nome_classe}.{campo} com a regra {regra!r} não fecha com o resto da classe: {erro}") from erro
     alvo = next(a for a in s.atributos if a["nome"] == campo)
@@ -8935,16 +9015,35 @@ def planejar_incremento(projeto, classe, campo, regra):
             "atributos": s.atributos, "app": info["app"]}
 
 
-def aplicar_incremento(projeto, plano, comentarios=True):
-    """Escreve a classe refeita, põe de volta as ligações dela, anota (especificacao.json / modulos.json,
-    incrementos.json, README) e cria a migration se o site já subiu."""
+def _classe_refeita(projeto, info, atributos):
+    """(Spec, arquivos) da classe refeita pelo gerador com estes atributos — a principal pelo especificacao.json
+    (sem README, iniciar.sh e config/, que têm o que os módulos acrescentaram), o módulo pelo modulos.json."""
     projeto = Path(projeto)
+    if info["principal"]:
+        espec = json.loads((projeto / "especificacao.json").read_text(encoding="utf-8"))
+        espec["atributos"] = atributos
+        s = montar_spec(spec=espec, exercicio=(projeto / "exercicios.html").exists())
+        arquivos = montar_arquivos(s, projeto.name)
+        for intocavel in ("README.md", "iniciar.sh", "web/config/settings.py", "web/config/urls.py"):
+            arquivos.pop(intocavel, None)
+        return s, arquivos
+    m = info["modulo"]
+    s = _spec_do_modulo(projeto, m["assunto"], m["entidade"], [], m.get("padroes"), m.get("dominio") or None,
+                        atributos=atributos)
+    return s, _arquivos_do_modulo(projeto, s, m["assunto"])[0]
+
+
+def _escrever_classe(projeto, plano, comentarios=True):
+    """Escreve só os arquivos que MUDARAM, põe de volta as ligações da classe e anota os atributos do módulo."""
+    projeto = Path(projeto)
+    mudaram = []
     for caminho, conteudo in plano["arquivos"].items():   # mesmo conteúdo = nem toca (data do arquivo e git quietos)
         alvo = projeto / caminho
         atual = alvo.read_bytes() if alvo.is_file() else None
         novo = conteudo if isinstance(conteudo, bytes) else conteudo.encode("utf-8")
         if atual != novo:
             escrever(projeto, {caminho: conteudo})
+            mudaram.append(caminho)
     for lig in ler_ligacoes(projeto):                    # a classe foi refeita: as referências dela voltam
         if lig.get("origem") == plano["classe"]:
             _escrever_ligacao(projeto, lig, comentarios)
@@ -8955,6 +9054,103 @@ def aplicar_incremento(projeto, plano, comentarios=True):
                 m["atributos"] = plano["atributos"]
                 m["campos"] = [a["nome"] for a in plano["atributos"]]
         (projeto / MODULOS).write_text(json.dumps(modulos, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return mudaram
+
+
+def refazer_classe(projeto, classe, comentarios=True):
+    """Refaz a classe com as MESMAS regras, pelo gerador de hoje — a app ganha o que o gerador passou a fazer
+    depois (ex.: os campos configuráveis da API). Determinístico; as ligações voltam. Devolve os arquivos que mudaram."""
+    projeto = Path(projeto)
+    classes = classes_do_projeto(projeto)
+    nome = achar_classe(classes, classe)
+    if nome is None:
+        raise ErroGerador(f"não existe a classe {classe!r} neste sistema")
+    s, arquivos = _classe_refeita(projeto, classes[nome], classes[nome]["atributos"])
+    plano = {"classe": nome, "principal": classes[nome]["principal"], "arquivos": arquivos, "atributos": s.atributos}
+    mudaram = _escrever_classe(projeto, plano, comentarios)
+    atualizar_migrations(projeto)
+    return mudaram
+
+
+# --- API: os campos de cada endpoint (sgs api config) — gravados no config/settings.py do projeto ---------------
+INICIO_API = "# --- API: campos de cada endpoint (sgs api config) — só o que mudou do padrão ---"
+FIM_API = "# --- fim da API (sgs api config) ---"
+ENDPOINTS_API = {"v1": "api/v1/", "resumo": "api/"}
+CALCULADOS_API = ("total", "valor_final", "codigo", "titulo", "valor")
+
+
+def exposto_por_padrao(endpoint, campo):
+    """O mesmo padrão do api.py gerado: o v1 mostra o registro inteiro; o resumo, id, codigo, titulo e valor."""
+    return campo in ("id", "codigo", "titulo", "valor") if endpoint == "resumo" else campo not in ("codigo", "titulo", "valor")
+
+
+def ler_api_campos(projeto):
+    """{app: {endpoint: {campo: bool}}} — o que o projeto mudou do padrão (o bloco do sgs api config)."""
+    try:
+        texto = (Path(projeto) / "web" / "config" / "settings.py").read_text(encoding="utf-8")
+    except OSError:
+        return {}
+    saida = {}
+    for app, valor in re.findall(r"^([A-Z][A-Z0-9_]*)_API_CAMPOS = (.+)$", texto, re.M):
+        try:
+            dados = ast.literal_eval(valor)
+        except (ValueError, SyntaxError):
+            continue
+        if isinstance(dados, dict):
+            saida[app.lower()] = {e: {c: bool(v) for c, v in (d or {}).items()} for e, d in dados.items() if e in ENDPOINTS_API}
+    return saida
+
+
+def gravar_api_campos(projeto, escolhas):
+    """Reescreve o bloco do sgs api config no fim do config/settings.py (o resto do arquivo não muda)."""
+    caminho = Path(projeto) / "web" / "config" / "settings.py"
+    texto = caminho.read_text(encoding="utf-8")
+    texto = re.sub(rf"\n*{re.escape(INICIO_API)}.*?{re.escape(FIM_API)}\n?", "\n", texto, flags=re.S).rstrip("\n") + "\n"
+    linhas = []
+    for app in sorted(escolhas):
+        limpo = {e: dict(sorted(c.items())) for e, c in sorted(escolhas[app].items()) if c}
+        if limpo:
+            linhas.append(f"{app.upper()}_API_CAMPOS = {limpo!r}")
+    if linhas:
+        texto += f"\n{INICIO_API}\n" + "\n".join(linhas) + f"\n{FIM_API}\n"
+    caminho.write_text(texto, encoding="utf-8")
+
+
+def endpoints_do_projeto(projeto):
+    """Os endpoints de cada app do sistema, com cada campo e se está EXPOSTO:
+    [{"app", "classe", "endpoint", "rota", "suporta", "campos": [(campo, exposto, mudado)]}]."""
+    projeto = Path(projeto)
+    try:
+        espec = json.loads((projeto / "especificacao.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        espec = {}
+    principal = espec.get("entidade") if isinstance(espec, dict) else None
+    escolhas = ler_api_campos(projeto)
+    saida = []
+    for classe, info in sorted(entidades_do_projeto(projeto).items(), key=lambda par: (par[0] != principal, par[0])):
+        pasta = projeto / "web" / info["caminho"]
+        modelo = (pasta / "models.py").read_text(encoding="utf-8")
+        corpo = modelo.split(f"class {classe}(models.Model):", 1)[-1]
+        campos_model = [n for n in re.findall(r"^    (\w+) = models\.\w+\(", corpo, re.M) if n != "id"]
+        try:
+            suporta = "API_CAMPOS" in (pasta / "settings.py").read_text(encoding="utf-8")
+        except OSError:
+            suporta = False
+        prefixo = "/" if classe == principal else f"/{info['app']}/"
+        for endpoint, rota in ENDPOINTS_API.items():
+            mudou = escolhas.get(info["app"], {}).get(endpoint, {})
+            campos = [(c, mudou.get(c, exposto_por_padrao(endpoint, c)), c in mudou)
+                      for c in ["id"] + campos_model + list(CALCULADOS_API)]
+            saida.append({"app": info["app"], "classe": classe, "endpoint": endpoint, "rota": prefixo + rota,
+                          "suporta": suporta, "campos": campos})
+    return saida
+
+
+def aplicar_incremento(projeto, plano, comentarios=True):
+    """Escreve a classe refeita, põe de volta as ligações dela, anota (especificacao.json / modulos.json,
+    incrementos.json, README) e cria a migration se o site já subiu."""
+    projeto = Path(projeto)
+    _escrever_classe(projeto, plano, comentarios)
     try:
         historico = json.loads((projeto / ARQ_INCREMENTOS).read_text(encoding="utf-8"))
     except (OSError, ValueError):
