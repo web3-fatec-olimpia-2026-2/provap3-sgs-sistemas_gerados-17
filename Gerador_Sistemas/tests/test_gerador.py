@@ -346,13 +346,112 @@ def test_modulo_em_estrutura_apps_uuid_e_sem_comentarios(tmp_path):
 def test_modulo_com_nome_repetido_reservado_ou_sem_django_explica(tmp_path):
     destino, _ = g.gerar(dominio="hotel", padroes=["strategy"], django=True, saida=tmp_path)
     with pytest.raises(g.ErroGerador, match="entidade=Nome"):
-        g.preparar_modulo(destino, "hotel com reserva")                # Reserva já é a app principal
+        g.preparar_modulo(destino, "hotel com reserva", entidade="Reserva")   # Reserva já é a app principal
     with pytest.raises(g.ErroGerador, match="reservado"):
         g.preparar_modulo(destino, "estoque", entidade="App")         # app "apps" (a pasta das apps)
     sem_django, _ = g.gerar(dominio="cinema", padroes=["strategy"], saida=tmp_path)
     with pytest.raises(g.ErroGerador, match="Django"):
         g.preparar_modulo(sem_django, "estoque")
     assert g.ler_modulos(destino) == []                                # planejar não escreve nada
+
+
+@pytest.mark.parametrize("pedido, nome", [("destinos de viagem", "Destino"), ("cadastro de horários de voos", "Horario"),
+                                          ("controle de opções", "Opcao"), ("hotéis", "Hotel"), ("de da do", None)])
+def test_nome_da_funcionalidade_vem_do_contexto_do_pedido(pedido, nome):
+    assert g.nome_do_pedido(pedido) == nome
+
+
+def test_ligar_classes_poe_a_referencia_no_form_na_api_e_nos_testes(tmp_path):
+    pytest.importorskip("django")
+    destino, s = g.gerar(dominio="hotel", padroes=["strategy"], django=True, saida=tmp_path, web={"id_publico": "uuid"})
+    g.gerar_modulo(destino, "destinos de viagem com os campos cidade e pais")
+    lig = g.ligar_classes(destino, "reserva", None, "destino")         # sem campo: o nome vem do alvo
+    assert (lig["origem"], lig["campo"], lig["alvo"]) == ("Reserva", "destino", "Destino")
+    app = destino / "web" / s.app
+    assert 'destino = models.ForeignKey("destinos.Destino"' in (app / "models.py").read_text(encoding="utf-8")
+    assert '"destino", "tipo"]' in (app / "forms.py").read_text(encoding="utf-8")
+    assert (app / "tests" / "test_ligacao_destino.py").exists() and g.ler_ligacoes(destino)[0]["campo"] == "destino"
+    with pytest.raises(g.ErroGerador, match="já tem um campo"):
+        g.ligar_classes(destino, "Reserva", "destino", "Destino")
+    with pytest.raises(g.ErroGerador, match="não existe a classe"):
+        g.planejar_ligacao(destino, "Reserva", "voo", "Voo")
+    codigo, saida = rodar_pytest(destino / "web")                     # inclui o test_ligacao_destino.py
+    assert codigo == 0, saida
+
+
+# ---------------------------------------------------------------- incrementar/modificar um campo (sgs incrementar)
+@pytest.mark.parametrize("texto, esperado", [
+    ("inteiro>=0", {"tipo": "int", "regra": "minimo", "min": 0}),
+    ("inteiro:1..30", {"tipo": "int", "regra": "faixa", "min": 1, "max": 30}),
+    ("decimal>=0", {"tipo": "float", "regra": "minimo", "min": 0.0}),
+    ("lista:Janela, Meio, Corredor", {"tipo": "str", "regra": "lista", "opcoes": ["Janela", "Meio", "Corredor"]}),
+    ("lista:1,2,3", {"tipo": "int", "regra": "lista", "opcoes": [1, 2, 3]}),
+    ("texto", {"tipo": "str", "regra": "obrigatorio"}), ("simnão", {"tipo": "bool"}), ("data", {"tipo": "data"}),
+])
+def test_ler_regra_do_campo(texto, esperado):
+    regra = g.ler_regra(texto)
+    assert {k: regra.get(k) for k in esperado} == esperado
+    assert g.ler_regra(g.regra_em_texto({"nome": "x", **regra})) == regra       # ida e volta
+
+
+@pytest.mark.parametrize("texto", ["qualquer", "inteiro:5..1", "lista:so_um", "lista:a,a"])
+def test_regra_do_campo_invalida_explica(texto):
+    with pytest.raises(g.ErroGerador):
+        g.ler_regra(texto)
+
+
+def test_incrementar_modifica_e_acrescenta_campos_e_tudo_passa(tmp_path):
+    pytest.importorskip("django")
+    destino, s = g.gerar(dominio="hotel", padroes=["strategy", "state"], django=True, saida=tmp_path)
+    modificado = g.incrementar_campo(destino, "Reserva", "quarto", "lista:101,102,103")
+    novo = g.incrementar_campo(destino, "reserva", "assento", "lista:janela,corredor")
+    assert (modificado["acao"], novo["acao"]) == ("modificado", "novo")
+    entidades = (destino / "nucleo" / "entidades.py").read_text(encoding="utf-8")
+    assert "if valor not in (101, 102, 103,):" in entidades and "def assento(self, valor):" in entidades  # @property
+    modelo = (destino / "web" / s.app / "models.py").read_text(encoding="utf-8")
+    assert "choices=[(101, '101')" in modelo and "default='janela'" in modelo       # default: linhas antigas
+    espec = json.loads((destino / "especificacao.json").read_text(encoding="utf-8"))
+    assert [a["nome"] for a in espec["atributos"]].index("assento") < [a["nome"] for a in espec["atributos"]].index("observacao")
+    assert [x["campo"] for x in json.loads((destino / "incrementos.json").read_text(encoding="utf-8"))] == ["quarto", "assento"]
+    assert rodar_pytest(destino)[0] == 0                              # núcleo: o setter recusa o que sai da lista
+    codigo, saida = rodar_pytest(destino / "web")                      # Django: choices no model e no form
+    assert codigo == 0, saida
+
+
+def test_incrementar_campo_de_um_modulo_e_preservar_a_ligacao(tmp_path):
+    pytest.importorskip("django")
+    destino, s = g.gerar(dominio="hotel", padroes=["strategy"], django=True, saida=tmp_path)
+    g.gerar_modulo(destino, "destinos de viagem com os campos cidade e pais")
+    g.ligar_classes(destino, "Reserva", "destino", "Destino")
+    g.incrementar_campo(destino, "Destino", "cidade", "lista:Paris,Roma,Lisboa")
+    g.incrementar_campo(destino, "Reserva", "diarias", "inteiro:1..10")           # a Reserva é refeita…
+    assert 'destino = models.ForeignKey("destinos.Destino"' in \
+        (destino / "web" / s.app / "models.py").read_text(encoding="utf-8")      # …e a ligação volta
+    assert any(a.get("opcoes") == ["Paris", "Roma", "Lisboa"] for a in g.ler_modulos(destino)[0]["atributos"])
+    codigo, saida = rodar_pytest(destino / "web")
+    assert codigo == 0, saida
+
+
+def test_refazer_a_classe_sem_mudar_a_regra_da_os_mesmos_arquivos(tmp_path):
+    """Determinístico: refazer a classe com a MESMA regra gera exatamente os arquivos que já estão no disco."""
+    destino, s = g.gerar(dominio="cinema", padroes=["prova"], django=True, saida=tmp_path)
+    plano = g.planejar_incremento(destino, s.ent, s.ident, "texto")
+    diferentes = [c for c, conteudo in plano["arquivos"].items()
+                  if (destino / c).read_bytes() != (conteudo if isinstance(conteudo, bytes) else conteudo.encode())]
+    assert plano["acao"] == "modificado" and diferentes == []
+
+
+def test_incrementar_explica_o_que_nao_pode(tmp_path):
+    destino, s = g.gerar(dominio="hotel", padroes=["strategy"], saida=tmp_path)       # sem Django: só o núcleo
+    with pytest.raises(g.ErroGerador, match="não fecha"):
+        g.planejar_incremento(destino, "Reserva", "diarias", "decimal>=0")           # a quantidade é inteira
+    with pytest.raises(g.ErroGerador, match="não existe a classe"):
+        g.planejar_incremento(destino, "Voo", "x", "texto")
+    with pytest.raises(g.ErroGerador, match="não reconhecida"):
+        g.planejar_incremento(destino, "Reserva", "x", "qualquer")
+    g.incrementar_campo(destino, "Reserva", "quarto", "inteiro>=0")               # sistema sem Django também
+    assert "if valor < 0:" in (destino / "nucleo" / "entidades.py").read_text(encoding="utf-8")
+    assert rodar_pytest(destino)[0] == 0
 
 
 def test_bootstrap_vem_de_dentro_do_projeto(tmp_path):

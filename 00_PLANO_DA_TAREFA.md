@@ -123,3 +123,11 @@ cd "Treino_Prova/exercicios/ex01_strategy_frete" && ALVO=exercicio ../../../.ven
       em duas linhas (`$>` embaixo); histórico global em arquivo (`history`, `history -c`, sobrevive ao F5); todo
       comando padrão também com `sgs` na frente; versões (`sgs editar NN` → 01.1 … 01.99, porta 61011…) e módulos
       (`sgs app NN <pedido>`: mais uma app Django com form, CRUD, API REST, padrões, settings e testes)
+- [x] Incremento perguntado: `sgs app` pergunta o nome da funcionalidade (pelo contexto), versão ou edição sem
+      versionar (`-sv`), a ligação com uma classe existente (`Viagcert.destino → Destino`), campos e padrões;
+      `sgs ligar NN Classe.campo Alvo` (ForeignKey opcional no models, form, API e testes, com a migration)
+- [x] `sgs incrementar NN Classe.campo <padrão>`: acrescenta ou modifica um campo com um padrão (inteiro>=0,
+      faixa, decimal, lista fechada, texto, sim/não, data) — a classe é refeita (o @property do núcleo, o model,
+      o form, a API e os testes); perguntado com "Perguntar"; versão ou `-sv`
+- [x] Intellisense na tela (até 5 sugestões enquanto se digita, a sugestão em cinza na linha completa com TAB, clique
+      escolhe) e verificação de todos os comandos listados, com e sem `sgs`

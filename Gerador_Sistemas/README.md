@@ -43,6 +43,20 @@ O prompt tem **duas linhas**: em cima `sgs@ilp037:~/caminho` (quebra se o caminh
 | `cd`, `ls`, `pwd`, `tree`, `cat`, `date`, `uname`, `history`, `clear`, `source .venv/bin/activate`, `python manage.py migrate/runserver…`, `pytest`, `bash iniciar.sh` | terminal — **todo comando padrão funciona com ou sem `sgs` na frente** (`sgs ls`, `sgs history -c`) — `sgs comand` explica cada um |
 | `sgs …` | configura, lista, roda e explica (digite só `sgs`) |
 
+**Intellisense:** enquanto você digita, uma caixa acima do prompt mostra até **5 sugestões**, que mudam a cada
+tecla. A primeira, se começar com o que já foi digitado, aparece também **na própria linha**, em cinza, depois do
+cursor: **TAB completa** com ela. **Clique** numa sugestão da caixa para escolhê-la, e Esc fecha a caixa.
+
+As sugestões vêm de `/sugestoes`:
+- o histórico, do mais recente para o mais antigo;
+- as pastas para o `cd`;
+- os comandos de cada sistema, já com o número (`sgs rodar 16`, `sgs incrementar 16`…);
+- os comandos `sgs`;
+- os comandos padrão, com e sem `sgs`.
+
+A ordem é: começa com o que foi digitado → uma palavra começa com ele → contém → as letras na ordem. Há teste
+que varre todos os comandos listados (o `sgs`, o `sgs comand` e os do terminal), com e sem `sgs` na frente.
+
 **Histórico:** cada comando vai para o arquivo `Gerador_Sistemas/.sgs_historico` (como o `~/.bash_history`):
 ↑/↓ continuam funcionando depois do F5 e ao reabrir a tela. `history` (ou `sgs history`) mostra numerado,
 `history N` os últimos N, `history -c` limpa e `history -d N` apaga uma linha. Respostas de pergunta não
@@ -55,7 +69,9 @@ Principais comandos `sgs`:
 | `sgs listar` · `sgs info NN` · `sgs testar NN` | sistemas pelo **número fixo** (01, 02…, dado na geração) e as **versões** (01.1, 01.2…) |
 | `sgs rodar NN [porta]` · `sgs parar NN` · `sgs servidores` | sobe/derruba o site; o SGS é o 00 (porta 6100), o 01 roda na 6101, a versão 01.3 na 61013 |
 | `sgs editar NN` | **editar = copiar**: cria a versão NN.k (01.1 … 01.99); o original não muda |
-| `sgs app NN <pedido> [entidade=Nome]` | **módulo**: nova versão de NN com mais uma app Django (form, CRUD, API REST, padrões, settings, models, views, testes) |
+| `sgs app NN <pedido> [entidade=Nome] [padroes=a,b] [ligar=Classe.campo] [-sv]` | **funcionalidade nova** (módulo): mais uma app Django (form, CRUD, API REST, padrões, settings, models, views, testes); com “Perguntar”, pergunta o nome dela, versão ou edição e a ligação |
+| `sgs ligar NN Classe.campo Alvo [-sv]` | campo de **referência** opcional entre duas classes do sistema (ex.: `Viagcert.destino → Destino`) |
+| `sgs incrementar NN Classe.campo <padrão> [-sv]` | **incrementar/modificar** um campo com um padrão (`inteiro>=0`, `inteiro:1..30`, `lista:a,b,c`…), no @property e no Django |
 | `sgs comandos NN` | comandos de terminal para rodar o sistema fora da tela |
 | `sgs comand [n]` · `sgs exit` | help numerado da esteira de desenvolvimento · volta à tela principal |
 | `sgs estilo [simples\|cmd\|bootstrap\|web]` · `sgs tema [T01…T10] [tom] [P01…P20]` | formatação das páginas geradas |
@@ -166,9 +182,63 @@ Toda app Django gerada (a principal e os módulos) traz, além das telas do CRUD
 muda. Editar uma versão cria a próxima do mesmo sistema (editar a 01.1 gera a 01.2). As versões ficam em
 `sistemas_gerados/.sgs_registro.json` (`versoes`) e nunca ganham número de sistema novo.
 
-`sgs app 01 <pedido> [entidade=Nome]` cria a próxima versão do 01 **com mais uma app Django**: o módulo é gerado
-pelo mesmo gerador, com o estilo, o tema e as opções do sistema, e o pedido escolhe o domínio, os campos e os
-padrões, como no `sgs gerar`. Cada módulo tem:
+`sgs app 01 <pedido>` acrescenta ao 01 **mais uma app Django** — a funcionalidade nova. O módulo é gerado pelo
+mesmo gerador, com o estilo, o tema e as opções do sistema; o pedido escolhe o domínio, os campos e os padrões, como
+no `sgs gerar`.
+
+Com a caixa **Perguntar antes de gerar**, o SGS pergunta antes de mexer em qualquer arquivo:
+
+1. **que funcionalidade é** — o nome da classe nova, que depende do contexto. O padrão vem do pedido: “destinos de
+   viagem” → `Destino`, “cadastro de horários de voos” → `Horario`. Você pode trocar por `Voo`, por exemplo;
+2. **versão ou edição** — versão nova 01.k (cópia) ou editar o próprio 01, **sem versionar**;
+3. **ligação** — ligar a classe nova a uma que já existe, nos dois sentidos: `Viagcert.destino → Destino` (a classe
+   que existe ganha a referência) ou `Destino.viagcert → Viagcert` (a nova aponta para ela);
+4. o **nome do campo** de referência, os **campos a mais** (com os tipos duvidosos), os **padrões** (o Strategy entra
+   sempre), a máquina de estados e o domínio base.
+
+`sgs app -sp` encerra as perguntas e aplica. Sem perguntas, tudo vai no comando:
+`sgs app 16 -sp destinos de viagem ligar=Viagcert.destino padroes=state -sv`. `ligar=Classe.campo` aponta para a classe
+nova; `ligar=Classe.campo:Alvo` serve para qualquer par. Tudo é planejado e conferido **antes** de escrever: nome
+repetido ou ligação errada não muda nada.
+
+**Ligação** (`sgs ligar NN Classe.campo Alvo [-sv]`, ou `ligar=` no `sgs app`) é um `ForeignKey` **opcional**
+(`null`/`blank`, `SET_NULL`: apagar o alvo só limpa o campo). Ela entra:
+
+- no `models.py`, antes do `tipo`, e no `Meta.fields` do form, onde vira uma lista de escolha;
+- na API REST (o id do alvo) e no detalhe (vazio aparece como “—”);
+- num teste próprio (`tests/test_ligacao_<campo>.py`), em `ligacoes.json` e no README.
+
+Se o site já subiu (o sistema tem migrations), o SGS roda o `makemigrations` na hora, para o banco e os testes
+acompanharem. Depois é só `sgs parar NN` e `sgs rodar NN`, que aplicam o `migrate`.
+
+**Incrementar/modificar um campo** (`sgs incrementar NN Classe.campo <padrão> [-sv]`): define o padrão (a regra)
+de UM campo de uma classe — a principal ou a de um módulo. Se o campo já existe, a regra dele **muda**; se o nome
+é novo, a classe **ganha** o campo.
+
+| Padrão | O que o campo aceita |
+|---|---|
+| `inteiro>=0` | inteiro com mínimo — negativo e letras são recusados |
+| `inteiro:1..30` · `decimal>=0` · `decimal:0..100` | inteiro numa faixa; decimal com mínimo ou numa faixa |
+| `lista:janela,meio,corredor` (ou `lista:1,2,3`) | **lista fechada**: só esses valores (no Django vira `choices` e uma lista de escolha) |
+| `texto` · `texto-livre` · `simnao` · `data` | texto obrigatório; texto opcional; sim/não; data AAAA-MM-DD |
+
+A classe é **refeita pelo gerador** a partir da especificação atualizada (`especificacao.json` da principal, ou
+`modulos.json` do módulo). Por isso:
+
+- o padrão vale no **@property** do núcleo (o setter recusa o que não segue o padrão), no model (validators ou
+  choices), no form e na API;
+- os testes da classe são refeitos junto, e as ligações dela voltam no lugar;
+- refazer com a mesma regra gera exatamente os mesmos arquivos (há teste que garante);
+- o README, o `iniciar.sh` e o `config/` do sistema não são tocados;
+- campo novo num banco que já tem linhas ganha um valor padrão (o primeiro da lista, o mínimo…), e a migration é
+  criada na hora.
+
+O SGS recusa, sem escrever nada, o que quebraria a classe — por exemplo, a quantidade passar a ser decimal — e
+ligações, que mudam com `sgs ligar`. `sgs incrementar NN` sozinho lista os campos com o padrão de cada um. Com
+“Perguntar”, ele pergunta a classe, o campo (um que existe ou um novo), o padrão, o valor dele (mínimo, faixa, os
+valores da lista) e versão ou edição; `sgs incrementar -sp` aplica. Anotado em `incrementos.json`.
+
+Cada módulo tem:
 
 - **form** (ModelForm), **CRUD** completo (`/<app>/`, `novo/`, `<id>/`, `editar/`, `excluir/`) e **API REST** (`/<app>/api/v1/`);
 - `settings.py`, `models.py`, `views.py`, `services.py`, `viewmodels.py`, `urls.py`, templates e estáticos;
@@ -177,8 +247,9 @@ padrões, como no `sgs gerar`. Cada módulo tem:
 
 O módulo entra no `INSTALLED_APPS`, ganha a rota `/<app>/` (antes da raiz), entra no `makemigrations` do
 `iniciar.sh` e fica anotado em `modulos.json` e numa seção do README. Se o nome da app já existir (ou for
-reservado), nada é copiado e a tela pede `entidade=Nome`. Pela linha de comando do Python:
-`gerar_sistema.gerar_modulo(pasta, "pedido", entidade="Nome")` faz o mesmo direto na pasta.
+reservado), nada é copiado e a tela pede `entidade=Nome`. Pelo Python:
+`gerar_sistema.gerar_modulo(pasta, "pedido", entidade="Nome")` e `gerar_sistema.ligar_classes(pasta, "Viagcert",
+"destino", "Destino")` fazem o mesmo direto na pasta.
 
 ### Portas: 6100, versões e porta presa
 

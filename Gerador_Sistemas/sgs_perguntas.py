@@ -15,6 +15,10 @@ Fluxo (com a caixa "Perguntar antes de gerar" marcada):
   sgs gerar -sp        → em QUALQUER pergunta: para de perguntar e gera com o que já foi decidido
   sgs gerar -sp <pedido> (logo de cara) → gera sem perguntar · sgs cancelar → desiste
 
+INCREMENTO (sgs app NN <pedido>, QuestionarioModulo): que funcionalidade é (o nome da classe, pelo contexto:
+Destino, Voo…) → versão nova ou editar o próprio NN (sem versão) → ligação com uma classe que já existe
+(Viagcert.destino → Destino) e o nome do campo → campos e tipos → padrões → estado → domínio. sgs app -sp aplica.
+
 Respostas: o número da opção, o nome dela, sim/não, um texto (nas perguntas abertas) ou Enter = padrão.
 Tudo é determinístico: as mesmas respostas geram o mesmo sistema.
 """
@@ -48,6 +52,8 @@ def _livre(chave, titulo, texto, padrao):
 
 class Questionario:
     """Estado das perguntas de UM pedido: decisões, fila de perguntas, rodada atual."""
+
+    comando = "sgs gerar"           # o comando que encerra as perguntas (com -sp)
 
     def __init__(self, pedido, config, marcadas=()):
         self.pedido = pedido
@@ -219,14 +225,15 @@ class Questionario:
         """Aplica a resposta. Devolve None se aceitou, ou a mensagem de erro (a pergunta se repete)."""
         bruto = (texto or "").strip()
         normal = gs.normalizar(bruto)
+        sp = f"{self.comando} -sp"
         if self.refinar:
             if self.esgotado:
-                return "não há mais perguntas — gere com: sgs gerar -sp (ou sgs cancelar)"
+                return f"não há mais perguntas — gere com: {sp} (ou sgs cancelar)"
             if normal in SIM:
-                return None if self.proxima_rodada() else "não há mais perguntas — gere com: sgs gerar -sp"
+                return None if self.proxima_rodada() else f"não há mais perguntas — gere com: {sp}"
             if normal in NAO:
-                return "tudo bem — para gerar: sgs gerar -sp · para desistir: sgs cancelar"
-            return "responda sim (mais perguntas) ou gere com: sgs gerar -sp"
+                return f"tudo bem — para gerar: {sp} · para desistir: sgs cancelar"
+            return f"responda sim (mais perguntas) ou gere com: {sp}"
         p = self.atual
         if normal in PADRAO:
             valor = p["padrao"]
@@ -243,7 +250,7 @@ class Questionario:
             if valor is _NADA:
                 return f"escolha um número de 1 a {len(p['opcoes'])} (ou Enter para o padrão)"
         else:
-            valor, erro = _validar_livre(p["chave"], bruto)
+            valor, erro = self._validar(p["chave"], bruto)
             if erro:
                 return erro
         self._guardar(p["chave"], valor)
@@ -257,6 +264,9 @@ class Questionario:
         else:
             self.atual, self.na_rodada = proxima, self.na_rodada + 1
         return None
+
+    def _validar(self, chave, bruto):
+        return _validar_livre(chave, bruto)
 
     def _guardar(self, chave, valor):
         if chave.startswith("tipo:"):           # tipo respondido: o campo deixa de ser duvidoso
@@ -327,6 +337,302 @@ class Questionario:
         return f"pergunta {self.na_rodada}/{POR_RODADA} · rodada {self.rodada}"
 
 
+NOVA = "*"          # nas opções de ligação, "*" é a classe NOVA (o nome dela só existe depois da 1ª pergunta)
+
+
+class QuestionarioModulo(Questionario):
+    """Perguntas do INCREMENTO (sgs app NN <pedido>): o que é a funcionalidade nova, conforme o contexto (Destino,
+    Voo, Horario…), se vira uma VERSÃO ou edita o próprio sistema, se ganha um campo de referência para uma classe
+    que já existe (ex.: Viagcert.destino → Destino), os campos e os padrões. Termina com sgs app -sp.
+
+    As opções do sistema (estilo, tema, estudo, comentários…) vêm do próprio sistema: não são perguntadas.
+    """
+
+    comando = "sgs app"
+
+    def __init__(self, pedido, config, projeto, numero, marcadas=(), sem_versao=False, entidade=None, padroes=None,
+                 ligar=None):
+        self.pedido = pedido
+        self.projeto = projeto
+        self.numero = numero
+        self.marcadas = {c for c in marcadas if c in CAIXAS}
+        self.existentes = gs.entidades_do_projeto(projeto)          # {Classe: {"app", …}} que o sistema já tem
+        analise = gs.analisar_assunto(pedido)
+        dominio = analise["dominio"]
+        self.detectados = padroes or analise["padroes"] or ["strategy"]    # módulo: só o que o pedido pedir
+        self.campos_do_pedido = bool(analise["campos"])
+        nome = gs.camel(entidade) if entidade else (gs.nome_do_pedido(pedido) or gs.DOMINIOS[dominio]["entidade"])
+        self.decisoes = {
+            "entidade": nome, "versao": "editar" if sem_versao else "versao", "ligar": "nao", "campo_ligacao": "",
+            "dominio": dominio, "sistema": gs.DOMINIOS[dominio]["sistema"], "padroes": "manter", "estado": False,
+            "testar": config["testar"], "campos": tipos_campos.analisar(analise["campos"]),
+        }
+        if ligar:                                                   # ligar=Classe.campo[:Alvo] já veio no comando
+            m = re.fullmatch(r"(\w+)\.(\w+)(?::(\w+))?", ligar)
+            if m:
+                origem, campo, alvo = m.group(1), m.group(2), m.group(3)
+                self.decisoes["ligar"] = f"{gs.achar_classe(self.existentes, origem) or NOVA}>" + \
+                    (NOVA if not alvo or gs.camel(alvo) == nome else (gs.achar_classe(self.existentes, alvo) or alvo))
+                self.decisoes["campo_ligacao"] = campo
+        for caixa in self.marcadas:
+            self.decisoes[caixa] = True
+        self.extras = []
+        self.fila = self._fila()
+        self.pos = self.rodada = self.na_rodada = self.respostas = 0
+        self.atual, self.refinar, self.esgotado = None, False, False
+        self.proxima_rodada()
+
+    # ------------------------------------------------------------------ a fila
+    def _fila(self):
+        d = self.decisoes
+
+        def caixa(chave, fabrica):
+            return lambda: None if chave in self.marcadas else fabrica()
+
+        n = self.numero
+        fila = [
+            lambda: _livre("entidade", "Funcionalidade nova",
+                           "Que funcionalidade é esta (o nome da classe nova)? Depende do contexto: Destino, Voo, "
+                           f"Horario… Pelo pedido: {d['entidade']}. Classes que o sistema {n} já tem: "
+                           f"{', '.join(sorted(self.existentes)) or 'nenhuma'}.", d["entidade"]),
+            lambda: _opcao("versao", "Versão ou edição", f"Criar uma VERSÃO nova (cópia {n}.k — o {n} não muda) ou "
+                           f"EDITAR o próprio {n}, sem versionar?",
+                           [("versao", f"versão nova (cópia {n}.k)"), ("editar", f"editar o próprio {n} (sem versão)")],
+                           d["versao"]),
+            lambda: _opcao("ligar", "Ligação", f"Ligar a {d['entidade']} a uma classe que já existe? (um campo de "
+                           "referência: aparece no formulário e na API REST; opcional)", self._opcoes_ligar(), d["ligar"]),
+            lambda: None if d["ligar"] == "nao" else _livre(
+                "campo_ligacao", "Nome do campo", f"Nome do campo de referência em {self._classe_origem()}? "
+                f"(aponta para {self._classe_alvo()})", d["campo_ligacao"] or self._campo_padrao()),
+            lambda: None if self.campos_do_pedido else _livre(
+                "campos", "Campos", f"Campos a mais na {d['entidade']}, além dos do domínio "
+                f"({', '.join(a['nome'] for a in gs.DOMINIOS[d['dominio']]['atributos'])})? Separe por vírgula; o tipo "
+                "pode ir junto (idade:int) ou fica por conta do identificador. Enter = nenhum.", ""),
+            *[self._pergunta_tipo(i) for i in range(MAX_CAMPOS)],
+            lambda: _opcao("padroes", "Padrões", f"Padrões de projeto da {d['entidade']}? O pedido indicou: "
+                           f"{', '.join(self.detectados)} (o Strategy entra sempre: o Service da app usa).",
+                           [("manter", "manter o que o pedido indicou"), ("strategy", "só o Strategy"),
+                            ("prova", "os 9 da prova (P3)"), ("criacao", "GoF · criação"),
+                            ("estrutural", "GoF · estruturais"), ("comportamental", "GoF · comportamentais")],
+                           d["padroes"]),
+            lambda: _sim_nao("estado", "Máquina de estados",
+                             f"Incluir uma máquina de estados (padrão State) para o ciclo de vida da {d['entidade']}?",
+                             d["estado"]),
+            lambda: _opcao("dominio", "Domínio base",
+                           f"Domínio base da {d['entidade']} (atributos, regras e exemplos)? Os que o pedido mais "
+                           f"pontuou; dá para digitar qualquer um dos {len(gs.DOMINIOS)}.", self._opcoes_dominio(),
+                           d["dominio"]),
+            caixa("testar", lambda: _sim_nao("testar", "Testes", "Rodar os testes do sistema depois de acrescentar?",
+                                             d["testar"])),
+        ]
+        return fila + [self._pergunta_padrao(p) for p in gs.ORDEM_PADROES]
+
+    def _opcoes_ligar(self):
+        nova = self.decisoes["entidade"]
+        opcoes = [("nao", "não ligar")]
+        for classe in sorted(self.existentes):
+            opcoes.append((f"{classe}>{NOVA}", f"{classe}.{gs.camel_para_snake(nova)} → {nova}  (a {classe} ganha a "
+                                               f"referência para a {nova})"))
+            opcoes.append((f"{NOVA}>{classe}", f"{nova}.{gs.camel_para_snake(classe)} → {classe}  (a {nova} aponta "
+                                               f"para a {classe})"))
+        atual = self.decisoes["ligar"]
+        if atual != "nao" and atual not in [v for v, _ in opcoes]:
+            opcoes.append((atual, atual.replace(NOVA, nova).replace(">", " → ")))
+        return opcoes
+
+    def _classe_origem(self):
+        origem = self.decisoes["ligar"].split(">")[0]
+        return self.decisoes["entidade"] if origem == NOVA else origem
+
+    def _classe_alvo(self):
+        alvo = self.decisoes["ligar"].split(">")[-1]
+        return self.decisoes["entidade"] if alvo == NOVA else alvo
+
+    def _campo_padrao(self):
+        return gs.camel_para_snake(self._classe_alvo())
+
+    def _validar(self, chave, bruto):
+        if chave == "entidade":
+            valor, erro = _validar_livre(chave, bruto)
+            if erro:
+                return valor, erro
+            if gs.plural(gs.camel_para_snake(valor)) in {info["app"] for info in self.existentes.values()} \
+                    or valor in self.existentes:
+                return None, f"o sistema {self.numero} já tem a classe {valor} — dê outro nome à funcionalidade nova"
+            return valor, None
+        if chave == "campo_ligacao":
+            nome = gs.camel_para_snake(gs.camel(bruto))
+            if not re.fullmatch(r"[a-z][a-z0-9_]*", nome) or nome in gs.RESERVADOS or nome in gs.RESERVADOS_DJANGO:
+                return None, "nome do campo: letras, números e _ (ex.: destino, destino_ref)"
+            return nome, None
+        return super()._validar(chave, bruto)
+
+    def _guardar(self, chave, valor):
+        if chave == "ligar" and valor != self.decisoes["ligar"]:
+            self.decisoes["campo_ligacao"] = ""          # a ligação mudou: o nome do campo volta ao padrão
+        super()._guardar(chave, valor)
+        if chave == "ligar" and valor != "nao" and not self.decisoes["campo_ligacao"]:
+            self.decisoes["campo_ligacao"] = self._campo_padrao()
+
+    # ------------------------------------------------------------------ o que vai para o gerador
+    def argumentos(self):
+        d = self.decisoes
+        ligar = None
+        if d["ligar"] != "nao":
+            ligar = (self._classe_origem(), d["campo_ligacao"] or self._campo_padrao(), self._classe_alvo())
+        return dict(pedido=self.pedido, entidade=d["entidade"], dominio=d["dominio"], padroes=self.padroes_finais(),
+                    campos=[{"nome": c["nome"], "tipo": c["tipo"]} for c in d["campos"]] or None,
+                    sem_versao=d["versao"] == "editar", ligar=ligar, testar=d["testar"])
+
+    def resumo(self):
+        d = self.decisoes
+        ligar = self.argumentos()["ligar"]
+        return [["pedido", self.pedido],
+                ["funcionalidade nova", f"{d['entidade']} (app {gs.plural(gs.camel_para_snake(d['entidade']))})"],
+                ["onde", f"editar o próprio {self.numero} (sem versão)" if d["versao"] == "editar"
+                 else f"versão nova do {self.numero} (cópia)"],
+                ["ligação", f"{ligar[0]}.{ligar[1]} → {ligar[2]}" if ligar else "nenhuma"],
+                ["campos a mais", ", ".join(f"{c['nome']} ({tipos_campos.rotulo(c['tipo'])})" for c in d["campos"])
+                 or "nenhum (só os do domínio)"],
+                ["padrões", f"{len(self.padroes_finais())}: " + ", ".join(self.padroes_finais())],
+                ["domínio base", d["dominio"]],
+                ["testes", "sim" if d["testar"] else "não"]]
+
+
+NOVO = "__novo__"   # na pergunta do campo: um campo que ainda não existe
+REGRAS = [           # (chave, rótulo, o que pede depois) — o padrão do campo no sgs incrementar
+    ("texto", "texto obrigatório (vazio é recusado)", None),
+    ("texto-livre", "texto opcional, sem regra", None),
+    ("inteiro>=", "inteiro com MÍNIMO (negativo e letras são recusados)", "minimo"),
+    ("inteiro:", "inteiro numa FAIXA (mínimo..máximo)", "faixa"),
+    ("decimal>=", "decimal com MÍNIMO", "minimo"),
+    ("decimal:", "decimal numa FAIXA", "faixa"),
+    ("lista:", "LISTA fechada de valores (só eles entram)", "lista"),
+    ("simnao", "sim/não (True/False)", None),
+    ("data", "data AAAA-MM-DD", None),
+]
+
+
+def _chave_da_regra(texto):
+    """"inteiro>=0" → ("inteiro>=", "0") · "lista:a,b" → ("lista:", "a,b") · "texto" → ("texto", "")."""
+    for apelido, chave in (("int>=", "inteiro>="), ("int:", "inteiro:"), ("faixa:", "inteiro:"),
+                           ("float>=", "decimal>="), ("float:", "decimal:"), ("opcoes:", "lista:"), ("valores:", "lista:")):
+        if texto.startswith(apelido):
+            texto = chave + texto[len(apelido):]
+    for chave, _, _ in REGRAS:
+        if chave.endswith((">=", ":")) and texto.startswith(chave):
+            return chave, texto[len(chave):]
+    return (texto, "") if texto in {c for c, _, _ in REGRAS} else ("texto", "")
+
+
+class QuestionarioIncremento(Questionario):
+    """Perguntas do sgs incrementar NN: a CLASSE, o CAMPO (um que existe ou um novo), o PADRÃO dele (a regra que o
+    @property do núcleo e o model do Django passam a exigir: mínimo, faixa, lista fechada…), o valor da regra e se
+    vira versão ou edita o próprio sistema. Termina com sgs incrementar -sp."""
+
+    comando = "sgs incrementar"
+
+    def __init__(self, projeto, numero, classes, classe=None, campo=None, regra=None, sem_versao=False):
+        self.pedido = f"sgs incrementar {numero}"
+        self.projeto, self.numero, self.classes = projeto, numero, classes
+        self.marcadas, self.extras = set(), []
+        nome_classe = gs.achar_classe(classes, classe) or sorted(classes)[0]
+        campo = gs.camel_para_snake(gs.camel(campo)) if campo else ""
+        existe = any(a["nome"] == campo for a in classes[nome_classe]["atributos"])
+        chave, parametro = _chave_da_regra(gs.normalizar(regra or "").replace(" ", "")) if regra else ("", "")
+        if regra and chave == "lista:":
+            parametro = regra.split(":", 1)[1]                # a lista com as maiúsculas e acentos digitados
+        self.decisoes = {"classe": nome_classe, "campo": campo if existe else NOVO, "nome_novo": "" if existe else campo,
+                         "regra": chave, "parametro": parametro, "versao": "editar" if sem_versao else "versao"}
+        self.fila = self._fila()
+        self.pos = self.rodada = self.na_rodada = self.respostas = 0
+        self.atual, self.refinar, self.esgotado = None, False, False
+        self.proxima_rodada()
+
+    def _atributo_atual(self):
+        d = self.decisoes
+        return next((a for a in self.classes[d["classe"]]["atributos"] if a["nome"] == d["campo"]), None)
+
+    def _fila(self):
+        d = self.decisoes
+        n = self.numero
+        return [
+            lambda: _opcao("classe", "Classe", f"Em qual classe do sistema {n}?",
+                           [(c, f"{c}" + (" (a principal)" if i["principal"] else f" (módulo {i['app']})"))
+                            for c, i in sorted(self.classes.items())], d["classe"]),
+            lambda: _opcao("campo", "Campo", f"Qual campo da {d['classe']}? Um que já existe (MODIFICAR a regra) ou um "
+                           "NOVO (incrementar a classe).",
+                           [(a["nome"], f"{a['nome']} — hoje: {gs.regra_em_texto(a)}")
+                            for a in self.classes[d["classe"]]["atributos"]] + [(NOVO, "um campo NOVO")],
+                           d["campo"]),
+            lambda: None if d["campo"] != NOVO else _livre(
+                "nome_novo", "Nome do campo novo", f"Nome do campo novo na {d['classe']} (ex.: assento, codigo_voo)?",
+                d["nome_novo"]),
+            lambda: _opcao("regra", "Padrão do campo", "Que padrão o campo segue? Ele vale no @property do núcleo "
+                           "(a “fechadura” do setter) e no model/form do Django.",
+                           [(c, r) for c, r, _ in REGRAS], d["regra"] or self._regra_atual()[0]),
+            lambda: self._pergunta_parametro(),
+            lambda: _opcao("versao", "Versão ou edição", f"Criar uma VERSÃO nova (cópia {n}.k — o {n} não muda) ou "
+                           f"EDITAR o próprio {n}, sem versionar?",
+                           [("versao", f"versão nova (cópia {n}.k)"), ("editar", f"editar o próprio {n} (sem versão)")],
+                           d["versao"]),
+        ]
+
+    def _regra_atual(self):
+        a = self._atributo_atual()
+        return _chave_da_regra(gs.regra_em_texto(a)) if a else ("texto", "")
+
+    def _pergunta_parametro(self):
+        d = self.decisoes
+        pede = next(p for c, _, p in REGRAS if c == d["regra"])
+        if pede is None:
+            return None
+        chave_atual, valor_atual = self._regra_atual()
+        padrao = d["parametro"] or (valor_atual if chave_atual == d["regra"] else "")
+        texto = {"minimo": "Valor MÍNIMO (ex.: 0 — aí negativo é recusado)?",
+                 "faixa": "FAIXA mínimo..máximo (ex.: 1..30)?",
+                 "lista": "Os valores da LISTA, separados por vírgula (ex.: janela, meio, corredor · ou 1, 2, 3)?"}[pede]
+        return _livre("parametro", "Valor da regra", texto, padrao or {"minimo": "0", "faixa": "1..30"}.get(pede, ""))
+
+    def _validar(self, chave, bruto):
+        if chave == "nome_novo":
+            nome = gs.camel_para_snake(gs.camel(bruto))
+            if not re.fullmatch(r"[a-z][a-z0-9_]*", nome) or nome in gs.RESERVADOS or nome in gs.RESERVADOS_DJANGO:
+                return None, "nome do campo: letras, números e _ (ex.: assento, codigo_voo)"
+            if any(a["nome"] == nome for a in self.classes[self.decisoes["classe"]]["atributos"]):
+                return None, f"a {self.decisoes['classe']} já tem o campo {nome} — escolha ele na pergunta anterior"
+            return nome, None
+        if chave == "parametro":
+            try:
+                gs.ler_regra(self.decisoes["regra"] + bruto)
+            except gs.ErroGerador as erro:
+                return None, str(erro)
+            return bruto, None
+        return super()._validar(chave, bruto)
+
+    def _guardar(self, chave, valor):
+        if chave == "classe" and valor != self.decisoes["classe"]:
+            self.decisoes.update(campo=NOVO, nome_novo="", regra="", parametro="")
+        if chave in ("campo", "regra") and valor != self.decisoes[chave]:
+            self.decisoes["parametro"] = ""                 # mudou o campo ou a regra: o valor volta ao padrão
+        self.decisoes[chave] = valor
+
+    def argumentos(self):
+        d = self.decisoes
+        pede = next(p for c, _, p in REGRAS if c == (d["regra"] or self._regra_atual()[0]))
+        regra = (d["regra"] or self._regra_atual()[0]) + (d["parametro"] or (self._regra_atual()[1] if pede else ""))
+        return dict(classe=d["classe"], campo=d["nome_novo"] if d["campo"] == NOVO else d["campo"], regra=regra,
+                    sem_versao=d["versao"] == "editar")
+
+    def resumo(self):
+        a = self.argumentos()
+        return [["classe", a["classe"]],
+                ["campo", f"{a['campo'] or '(falta o nome)'} — " + ("NOVO" if self.decisoes["campo"] == NOVO else "modificar")],
+                ["padrão (regra)", a["regra"]],
+                ["onde", f"editar o próprio {self.numero} (sem versão)" if a["sem_versao"]
+                 else f"versão nova do {self.numero} (cópia)"]]
+
+
 _NADA = object()
 
 
@@ -371,21 +677,20 @@ def _resumo(texto, limite=150):
 def blocos(q, erro=None):
     """O que a tela mostra para a pergunta atual (ou para o "refinar mais?")."""
     saida = []
+    sp = f"{q.comando} -sp"
     if erro:
         saida.append({"t": "texto", "texto": erro, "cor": "erro"})
     if q.refinar:
         saida += [{"t": "titulo", "texto": f"Rodada {q.rodada} concluída — decisões até aqui"},
                   {"t": "tabela", "colunas": ["decisão", "valor"], "linhas": q.resumo()}]
         if q.esgotado:
-            saida += [{"t": "texto", "texto": "Não há mais perguntas. Gere com sgs gerar -sp (ou sgs cancelar)."},
-                      {"t": "tabela", "colunas": [""], "linhas": [[{"texto": "sgs gerar -sp — gerar agora",
-                                                                    "cmd": "sgs gerar -sp"}]]}]
+            saida += [{"t": "texto", "texto": f"Não há mais perguntas. Gere com {sp} (ou sgs cancelar)."},
+                      {"t": "tabela", "colunas": [""], "linhas": [[{"texto": f"{sp} — gerar agora", "cmd": sp}]]}]
         else:
-            saida += [{"t": "texto", "texto": "Refinar ainda mais? sim = mais perguntas · sgs gerar -sp = gera agora · "
+            saida += [{"t": "texto", "texto": f"Refinar ainda mais? sim = mais perguntas · {sp} = gera agora · "
                                               "sgs cancelar = desiste"},
                       {"t": "tabela", "colunas": ["", ""], "linhas": [[{"texto": "sim — mais perguntas", "cmd": "sim"},
-                                                                       {"texto": "sgs gerar -sp — gerar agora",
-                                                                        "cmd": "sgs gerar -sp"}]]}]
+                                                                       {"texto": f"{sp} — gerar agora", "cmd": sp}]]}]
         return saida
     p = q.pergunta_atual()
     saida.append({"t": "titulo", "texto": f"{q.rotulo()} — {p['titulo']}"})
@@ -398,5 +703,5 @@ def blocos(q, erro=None):
     if p["tipo"] == "opcao":
         padrao = next(r for v, r in p["opcoes"] if v == p["padrao"]).split(" — ")[0]
     saida.append({"t": "texto", "cor": "suave",
-                  "texto": f"Enter = padrão ({padrao}) · sgs gerar -sp = para de perguntar e gera · sgs cancelar = desiste"})
+                  "texto": f"Enter = padrão ({padrao}) · {sp} = para de perguntar e gera · sgs cancelar = desiste"})
     return saida

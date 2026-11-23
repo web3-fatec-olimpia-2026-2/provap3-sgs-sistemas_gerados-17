@@ -499,6 +499,64 @@ def processar(texto=None, django=False, exercicio=False, testar=True, saida=None
     return resposta
 
 
+TERMINAL_SUGERIDOS = [   # comandos padrão (valem com e sem "sgs" na frente) — o que o intellisense oferece
+    ("ls", "lista a pasta"), ("ls -la", "lista tudo, com detalhes"), ("cd ..", "sobe uma pasta"), ("cd ~", "volta à raiz"),
+    ("cd -", "volta à pasta anterior"), ("pwd", "pasta atual"), ("tree -L 2", "árvore da pasta"),
+    ("cat README.md", "mostra um arquivo"), ("head -n 20 ", "começo de um arquivo"), ("tail -n 20 ", "fim de um arquivo"),
+    ("echo ", "imprime um texto"), ("whoami", "usuário"), ("date", "data e hora"), ("uname -a", "sistema operacional"),
+    ("hostname", "nome da máquina"), ("which python", "qual python"), ("history", "histórico de comandos"),
+    ("history -c", "limpa o histórico"), ("clear", "limpa a tela"), ("exit", "sai do módulo comand"),
+    ("source .venv/bin/activate", "ativa o ambiente virtual"), ("deactivate", "desativa o ambiente virtual"),
+    ("python --version", "versão do Python"), ("python -m pytest -q", "roda os testes da pasta"),
+    ("python manage.py check", "confere o projeto Django"), ("python manage.py makemigrations", "cria as migrations"),
+    ("python manage.py migrate", "aplica as migrations"), ("python manage.py showmigrations", "lista as migrations"),
+    ("python manage.py garantir_admin", "cria/atualiza o superusuário"),
+    ("python manage.py runserver", "sobe o site (porta do sistema)"), ("pip list", "pacotes instalados"),
+    ("pip install -r requirements.txt", "confere as dependências"), ("bash iniciar.sh", "prepara e sobe o site"),
+    ("bash rodar_testes.sh", "testes de todas as pastas"), ("git status", "o que mudou no git"),
+    ("git log --oneline", "commits"),
+]
+POR_SISTEMA = [   # (comando, o que faz) para cada número de sistema: o intellisense já traz o número certo
+    ("sgs info {n}", "detalhes"), ("sgs rodar {n}", "sobe o site"), ("sgs testar {n}", "roda os testes"),
+    ("cd {n}", "entra na pasta"), ("sgs comandos {n}", "comandos de terminal"), ("sgs parar {n}", "derruba o site"),
+    ("sgs editar {n}", "cria a versão (cópia)"), ("sgs app {n} ", "funcionalidade nova (módulo)"),
+    ("sgs ligar {n}", "classes e ligações"), ("sgs incrementar {n}", "campos e padrões"),
+]
+
+
+def sugestoes(ctx, limite_historico=40):
+    """Catálogo do INTELLISENSE da tela: {"cmd", "desc", "tipo"} em ordem de prioridade — histórico (mais recente
+    primeiro), as pastas do cd, os comandos de cada sistema, os comandos sgs e os padrão (com e sem sgs).
+    Quem filtra e ordena enquanto se digita é a página (até 5 sugestões, TAB completa)."""
+    itens, vistos = [], set()
+
+    def add(comando, descricao, tipo):
+        if comando.strip() and comando not in vistos:
+            vistos.add(comando)
+            itens.append({"cmd": comando, "desc": descricao, "tipo": tipo})
+
+    for linha in reversed(ctx.historico.linhas()[-limite_historico:]):
+        add(linha, "↺ do histórico", "historico")
+    try:
+        pastas = sorted(p.name for p in ctx.sessao.cwd.iterdir() if p.is_dir() and not p.name.startswith("."))
+    except OSError:
+        pastas = []
+    for nome in pastas[:40]:
+        add(f"cd {nome}", "entra na pasta", "pasta")
+    for n, pasta in sistemas(ctx.saida):
+        for modelo, descricao in POR_SISTEMA:
+            add(modelo.format(n=nn(n)), f"{descricao} · {pasta.name}", "sistema")
+    for rotulo, descricao, preencher in COMANDOS_SGS:
+        base = re.split(r" \[| <| NN| \||  \(", rotulo)[0].strip()
+        if "=" in base:
+            base = base.split("=")[0] + "="
+        add(base + (" " if preencher and not base.endswith("=") else ""), descricao, "sgs")
+    for comando, descricao in TERMINAL_SUGERIDOS:
+        add(comando, descricao, "terminal")
+        add(f"sgs {comando}", descricao + " (com sgs)", "terminal")
+    return itens
+
+
 def catalogo():
     """Domínios e padrões (por categoria) com as palavras que os ativam."""
     return {
@@ -1009,8 +1067,17 @@ COMANDOS_SGS = [
     ("sgs info NN", "detalhes e arquivos do sistema NN (ou da versão NN.k)", True),
     ("sgs testar NN", "roda os testes do sistema NN (ou da versão NN.k)", True),
     ("sgs editar NN", "EDITAR = COPIAR: cria a versão NN.k (01.1 … 01.99) — o original não muda", True),
-    ("sgs app NN <pedido>", "MÓDULO: nova versão de NN com mais uma app Django (form, CRUD, API REST, padrões, "
-                            "settings, models, views, testes) · entidade=Nome escolhe o nome", True),
+    ("sgs app NN <pedido>", "FUNCIONALIDADE NOVA: mais uma app Django (form, CRUD, API REST, padrões, settings, "
+                            "models, views, testes). Com “Perguntar”, pergunta o nome (pelo contexto), versão ou "
+                            "edição, ligação e campos · entidade=Nome · padroes=a,b · ligar=Classe.campo · "
+                            "-sv = sem versão (edita o NN)", True),
+    ("sgs ligar NN Classe.campo Alvo", "campo de REFERÊNCIA opcional entre duas classes (ex.: sgs ligar 16 "
+                                       "Viagcert.destino Destino) · -sv = sem versão · sgs ligar NN lista as classes",
+     True),
+    ("sgs incrementar NN Classe.campo <padrão>", "INCREMENTAR/MODIFICAR um campo com um padrão: inteiro>=0 "
+                                                 "(negativo e letras recusados), inteiro:1..30, lista:a,b,c, texto… "
+                                                 "— vale no @property e no Django · -sv = sem versão · sozinho lista "
+                                                 "os campos", True),
     ("sgs rodar NN [porta]", "prepara o Django do sistema NN (.env, migrations, admin) e sobe o site (6100+NN; "
                              "versão 01.3 → 61013)", True),
     ("sgs servidores", "sites no ar", False),
@@ -1112,15 +1179,25 @@ def sgs_ajuda(ctx, _args, _opcoes=None):
               "sim/não, data_… → data); só os que NÃO são óbvios (codigo, status…) viram pergunta. Teste: sgs tipos."),
         texto("6) ESTILO das páginas: sgs estilo (simples · cmd · bootstrap · web) e sgs tema (10 temas × 6 tons). "
               "“Notas na web” liga as notas de apresentação nas páginas (diferente dos comentários no código)."),
-        texto("8) MÓDULOS: sgs app NN <pedido> cria a versão NN.k com mais uma app Django: form (ModelForm), CRUD "
-              "completo, API REST (/<app>/api/v1/), os padrões do pedido (núcleo dentro da app), settings, models, "
-              "views e testes. Ex.: sgs app 01 vacinas com desconto por convênio entidade=Vacina."),
+        texto("8) FUNCIONALIDADE NOVA (módulo): sgs app NN <pedido> acrescenta mais uma app Django: form (ModelForm), "
+              "CRUD completo, API REST (/<app>/api/v1/), os padrões pedidos (núcleo dentro da app), settings, models, "
+              "views e testes. Com “Perguntar antes de gerar”, PERGUNTA o que ela é (o nome depende do contexto: "
+              "Destino, Voo…), se vira versão NN.k ou edita o próprio NN (sem versão), se liga a uma classe que já "
+              "existe (ex.: Viagcert.destino → Destino), campos e padrões. Direto: sgs app 16 -sp destinos de viagem "
+              "ligar=Viagcert.destino padroes=state -sv. Ligar duas classes que já existem: sgs ligar NN Classe.campo "
+              "Alvo."),
+        texto("9) INCREMENTAR/MODIFICAR UM CAMPO: sgs incrementar NN Classe.campo <padrão> — campo que existe muda de "
+              "regra; nome novo entra na classe. Padrões: inteiro>=0 (negativo e letras recusados), inteiro:1..30, "
+              "decimal>=0, lista:janela,meio,corredor (só esses valores), texto, texto-livre, simnao, data. Vale no "
+              "@property do núcleo e no model/form/API do Django; os testes acompanham. Ex.: sgs incrementar 16 "
+              "Viagcert.voo inteiro>=1 -sv · sgs incrementar 16 sozinho lista os campos e os padrões."),
         tabela_comandos(),
         bloco("titulo", texto="Configuração atual"),
         tabela_config(ctx.config),
         bloco("link", texto="Referência dos padrões GoF: cópia da Wikipédia (abre em outra aba)", href="/referencia"),
-        texto("Atalhos: Enter executa · Shift+Enter quebra linha · ↑/↓ histórico (guardado em arquivo: sobrevive ao "
-              "F5) · Ctrl+L limpa · history · history -c", "suave"),
+        texto("Atalhos: Enter executa · Shift+Enter quebra linha · TAB completa com a sugestão (o trecho em cinza "
+              "na linha) · clique numa das sugestões da caixa para escolher · Esc fecha a caixa · ↑/↓ histórico "
+              "(guardado em arquivo: sobrevive ao F5) · Ctrl+L limpa · history · history -c", "suave"),
     )
 
 
@@ -1136,6 +1213,10 @@ def sgs_gerar(ctx, args, opcoes=None):
     if sem_perguntar and not args:
         if ctx.questionario is None:
             return falha("não há pedido em andamento — use: sgs gerar -sp <pedido>")
+        if isinstance(ctx.questionario, perguntas.QuestionarioModulo):     # as perguntas eram de um sgs app
+            return _concluir_modulo(ctx, opcoes)
+        if isinstance(ctx.questionario, perguntas.QuestionarioIncremento):  # … ou de um sgs incrementar
+            return sgs_incrementar(ctx, ["-sp"], opcoes)
         q, ctx.questionario = ctx.questionario, None
         resposta = processar(saida=ctx.saida, porta_base=c["porta_base"], **q.argumentos())
         if not resposta["ok"]:
@@ -1497,57 +1578,247 @@ def sgs_editar(ctx, args, opcoes=None):
               cartao=c)
 
 
-def _pedido_e_entidade(args):
-    """["vacinas", "com", "desconto", "entidade=Vacina"] → ("vacinas com desconto", "Vacina")."""
-    entidade, resto = None, []
+SEM_VERSAO = ("-sv", "--sem-versao", "--sem-versão")
+
+
+def _opcoes_do_app(args):
+    """Separa do pedido as opções do sgs app: entidade=, padroes=, ligar=, -sv (sem versão) e -sp (sem perguntar)."""
+    o = {"entidade": None, "padroes": None, "ligar": None, "sem_versao": False, "sem_perguntar": False}
+    resto = []
     for arg in args:
-        if arg.lower().startswith("entidade="):
-            entidade = arg.split("=", 1)[1].strip() or None
+        baixo = arg.lower()
+        if baixo in SEM_VERSAO:
+            o["sem_versao"] = True
+        elif baixo in SEM_PERGUNTAR:
+            o["sem_perguntar"] = True
+        elif baixo.startswith("entidade="):
+            o["entidade"] = arg.split("=", 1)[1].strip() or None
+        elif baixo.split("=", 1)[0] in ("padroes", "padrões", "padrao", "padrão") and "=" in baixo:
+            o["padroes"] = [p for p in re.split(r"[,;\s]+", arg.split("=", 1)[1]) if p] or None
+        elif baixo.startswith("ligar="):
+            o["ligar"] = arg.split("=", 1)[1].strip() or None
         else:
             resto.append(arg)
-    return " ".join(resto).strip(), entidade
+    return " ".join(resto).strip(), o
+
+
+def _ler_ligar(texto, nova):
+    """"Viagcert.destino" → ("Viagcert", "destino", <a classe nova>) · "Voo.destino:Destino" → ("Voo", "destino", "Destino")."""
+    m = re.fullmatch(r"(\w+)\.(\w+)(?::(\w+))?", texto or "")
+    if not m:
+        raise ValueError("use ligar=Classe.campo (a Classe ganha o campo apontando para a classe nova; ex.: "
+                         "ligar=Viagcert.destino) ou ligar=Classe.campo:Alvo")
+    return m.group(1), m.group(2), m.group(3) or nova
 
 
 def sgs_app(ctx, args, opcoes=None):
-    """sgs app NN <pedido> [entidade=Nome]: cria a versão NN.k com MAIS UMA app Django (o módulo do pedido).
+    """sgs app NN <pedido> [entidade=Nome] [padroes=a,b] [ligar=Classe.campo] [-sv] [-sp]
 
-    O módulo tem o seu form (ModelForm), o CRUD completo, a API REST, os padrões que o pedido pedir (núcleo
-    dentro da app), o settings da app, models, views e testes. O original não muda (editar = copiar)."""
-    if not args:
-        raise ValueError("use: sgs app NN <pedido> — ex.: sgs app 01 vacinas com desconto por convênio")
-    destino, n = escolher(ctx, args[0])
-    pedido, entidade = _pedido_e_entidade(args[1:])
-    if not pedido:
-        raise ValueError(f"diga o que o módulo faz: sgs app {n} <pedido> (ex.: sgs app {n} estoque com extras "
-                         "opcionais entidade=Produto)")
-    if len(pedido) > LIMITE_PEDIDO:
-        return falha(f"pedido longo demais (máximo {LIMITE_PEDIDO} caracteres)")
-    info = info_sistema(destino)
-    if not info["django"]:
-        return falha(f"o sistema {n} não tem o site Django — um módulo é uma app Django: gere o sistema com a "
-                     "caixa “+ Django” marcada")
-    try:
-        plano = gs.preparar_modulo(destino, pedido, entidade=entidade)     # valida tudo ANTES de copiar
-    except gs.ErroGerador as erro:
-        return falha(str(erro))
-    nova, numero = nova_versao(destino, ctx.config.valores["porta_base"], ctx.saida)
-    gs.aplicar_modulo(nova, plano)
+    Acrescenta ao sistema NN MAIS UMA app Django (a funcionalidade nova): form (ModelForm), CRUD completo, API
+    REST, os padrões pedidos (núcleo dentro da app), settings, models, views e testes. Com "Perguntar antes de
+    gerar", PERGUNTA antes: que funcionalidade é (o nome, pelo contexto), versão ou edição, ligação, campos,
+    padrões. Padrão = versão nova NN.k (o NN não muda); -sv = edita o próprio NN, sem versionar.
+    """
     c = dict(ctx.config.valores)
     c.update({k: bool(v) for k, v in (opcoes or {}).items() if k in OPCOES_CAIXA})
-    resposta = cartao(nova, info_sistema(nova), ctx.saida, c["porta_base"])
-    if c["testar"]:
-        resposta["testes"] = gs.executar_testes(nova, SimpleNamespace(exercicio=info["exercicio"], django=True))
-    m = plano["modulo"]
-    porta = resposta["porta"]
-    linhas = [["app", m["pacote"]], ["entidade", m["entidade"]], ["padrões", ", ".join(m["padroes"])],
+    if args and all(a.lower() in SEM_PERGUNTAR for a in args):         # sgs app -sp: encerra as perguntas e aplica
+        if not isinstance(ctx.questionario, perguntas.QuestionarioModulo):
+            return falha("não há perguntas de módulo em andamento — use: sgs app NN <pedido>")
+        return _concluir_modulo(ctx, opcoes)
+    if not args:
+        raise ValueError("use: sgs app NN <pedido> — ex.: sgs app 16 destinos de viagem ligar=Viagcert.destino")
+    destino, n = escolher(ctx, args[0])
+    pedido, o = _opcoes_do_app(args[1:])
+    if not pedido:
+        raise ValueError(f"diga que funcionalidade acrescentar: sgs app {n} <pedido> (ex.: sgs app {n} destinos de "
+                         "viagem com os campos cidade e pais)")
+    if len(pedido) > LIMITE_PEDIDO:
+        return falha(f"pedido longo demais (máximo {LIMITE_PEDIDO} caracteres)")
+    if not info_sistema(destino)["django"]:
+        return falha(f"o sistema {n} não tem o site Django — um módulo é uma app Django: gere o sistema com a "
+                     "caixa “+ Django” marcada")
+    if c["perguntar"] and not o["sem_perguntar"]:
+        q = perguntas.QuestionarioModulo(pedido, c, destino, n, marcadas=["testar"] if c["testar"] else [],
+                                         sem_versao=o["sem_versao"], entidade=o["entidade"], padroes=o["padroes"],
+                                         ligar=o["ligar"])
+        ctx.questionario = q
+        return ok(texto(f"Antes de acrescentar a funcionalidade ao {n}, algumas perguntas (o nome dela depende do "
+                        f"contexto). Pedido: {pedido}", "destaque"), *perguntas.blocos(q))
+    ctx.questionario = None
+    return _aplicar_modulo(ctx, destino, n, pedido, entidade=o["entidade"], padroes=o["padroes"], ligar=o["ligar"],
+                           sem_versao=o["sem_versao"], testar=c["testar"])
+
+
+def _concluir_modulo(ctx, opcoes=None):
+    q, ctx.questionario = ctx.questionario, None
+    a = q.argumentos()
+    resposta = _aplicar_modulo(ctx, q.projeto, q.numero, a["pedido"], entidade=a["entidade"], padroes=a["padroes"],
+                               ligar=a["ligar"], sem_versao=a["sem_versao"], testar=a["testar"], dominio=a["dominio"],
+                               campos=a["campos"])
+    if resposta["ok"]:
+        resposta["blocos"].insert(0, texto(f"✓ perguntas encerradas ({q.respostas} resposta(s)) — aplicando com as "
+                                           "decisões tomadas", "ok"))
+    return resposta
+
+
+def _aplicar_modulo(ctx, destino, n, pedido, entidade=None, padroes=None, ligar=None, sem_versao=False, testar=True,
+                    dominio=None, campos=None):
+    """Planeja TUDO (módulo e ligação) antes de mexer em qualquer arquivo; depois aplica na versão nova ou no próprio NN."""
+    info = info_sistema(destino)
+    try:
+        plano = gs.preparar_modulo(destino, pedido, entidade=entidade, campos=campos, padroes=padroes, dominio=dominio)
+        m = plano["modulo"]
+        lig = None
+        if ligar:
+            origem, campo, alvo = ligar if isinstance(ligar, tuple) else _ler_ligar(ligar, m["entidade"])
+            novas = {m["entidade"]: {"app": m["app"], "pacote": m["pacote"], "caminho": m["caminho"]}}
+            lig = gs.planejar_ligacao(destino, origem, campo, alvo, novas=novas)
+    except (gs.ErroGerador, ValueError) as erro:
+        return falha(str(erro))
+    if sem_versao:
+        alvo_dir, numero = destino, n
+    else:
+        alvo_dir, numero = nova_versao(destino, ctx.config.valores["porta_base"], ctx.saida)
+    gs.aplicar_modulo(alvo_dir, plano)
+    linhas = [["app", m["pacote"]], ["classe", m["entidade"]], ["padrões", ", ".join(m["padroes"])],
               ["telas (CRUD)", f"/{m['app']}/  ·  /{m['app']}/novo/  ·  /{m['app']}/<id>/  ·  editar/  ·  excluir/"],
               ["API REST", f"/{m['app']}/api/v1/  (GET, POST)  ·  /{m['app']}/api/v1/<id>/  (GET, PUT, PATCH, DELETE)"],
               ["arquivos", f"web/{m['caminho']}/  (settings · models · forms · views · api · urls · nucleo/ · tests/)"]]
-    return ok(texto(f"✓ versão {numero} criada com o módulo {m['app']} — cópia do {n} + a app nova; o {n} não mudou",
-                    "ok"),
-              bloco("tabela", colunas=["módulo", ""], linhas=linhas),
-              texto(f"suba com: sgs rodar {numero} (porta {porta}) · o banco ganha a tabela nova no migrate", "suave"),
-              cartao=resposta)
+    if lig:
+        try:
+            lig = gs.ligar_classes(alvo_dir, lig["origem"], lig["campo"], lig["alvo"], comentarios=info["comentarios"])
+        except gs.ErroGerador as erro:
+            return falha(f"o módulo {m['app']} entrou em {numero}, mas a ligação falhou: {erro}")
+        linhas.append(["ligação", f"{lig['origem']}.{lig['campo']} → {lig['alvo']}  (opcional; no form e na API)"])
+    linhas.append(["migrations", (lig or plano).get("migrations") or "—"])
+    return _resposta_da_edicao(ctx, alvo_dir, numero, n, sem_versao, testar, info, linhas,
+                               f"o módulo {m['app']} ({m['entidade']})")
+
+
+def _resposta_da_edicao(ctx, alvo_dir, numero, n, sem_versao, testar, info, linhas, o_que):
+    resposta = cartao(alvo_dir, info_sistema(alvo_dir), ctx.saida, ctx.config.valores["porta_base"])
+    if testar:
+        resposta["testes"] = gs.executar_testes(alvo_dir, SimpleNamespace(exercicio=info["exercicio"],
+                                                                          django=info["django"]))
+    if sem_versao:
+        titulo = f"✓ {o_que}: aplicado no próprio {n} (sem versão)"
+    else:
+        titulo = f"✓ versão {numero} criada com {o_que} — cópia do {n}; o {n} não mudou"
+    blocos = [texto(titulo, "ok"), bloco("tabela", colunas=["", ""], linhas=linhas)]
+    if ctx.servidores.ativos().get(alvo_dir.name):
+        blocos.append(texto(f"o site do {numero} está no ar com o código ANTIGO — derrube e suba de novo (o rodar "
+                            f"aplica as migrations): sgs parar {numero} · sgs rodar {numero}", "aviso"))
+    elif info["django"]:
+        blocos.append(texto(f"suba com: sgs rodar {numero} (porta {resposta['porta']}) · o rodar aplica as migrations",
+                            "suave"))
+    return ok(*blocos, cartao=resposta)
+
+
+def sgs_incrementar(ctx, args, opcoes=None):
+    """sgs incrementar NN Classe.campo <padrão> [-sv] — acrescenta (campo novo) ou MODIFICA um campo de uma classe,
+    com o padrão (a regra) dele: inteiro>=0, inteiro:1..30, decimal>=0, lista:a,b,c, texto, texto-livre, simnao, data.
+
+    A classe é refeita pelo gerador: a regra vale no @property do núcleo (o setter recusa negativo, letras, valor
+    fora da lista…) e no model/form/API do Django; os testes acompanham. Com "Perguntar", pergunta classe, campo,
+    padrão, o valor dele e versão/edição. sgs incrementar NN sozinho mostra as classes, os campos e os padrões.
+    """
+    c = dict(ctx.config.valores)
+    c.update({k: bool(v) for k, v in (opcoes or {}).items() if k in OPCOES_CAIXA})
+    if args and all(a.lower() in SEM_PERGUNTAR for a in args):       # sgs incrementar -sp: aplica as respostas
+        q = ctx.questionario
+        if not isinstance(q, perguntas.QuestionarioIncremento):
+            return falha("não há perguntas de incremento em andamento — use: sgs incrementar NN")
+        ctx.questionario = None
+        a = q.argumentos()
+        resposta = _aplicar_incremento(ctx, q.projeto, q.numero, a["classe"], a["campo"], a["regra"], a["sem_versao"],
+                                       c["testar"])
+        if resposta["ok"]:
+            resposta["blocos"].insert(0, texto(f"✓ perguntas encerradas ({q.respostas} resposta(s))", "ok"))
+        return resposta
+    sem_versao = any(a.lower() in SEM_VERSAO for a in args)
+    sem_perguntar = any(a.lower() in SEM_PERGUNTAR for a in args)
+    resto = [a for a in args if a.lower() not in SEM_VERSAO + SEM_PERGUNTAR]
+    destino, n = escolher(ctx, resto[0] if resto else None)
+    classes = gs.classes_do_projeto(destino)
+    if not classes:
+        return falha(f"o sistema {n} não tem classes que o SGS saiba refazer (falta o especificacao.json?)")
+    alvo = re.fullmatch(r"(\w+)\.(\w+)", resto[1]) if len(resto) > 1 else None
+    if len(resto) > 1 and alvo is None:
+        raise ValueError(f"use: sgs incrementar {n} Classe.campo <padrão> (ex.: sgs incrementar {n} "
+                         f"{sorted(classes)[0]}.assento lista:janela,meio,corredor)")
+    classe, campo = (alvo.group(1), alvo.group(2)) if alvo else (None, None)
+    regra = " ".join(resto[2:]) or None
+    if c["perguntar"] and not sem_perguntar:
+        q = perguntas.QuestionarioIncremento(destino, n, classes, classe, campo, regra, sem_versao)
+        ctx.questionario = q
+        return ok(texto(f"Incrementar/modificar um campo do sistema {n}: a classe, o campo e o padrão dele.", "destaque"),
+                  *perguntas.blocos(q))
+    if not (classe and regra):
+        linhas = [[cmd(f"{nome}.{a['nome']}", f"sgs incrementar {n} {nome}.{a['nome']} ", True), gs.regra_em_texto(a),
+                   gs.descrever_regra(a).split(": ", 1)[1]]
+                  for nome, info in sorted(classes.items()) for a in info["atributos"]]
+        return ok(texto(f"Campos das classes do sistema {n} (clique para incrementar/modificar):"),
+                  bloco("tabela", colunas=["classe.campo", "padrão hoje", "o que aceita"], linhas=linhas),
+                  bloco("titulo", texto="Padrões (regras) que um campo pode seguir"),
+                  bloco("tabela", colunas=["padrão", "o que faz"], linhas=[[p, o] for p, o in gs.REGRAS_DE_CAMPO]),
+                  texto(f"use: sgs incrementar {n} Classe.campo <padrão> [-sv] — campo que existe = MODIFICAR; nome "
+                        "novo = INCREMENTAR a classe. Sem -sv cria a versão nova; -sv edita o próprio sistema.", "suave"))
+    return _aplicar_incremento(ctx, destino, n, classe, campo, regra, sem_versao, c["testar"])
+
+
+def _aplicar_incremento(ctx, destino, n, classe, campo, regra, sem_versao, testar):
+    info = info_sistema(destino)
+    try:
+        plano = gs.planejar_incremento(destino, classe, campo, regra)       # tudo conferido ANTES de escrever
+    except gs.ErroGerador as erro:
+        return falha(str(erro))
+    alvo_dir, numero = (destino, n) if sem_versao else nova_versao(destino, ctx.config.valores["porta_base"], ctx.saida)
+    plano = gs.aplicar_incremento(alvo_dir, plano, comentarios=info["comentarios"])
+    linhas = [["campo", f"{plano['classe']}.{plano['campo']} ({plano['acao']})"],
+              ["padrão", f"{plano['regra']} — {plano['descricao'].split(': ', 1)[1]}"],
+              ["onde vale", "@property do núcleo (o setter recusa o que não segue o padrão)"
+               + (" · model (validators/choices) · form · API REST" if info["django"] else "")],
+              ["testes", "os da classe foram refeitos com o padrão novo"],
+              ["migrations", plano["migrations"]]]
+    return _resposta_da_edicao(ctx, alvo_dir, numero, n, sem_versao, testar, info, linhas,
+                               f"o campo {plano['classe']}.{plano['campo']} ({plano['acao']})")
+
+
+def sgs_ligar(ctx, args, opcoes=None):
+    """sgs ligar NN Classe.campo Alvo [-sv] — campo de referência (ForeignKey opcional) entre duas classes do NN.
+    Ex.: sgs ligar 16 Viagcert.destino Destino. Sem -sv cria a versão NN.k; com -sv edita o próprio NN."""
+    c = dict(ctx.config.valores)
+    c.update({k: bool(v) for k, v in (opcoes or {}).items() if k in OPCOES_CAIXA})
+    sem_versao = any(a.lower() in SEM_VERSAO for a in args)
+    args = [a for a in args if a.lower() not in SEM_VERSAO]
+    destino, n = escolher(ctx, args[0] if args else None)
+    entidades = gs.entidades_do_projeto(destino)
+    if len(args) < 3:
+        linhas = [[classe, i["app"], f"web/{i['caminho']}/"] for classe, i in sorted(entidades.items())]
+        return ok(texto(f"Classes do sistema {n} (use: sgs ligar {n} Classe.campo Alvo [-sv] — ex.: sgs ligar {n} "
+                        f"{next(iter(sorted(entidades)), 'Classe')}.destino Destino):"),
+                  bloco("tabela", colunas=["classe", "app", "pasta"], linhas=linhas),
+                  texto("A Classe ganha o campo (opcional) apontando para o Alvo: aparece no formulário e na API REST; "
+                        "apagar o Alvo só limpa o campo. Sem -sv cria a versão nova; -sv edita o próprio sistema.",
+                        "suave"))
+    m = re.fullmatch(r"(\w+)\.(\w+)", args[1])
+    if not m:
+        raise ValueError(f"use: sgs ligar {n} Classe.campo Alvo (ex.: sgs ligar {n} Viagcert.destino Destino)")
+    info = info_sistema(destino)
+    try:
+        lig = gs.planejar_ligacao(destino, m.group(1), m.group(2), args[2])
+    except gs.ErroGerador as erro:
+        return falha(str(erro))
+    alvo_dir, numero = (destino, n) if sem_versao else nova_versao(destino, ctx.config.valores["porta_base"], ctx.saida)
+    try:
+        lig = gs.ligar_classes(alvo_dir, lig["origem"], lig["campo"], lig["alvo"], comentarios=info["comentarios"])
+    except gs.ErroGerador as erro:
+        return falha(str(erro))
+    linhas = [["ligação", f"{lig['origem']}.{lig['campo']} → {lig['alvo']}  (opcional; no form e na API)"],
+              ["teste", f"tests/test_ligacao_{lig['campo']}.py (na app de {lig['origem']})"],
+              ["migrations", lig["migrations"]]]
+    return _resposta_da_edicao(ctx, alvo_dir, numero, n, sem_versao, c["testar"], info, linhas,
+                               f"a ligação {lig['origem']}.{lig['campo']} → {lig['alvo']}")
 
 
 SGS = {"ajuda": sgs_ajuda, "help": sgs_ajuda, "gerar": sgs_gerar, "listar": sgs_listar, "lista": sgs_listar,
@@ -1557,7 +1828,8 @@ SGS = {"ajuda": sgs_ajuda, "help": sgs_ajuda, "gerar": sgs_gerar, "listar": sgs_
        "clear": sgs_limpar, "cls": sgs_limpar, "limpar": sgs_limpar, "exit": sgs_exit, "sair": sgs_exit,
        "cancelar": sgs_cancelar, "estilo": sgs_estilo, "tema": sgs_tema, "temas": sgs_tema, "tipos": sgs_tipos,
        "tipo": sgs_tipos, "editar": sgs_editar, "versao": sgs_editar, "versão": sgs_editar, "app": sgs_app,
-       "modulo": sgs_app, "módulo": sgs_app}
+       "modulo": sgs_app, "módulo": sgs_app, "ligar": sgs_ligar, "incrementar": sgs_incrementar,
+       "modificar": sgs_incrementar}
 
 
 def executar_linha(linha, ctx, opcoes=None):
@@ -1589,13 +1861,16 @@ def executar_linha(linha, ctx, opcoes=None):
                                                               "encerrado)", "suave"))
         if q is not None and ctx.questionario is q and not resposta.get("limpar"):
             resposta.setdefault("blocos", []).append(
-                texto(f"(pergunta pendente — {q.rotulo()}: responda, ou sgs gerar -sp para gerar, ou sgs cancelar)", "aviso"))
+                texto(f"(pergunta pendente — {q.rotulo()}: responda, ou {q.comando} -sp para gerar, ou sgs cancelar)",
+                      "aviso"))
     resposta.setdefault("ok", True)
     resposta["prompt"] = ctx.sessao.prompt()
     if ctx.confirmacao is not None:
         resposta["pergunta"], resposta["dica"] = ctx.confirmacao["rotulo"], ctx.confirmacao["dica"]
     else:
         resposta["pergunta"] = ctx.questionario.rotulo() if ctx.questionario else None
+        if ctx.questionario is not None:
+            resposta["dica"] = f"sua resposta (Enter = padrão) · {ctx.questionario.comando} -sp aplica agora"
     resposta["gravado"] = gravado                      # o que entrou no histórico (a página acrescenta na lista dela)
     if ctx.historico.mudou:                            # history -c / -d: a página troca a lista dela
         resposta["historico"] = ctx.historico.linhas()
@@ -1720,6 +1995,7 @@ class Tela(BaseHTTPRequestHandler):
                                                 "prompt": ctx.sessao.prompt(),
                                                 "historico": ctx.historico.linhas()}),   # ↑/↓ depois do F5
             "/catalogo": lambda: self._json(200, catalogo()),
+            "/sugestoes": lambda: self._json(200, {"ok": True, "itens": sugestoes(ctx)}),   # intellisense
             "/manifest.webmanifest": lambda: self._responder(200, MANIFEST, "application/manifest+json"),
             "/sw.js": lambda: self._responder(200, SERVICE_WORKER, "application/javascript",
                                               {"Service-Worker-Allowed": "/"}),
@@ -1893,8 +2169,20 @@ PAGINA = r"""<!doctype html>
   /* ---- caixa do prompt (fixa embaixo) ---- */
   #prompt { position: fixed; left: 0; right: 0; bottom: 0; padding: 18px 16px 14px;
             background: linear-gradient(to bottom, transparent, var(--fundo) 18px); }
-  #caixa { max-width: 1100px; margin: 0 auto; background: var(--painel); border: 1px solid var(--borda);
+  #caixa { position: relative; max-width: 1100px; margin: 0 auto; background: var(--painel); border: 1px solid var(--borda);
            border-radius: 6px; padding: 10px 12px 8px; }
+  /* ---- INTELLISENSE: até 5 sugestões acima do prompt (clique escolhe) e a sugestão "fantasma" na linha (TAB) ---- */
+  #sugestoes { position: absolute; left: 12px; right: 12px; bottom: calc(100% + 4px); z-index: 5; background: var(--painel);
+               border: 1px solid #3d3d3d; border-radius: 6px; padding: 4px 0; box-shadow: 0 -6px 18px rgba(0, 0, 0, .55); }
+  .sug { display: flex; gap: 14px; align-items: baseline; padding: 2px 12px; cursor: pointer; }
+  .sug.ativa { background: #1f2a1f; }
+  .sug:hover { background: var(--selecao); }
+  .sug-cmd { color: var(--texto); white-space: pre; }
+  .sug-cmd b { color: var(--verde); font-weight: 700; }
+  .sug-desc { margin-left: auto; color: var(--suave); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+              font-size: 12.5px; }
+  .sug-tab { color: var(--suave); font-size: 11.5px; border: 1px solid var(--borda); border-radius: 3px; padding: 0 4px; }
+  #fantasma { color: #5f6b5f; }
   #caixa.focado { border-color: #3d3d3d; }
   /* PS1 em DUAS linhas: em cima "sgs@ilp037:~/caminho" (quebra se for comprido); embaixo "$>" e o comando */
   .linha-prompt { cursor: text; }
@@ -1929,11 +2217,12 @@ PAGINA = r"""<!doctype html>
 </main>
 <div id="prompt">
   <div id="caixa">
+    <div id="sugestoes" role="listbox" aria-label="sugestões (clique para escolher · TAB completa)" hidden></div>
     <div class="linha-prompt" id="linha">
       <div class="ps1-linha"><span id="modo"></span><span class="ps1" id="ps1"></span></div>
       <div class="linha-comando"><span class="seta" id="seta">$&gt;</span>
       <div class="entrada">
-        <pre id="eco"><span id="antes"></span><span id="cursor"> </span><span id="depois"></span><span id="dica">sgs gerar &lt;pedido&gt; · cd · ls · python manage.py … · ou sgs para ajuda</span></pre>
+        <pre id="eco"><span id="antes"></span><span id="cursor"> </span><span id="fantasma"></span><span id="depois"></span><span id="dica">sgs gerar &lt;pedido&gt; · cd · ls · python manage.py … · ou sgs para ajuda</span></pre>
         <textarea id="texto" rows="1" spellcheck="false" autocomplete="off" maxlength="600"
                   aria-label="Comando: sgs, terminal ou anotação"></textarea>
       </div>
@@ -1997,18 +2286,78 @@ function trocarHistorico(linhas) {
   historico.splice(0, historico.length, ...linhas);
   posHist = historico.length;
 }
+/* ---------- INTELLISENSE: até 5 sugestões que se atualizam a cada tecla (clique escolhe) + a "fantasma" (TAB) ----
+   O catálogo vem do servidor (/sugestoes): histórico, pastas do cd, comandos de cada sistema, sgs e os padrão
+   (com e sem sgs). Ordem: começa com o que foi digitado → palavra que começa com ele → contém → letras na ordem. */
+const MAX_SUG = 5;
+let catalogoSug = [];             // [{cmd, desc, tipo}]
+let sugAtuais = [];               // as mostradas agora; a 1ª é a que o TAB completa
+let sugFechadas = false;          // Esc fecha até a próxima tecla
+let viaHistorico = false;         // ↑/↓ escreveu o comando: a caixa fica fechada
+function carregarSugestoes() {
+  fetch("/sugestoes").then((r) => r.json()).then((d) => { catalogoSug = d.itens || []; atualizarSugestoes(); })
+    .catch(() => {});
+}
+function pontuar(cmd, t) {
+  const c = cmd.toLowerCase();
+  if (c === t) return null;                                   // já está escrito: não sugere de novo
+  if (c.startsWith(t)) return 0;
+  if (c.includes(" " + t) || c.includes("/" + t) || c.includes("." + t)) return 1;
+  if (c.includes(t)) return 2;
+  if (t.length < 2) return null;
+  let i = 0;
+  for (const letra of c) { if (letra === t[i]) i += 1; if (i === t.length) return 3; }
+  return null;
+}
+function buscarSugestoes(texto) {
+  const t = texto.toLowerCase();
+  if (!t.trim() || t.includes("\n")) return [];
+  const achados = [];
+  catalogoSug.forEach((s, ordem) => { const p = pontuar(s.cmd, t); if (p !== null) achados.push([p, ordem, s]); });
+  achados.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  return achados.slice(0, MAX_SUG).map((a) => a[2]);
+}
+function cmdDestacado(cmd, t) {               // o trecho já digitado aparece em destaque dentro da sugestão
+  const i = t ? cmd.toLowerCase().indexOf(t.toLowerCase()) : -1;
+  return i < 0 ? [cmd] : [cmd.slice(0, i), el("b", {}, cmd.slice(i, i + t.length)), cmd.slice(i + t.length)];
+}
+function atualizarSugestoes() {
+  const v = ta.value;
+  sugAtuais = (pergunta || sugFechadas || viaHistorico || document.activeElement !== ta) ? [] : buscarSugestoes(v);
+  $("sugestoes").replaceChildren(...sugAtuais.map((s, i) => {
+    const item = el("div", { class: "sug" + (i === 0 ? " ativa" : ""), role: "option", title: "clique para escolher" },
+                    el("span", { class: "sug-cmd" }, ...cmdDestacado(s.cmd, v)), el("span", { class: "sug-desc" }, s.desc),
+                    i === 0 && fantasmaDe(s, v) ? el("span", { class: "sug-tab" }, "TAB") : null);
+    item.addEventListener("mousedown", (ev) => { ev.preventDefault(); escolherSugestao(s.cmd); });  // sem perder o foco
+    return item;
+  }));
+  $("sugestoes").hidden = sugAtuais.length === 0;
+  atualizarEco();
+}
+function fantasmaDe(s, v) {
+  return s && s.cmd.toLowerCase().startsWith(v.toLowerCase()) ? s.cmd.slice(v.length) : "";
+}
+function escolherSugestao(cmd) {
+  viaHistorico = sugFechadas = false;
+  escrever(cmd);
+  atualizarSugestoes();
+}
 function atualizarEco() {
   const v = ta.value, pos = Math.min(ta.selectionStart ?? v.length, v.length), ch = v[pos];
   const fim = ch === undefined || ch === "\n";
+  // Fantasma: o resto da 1ª sugestão, em outra cor, logo depois do que foi digitado (só com o cursor no fim).
+  const resto = pos === v.length && document.activeElement === ta ? fantasmaDe(sugAtuais[0], v) : "";
   $("antes").textContent = v.slice(0, pos);
-  $("cursor").textContent = fim ? " " : ch;
+  $("cursor").textContent = fim ? (resto ? resto[0] : " ") : ch;
+  $("fantasma").textContent = resto.slice(1);
   $("depois").textContent = v.slice(fim ? pos : pos + 1);
   $("dica").hidden = v.length > 0;
 }
-for (const ev of ["input", "keyup", "click", "select", "focus"]) ta.addEventListener(ev, atualizarEco);
+ta.addEventListener("input", () => { viaHistorico = sugFechadas = false; atualizarSugestoes(); });
+for (const ev of ["keyup", "click", "select"]) ta.addEventListener(ev, atualizarEco);
 document.addEventListener("selectionchange", () => { if (document.activeElement === ta) atualizarEco(); });
-ta.addEventListener("focus", () => caixa.classList.add("focado"));
-ta.addEventListener("blur", () => caixa.classList.remove("focado"));
+ta.addEventListener("focus", () => { caixa.classList.add("focado"); atualizarSugestoes(); });
+ta.addEventListener("blur", () => { caixa.classList.remove("focado"); $("sugestoes").hidden = true; atualizarEco(); });
 $("linha").addEventListener("mousedown", (ev) => { if (ev.target !== ta) { ev.preventDefault(); ta.focus(); } });
 
 function escrever(comando) {
@@ -2019,10 +2368,17 @@ function escrever(comando) {
 }
 ta.addEventListener("keydown", (ev) => {
   if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); executar(); return; }
+  if (ev.key === "Tab" && !ev.shiftKey) {                    // TAB completa com a 1ª sugestão
+    if (sugAtuais.length) { ev.preventDefault(); escolherSugestao(sugAtuais[0].cmd); return; }
+    if (ta.value) ev.preventDefault();                       // sem sugestão: o foco não sai do prompt
+  }
+  if (ev.key === "Escape" && sugAtuais.length) { ev.preventDefault(); sugFechadas = true; atualizarSugestoes(); return; }
   if ((ev.key === "ArrowUp" || ev.key === "ArrowDown") && !ta.value.includes("\n") && historico.length) {
     ev.preventDefault();
     posHist = Math.max(0, Math.min(historico.length, posHist + (ev.key === "ArrowUp" ? -1 : 1)));
+    viaHistorico = true;                                     // comando do histórico: a caixa de sugestões fecha
     escrever(historico[posHist] ?? "");
+    atualizarSugestoes();
   }
   if (ev.key.toLowerCase() === "l" && ev.ctrlKey) { ev.preventDefault(); limpar(); }
 });
@@ -2180,7 +2536,7 @@ async function executar(forcado) {
   if ((!texto && !pergunta) || $("enviar").disabled) return;      // numa pergunta, Enter vazio = padrão
   posHist = historico.length;
   ta.value = "";
-  atualizarEco();
+  atualizarSugestoes();                                         // linha vazia: a caixa de sugestões fecha
   // O eco também em duas linhas: o caminho em cima, "$> comando" embaixo.
   const eco = el("div", { class: "eco-cmd" }, el("span", { class: "ps1" }, ps1(prompt)),
                  el("span", { class: "seta" }, "$> "), texto || el("span", { class: "suave" }, "(Enter: padrão)"));
@@ -2216,6 +2572,7 @@ async function executar(forcado) {
   $("enviar").disabled = false;
   ta.focus();
   rolar();
+  carregarSugestoes();                  // pasta, sistemas e histórico podem ter mudado: o intellisense acompanha
 }
 $("enviar").addEventListener("click", () => executar());
 
@@ -2227,6 +2584,7 @@ fetch("/config").then((r) => r.json()).then((d) => {
   desenharPrompt();
 }).catch(() => {});
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+carregarSugestoes();                    // o catálogo do intellisense
 desenharPrompt();
 atualizarEco();
 ta.focus();

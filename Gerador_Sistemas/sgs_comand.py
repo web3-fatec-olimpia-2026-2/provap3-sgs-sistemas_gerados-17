@@ -170,9 +170,24 @@ CATALOGO = [
      "sgs editar NN", "sgs editar 01", "✓ versão 01.1 criada: cópia do 01 — porta 61011",
      "A porta da versão é a do sistema + o último dígito da versão (01.9, 01.19 … 01.99 → 61019).", "comando sgs"),
     ("sgs app NN <pedido>", "8 · SGS",
-     "MÓDULO: nova versão de NN com mais uma app Django — form, CRUD, API REST, padrões, settings, models, views e "
-     "testes.", "sgs app NN <pedido> [entidade=Nome]", "sgs app 01 vacinas com desconto por convênio entidade=Vacina",
-     "✓ versão 01.2 criada com o módulo vacinas", "Telas em /vacinas/ e API REST em /vacinas/api/v1/.", "comando sgs"),
+     "FUNCIONALIDADE NOVA: mais uma app Django — form, CRUD, API REST, padrões, settings, models, views e testes. Com "
+     "“Perguntar”, pergunta o nome (pelo contexto: Destino, Voo…), versão ou edição, ligação, campos e padrões.",
+     "sgs app NN <pedido> [entidade=Nome] [padroes=a,b] [ligar=Classe.campo] [-sv] [-sp]",
+     "sgs app 16 destinos de viagem com os campos cidade e pais",
+     "✓ módulo destinos (Destino) acrescentado ao próprio 16 (sem versão) · Viagcert.destino → Destino",
+     "Sem -sv cria a versão NN.k; -sv edita o próprio NN. sgs app -sp encerra as perguntas e aplica.", "comando sgs"),
+    ("sgs ligar NN Classe.campo Alvo", "8 · SGS",
+     "Campo de REFERÊNCIA (opcional) de uma classe para outra do mesmo sistema: entra no models, no form, na API e "
+     "ganha teste; o site que já subiu ganha a migration.", "sgs ligar NN [Classe.campo Alvo] [-sv]",
+     "sgs ligar 16 Viagcert.destino Destino", "✓ campo Viagcert.destino acrescentado",
+     "sgs ligar NN sozinho lista as classes. Apagar o Alvo só limpa o campo (SET_NULL).", "comando sgs"),
+    ("sgs incrementar NN Classe.campo <padrão>", "8 · SGS",
+     "INCREMENTAR (campo novo) ou MODIFICAR (campo que existe) um campo com um padrão: inteiro>=0, inteiro:1..30, "
+     "decimal>=0, lista:a,b,c, texto, texto-livre, simnao, data. A classe é refeita: o @property do núcleo, o "
+     "model/form/API do Django e os testes seguem o padrão.", "sgs incrementar NN [Classe.campo <padrão>] [-sv] [-sp]",
+     "sgs incrementar 16 Viagcert.voo inteiro>=1 -sv", "✓ campo Viagcert.voo acrescentado ao próprio 16 (sem versão)",
+     "sgs incrementar NN sozinho lista os campos e os padrões. Ligação (referência) muda com sgs ligar.",
+     "comando sgs"),
     ("sgs info NN", "8 · SGS", "Detalhes e arquivos do sistema NN.", "sgs info NN", "sgs info 01", "(o cartão do sistema)",
      "", "comando sgs"),
     ("sgs comandos NN", "8 · SGS", "Os comandos de terminal para rodar o sistema NN fora da tela.", "sgs comandos NN",

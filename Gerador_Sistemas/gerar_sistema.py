@@ -1304,8 +1304,15 @@ class Spec:
                 erros.append(f"atributo {n!r} é reservado pelo gerador")
             if a["tipo"] not in TIPOS_ATRIBUTO:
                 erros.append(f"atributo {n!r}: tipo deve ser {', '.join(TIPOS_ATRIBUTO)}")
-            if a["regra"] not in ("obrigatorio", "minimo", "faixa", "livre"):
-                erros.append(f"atributo {n!r}: regra deve ser obrigatorio, minimo, faixa ou livre")
+            if a["regra"] not in ("obrigatorio", "minimo", "faixa", "livre", "lista"):
+                erros.append(f"atributo {n!r}: regra deve ser obrigatorio, minimo, faixa, lista ou livre")
+            if a["regra"] == "lista":
+                opcoes = a.get("opcoes") or []
+                if a["tipo"] not in ("str", "int") or len(opcoes) < 2 or len(set(opcoes)) != len(opcoes) or not all(
+                        (isinstance(o, str) and o.strip() and not PROIBIDO_EM_TEXTO.search(o)) if a["tipo"] == "str"
+                        else (isinstance(o, int) and not isinstance(o, bool)) for o in opcoes):
+                    erros.append(f"atributo {n!r}: lista precisa de 2+ valores diferentes, todos texto (str) ou todos "
+                                 "inteiros (int)")
             if a["regra"] == "livre" and a["tipo"] != "str":
                 erros.append(f"atributo {n!r}: a regra livre é para texto (str)")
             if a["regra"] == "obrigatorio" and a["tipo"] not in ("str", "bool", "data"):
@@ -1356,6 +1363,8 @@ class Spec:
             return [2, 3, 1, 4][i % 4]
         if n == self.preco:
             return float(self.precos[i % 4])
+        if a["regra"] == "lista":
+            return a["opcoes"][i % len(a["opcoes"])]
         if a["tipo"] == "str" and a["regra"] == "obrigatorio":
             return f"{n.replace('_', ' ').capitalize()} {i + 1}"
         if a["tipo"] == "bool":
@@ -1385,6 +1394,10 @@ class Spec:
 
     @staticmethod
     def invalidos(a):
+        if a["regra"] == "lista":                            # fora da lista (e do tipo errado) é recusado
+            if a["tipo"] == "str":
+                return ["", "   ", "valor fora da lista", 123, None]
+            return [max(a["opcoes"]) + 1, str(a["opcoes"][0]), True, 2.5, None]
         if a["tipo"] == "str":
             return ["", "   ", 123, None]
         if a["tipo"] == "bool":
@@ -1403,6 +1416,8 @@ class Spec:
 
     @staticmethod
     def limites(a):
+        if a["regra"] == "lista":
+            return [a["opcoes"][0], a["opcoes"][-1]]
         if a["tipo"] == "str":
             return ["X"]
         if a["tipo"] == "bool":
@@ -1439,6 +1454,8 @@ class Spec:
 def descrever_regra(a):
     n, tipo = a["nome"], {"int": "inteiro", "float": "número", "str": "texto", "bool": "sim/não",
                           "data": "data"}[a["tipo"]]
+    if a["regra"] == "lista":
+        return f"{n}: {tipo}, um destes valores — {', '.join(str(o) for o in a['opcoes'])}"
     if a["tipo"] == "bool":
         return f"{n}: sim/não (só True ou False — 1 e 0 não valem)"
     if a["tipo"] == "data":
@@ -1492,6 +1509,11 @@ def gerar_property(a):
     elif a["regra"] == "faixa":
         chk += [f"if not {a['min']!r} <= valor <= {a['max']!r}:",
                 f'    raise ValueError("{n} deve estar entre {a["min"]} e {a["max"]}")']
+    elif a["regra"] == "lista":
+        valores = ", ".join(repr(o) for o in a["opcoes"])
+        chk += ["# Lista fechada: só um dos valores definidos entra (qualquer outro é recusado).",
+                f"if valor not in ({valores},):",
+                f'    raise ValueError("{n} deve ser um destes: {", ".join(str(o) for o in a["opcoes"])}")']
     return render(r'''
         @property
         def @@N@@(self):
@@ -5714,6 +5736,8 @@ def django_invalidos(s):
             casos.append(f'("{n}", "talvez")')               # nem True nem False
         elif a["tipo"] == "data":
             casos.append(f'("{n}", "2026-02-30")')           # dia que não existe
+        elif a["regra"] == "lista":                          # fora da lista fechada (choices)
+            casos.append(f'("{n}", "valor fora da lista")' if a["tipo"] == "str" else f'("{n}", {max(a["opcoes"]) + 1})')
         elif a["regra"] == "obrigatorio":
             casos.append(f'("{n}", "")')
         elif a["tipo"] == "int":
@@ -5975,9 +5999,26 @@ def gerar_web(s):
     campos = []
     for a in s.atributos:
         n, rot = a["nome"], a["nome"].replace("_", " ")
+        # Campo acrescentado depois (sgs incrementar): "padrao" vira default — as linhas que JÁ estão no banco
+        # recebem esse valor na migration (sem ele, o makemigrations travaria pedindo um valor).
+        if "padrao" not in a:
+            pad = ""
+        elif a["tipo"] == "float":
+            pad = f', default=Decimal("{float(a["padrao"]):.2f}")'
+        else:
+            pad = f", default={a['padrao']!r}"
+        if a["regra"] == "lista":
+            escolhas = ", ".join(f"({o!r}, {str(o)!r})" for o in a["opcoes"])
+            if a["tipo"] == "str":
+                tamanho = max(60, max(len(o) for o in a["opcoes"]))
+                campos.append(f'{n} = models.CharField("{rot}", max_length={tamanho}, choices=[{escolhas}]{pad})  '
+                              "# lista fechada: o form vira uma lista de escolha")
+            else:
+                campos.append(f'{n} = models.IntegerField("{rot}", choices=[{escolhas}]{pad})  # lista fechada')
+            continue
         if a["tipo"] == "str":
             if a["regra"] == "obrigatorio":
-                campos.append(f'{n} = models.CharField("{rot}", max_length=120)  # obrigatório: blank=False é o padrão')
+                campos.append(f'{n} = models.CharField("{rot}", max_length=120{pad})  # obrigatório: blank=False é o padrão')
             else:
                 campos.append(f'{n} = models.CharField("{rot}", max_length=200, blank=True, default="")  # sem regra')
             continue
@@ -5985,19 +6026,20 @@ def gerar_web(s):
             campos.append(f'{n} = models.BooleanField("{rot}", default=False)  # sim/não: caixa de marcar no form')
             continue
         if a["tipo"] == "data":
-            campos.append(f'{n} = models.DateField("{rot}")  # data válida (o form aceita AAAA-MM-DD)')
+            campos.append(f'{n} = models.DateField("{rot}"{pad})  # data válida (o form aceita AAAA-MM-DD)')
             continue
         val = []
         if a["tipo"] == "int":
             val.append(f"MinValueValidator({a['min']})")
             if a["regra"] == "faixa":
                 val.append(f"MaxValueValidator({a['max']})")
-            campos.append(f'{n} = models.IntegerField("{rot}", validators=[{", ".join(val)}])')
+            campos.append(f'{n} = models.IntegerField("{rot}", validators=[{", ".join(val)}]{pad})')
         else:
             val.append(f'MinValueValidator(Decimal("{a["min"]}"))')
             if a["regra"] == "faixa":
                 val.append(f'MaxValueValidator(Decimal("{a["max"]}"))')
-            campos.append(f'{n} = models.DecimalField("{rot}", max_digits=10, decimal_places=2, validators=[{", ".join(val)}])')
+            campos.append(f'{n} = models.DecimalField("{rot}", max_digits=10, decimal_places=2, '
+                          f'validators=[{", ".join(val)}]{pad})')
     tipos = ",\n".join(f'    ("{x[3]}", "{x[0]}")' for x in s.variantes + [s.vnova])
     campos_form = ", ".join(f'"{a["nome"]}"' for a in s.atributos) + ', "tipo"'
     politicas = ", ".join(sorted(f"Politica{x[2]}" for x in s.variantes + [s.vnova]))
@@ -6439,7 +6481,7 @@ def gerar_web(s):
                     valor = getattr(obj, f"get_{campo.name}_display")() if campo.choices else getattr(obj, campo.name)
                     if isinstance(valor, bool):
                         valor = "Sim" if valor else "Não"
-                    self.campos.append((str(campo.verbose_name).capitalize(), valor if valor != "" else "—"))
+                    self.campos.append((str(campo.verbose_name).capitalize(), valor if valor not in ("", None) else "—"))
         ''', IDENT=s.ident, QTD=s.qtd, UNIDADE=s.unidade,
         CODIGO='obj.id_interno_formatado  # ID interno LNNL, pronto para exibir' if w["id_interno"] else '""')
     arq[f"web/{app}/views.py"] = render(r'''
@@ -8300,11 +8342,16 @@ def gerar(dominio=None, assunto=None, spec=None, padroes=None, sistema=None, ent
 
 
 def montar_spec(dominio=None, assunto=None, spec=None, padroes=None, sistema=None, entidade=None,
-                django=False, exercicio=False, estudo=True, comentarios=True, web=None, campos=None):
-    """A Spec (a entrada já decidida e validada) SEM escrever nada — o que gerar() e preparar_modulo() usam."""
+                django=False, exercicio=False, estudo=True, comentarios=True, web=None, campos=None, atributos=None):
+    """A Spec (a entrada já decidida e validada) SEM escrever nada — o que gerar() e preparar_modulo() usam.
+
+    spec: caminho de um especificacao.json ou o próprio dict · atributos: troca a lista de atributos inteira
+    (sgs incrementar: a classe refeita com o campo novo ou modificado)."""
     origem = {"notas": []}
     web_spec = {}
-    if spec:
+    if isinstance(spec, dict):
+        entrada, caminho = copy.deepcopy(spec), Path("especificacao.json")
+    elif spec:
         caminho = Path(spec)
         if not caminho.exists():
             raise ErroGerador(f"arquivo de especificação não encontrado: {spec}")
@@ -8312,6 +8359,7 @@ def montar_spec(dominio=None, assunto=None, spec=None, padroes=None, sistema=Non
             entrada = json.loads(caminho.read_text(encoding="utf-8"))
         except json.JSONDecodeError as erro:
             raise ErroGerador(f"JSON inválido em {spec}: {erro}") from erro
+    if spec:
         if not isinstance(entrada, dict):
             raise ErroGerador("o JSON de especificação deve ser um objeto { ... }")
         base = entrada.pop("dominio_base", "generico")
@@ -8356,6 +8404,8 @@ def montar_spec(dominio=None, assunto=None, spec=None, padroes=None, sistema=Non
     if entidade:
         dados["entidade"] = camel(entidade)
     dados.pop("palavras", None)
+    if atributos is not None:
+        dados["atributos"] = copy.deepcopy(atributos)
     if campos:
         aplicar_campos(dados, campos, origem)
     pedidos = padroes or ["todos"]
@@ -8399,27 +8449,46 @@ def _nucleo_dentro_da_app(texto, pacote):
     return re.sub(r"\b(from|import) tests\.fabrica\b", rf"\1 {pacote}.tests.nucleo.fabrica", texto)
 
 
-def preparar_modulo(projeto, assunto, entidade=None, campos=None, padroes=None):
+PALAVRAS_DE_PEDIDO = {"cadastro", "cadastros", "cadastrar", "controle", "controlar", "gestao", "gerenciar", "registro",
+                      "registros", "modulo", "app", "sistema", "tela", "lista", "de", "do", "da", "dos", "das", "e",
+                      "o", "a", "os", "as", "um", "uma", "uns", "umas", "com", "para", "por", "no", "na", "nos", "nas",
+                      "novo", "nova", "novos", "novas", "mais"}
+
+
+def singular(palavra):
+    """Singular simples (o contrário do plural() das apps): destinos→destino, voos→voo, opcoes→opcao."""
+    for fim, troca in (("oes", "ao"), ("aes", "ao"), ("ais", "al"), ("eis", "el"), ("ois", "ol"), ("ns", "m"),
+                       ("res", "r"), ("zes", "z"), ("ses", "s")):
+        if palavra.endswith(fim) and len(palavra) > len(fim) + 1:
+            return palavra[: -len(fim)] + troca
+    return palavra[:-1] if palavra.endswith("s") and len(palavra) > 3 else palavra
+
+
+def nome_do_pedido(pedido):
+    """O NOME da funcionalidade nova pelo contexto do pedido (determinístico): a 1ª palavra que não é
+    "cadastro de", "controle de"… no singular, como classe — "destinos de viagem" → Destino,
+    "cadastro de horários de voos" → Horario. Sem palavra útil → None (fica o nome do domínio)."""
+    for palavra in re.findall(r"[a-z0-9]+", normalizar(pedido or "")):
+        if palavra not in PALAVRAS_DE_PEDIDO and not palavra.isdigit() and len(palavra) > 2:
+            return camel(singular(palavra))
+    return None
+
+
+def preparar_modulo(projeto, assunto, entidade=None, campos=None, padroes=None, dominio=None):
     """PLANEJA um módulo (mais uma app Django) para o sistema da pasta `projeto`, sem escrever nada.
 
     O módulo é gerado pelo MESMO gerador, com as opções web/estudo/comentários do sistema: sai com o form
     (ModelForm), o CRUD completo, a API REST, o settings da app, models, views, testes e os padrões do pedido —
-    o núcleo dele vai para DENTRO da app (<app>/nucleo/, testes em <app>/tests/nucleo/). Nome de app que já
-    existe (ou reservado) → ErroGerador com a dica entidade=Nome. Devolve o plano para aplicar_modulo().
+    o núcleo dele vai para DENTRO da app (<app>/nucleo/, testes em <app>/tests/nucleo/). O NOME da classe vem de
+    `entidade` ou do contexto do pedido (nome_do_pedido: "destinos…" → Destino); os atributos vêm do domínio.
+    Nome de app que já existe (ou reservado) → ErroGerador com a dica entidade=Nome. Devolve o plano para
+    aplicar_modulo().
     """
+    entidade = entidade or nome_do_pedido(assunto)
     projeto = Path(projeto)
     if not (projeto / "web" / "manage.py").exists():
         raise ErroGerador(f"{projeto.name} não tem o site Django (web/manage.py) — um módulo é uma app Django")
-    try:
-        espec = json.loads((projeto / "especificacao.json").read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        espec = {}
-    espec = espec if isinstance(espec, dict) else {}
-    web = dict(espec.get("web")) if isinstance(espec.get("web"), dict) else {}
-    web["estrutura"] = "apps" if (projeto / "web" / "apps").is_dir() else "plana"     # vale o que está no disco
-    s = montar_spec(assunto=assunto, entidade=entidade, campos=campos, padroes=padroes, django=True,
-                    sistema=espec.get("sistema") or None, estudo=bool(espec.get("estudo", True)),
-                    comentarios=bool(espec.get("comentarios", True)), web=web)
+    s = _spec_do_modulo(projeto, assunto, entidade, campos, padroes, dominio)
     app = s.app
     existentes = apps_do_projeto(projeto)
     dica = "escolha outro nome para a entidade do módulo: entidade=Nome (ex.: entidade=Vacina)"
@@ -8427,7 +8496,28 @@ def preparar_modulo(projeto, assunto, entidade=None, campos=None, padroes=None):
         raise ErroGerador(f"o sistema já tem uma app {app!r} (a entidade {s.ent} vira a app {app}) — {dica}")
     if app in APPS_RESERVADAS or not re.fullmatch(r"[a-z][a-z0-9_]*", app):
         raise ErroGerador(f"{app!r} é um nome reservado (Django, rotas ou pastas do sistema) — {dica}")
-    pacote = f"apps.{app}" if web["estrutura"] == "apps" else app
+    arquivos, modulo = _arquivos_do_modulo(projeto, s, assunto)
+    return {"arquivos": arquivos, "modulo": modulo, "spec": s}
+
+
+def _spec_do_modulo(projeto, assunto, entidade, campos=None, padroes=None, dominio=None, atributos=None):
+    """A Spec de um módulo com as opções web/estudo/comentários do sistema (especificacao.json)."""
+    try:
+        espec = json.loads((Path(projeto) / "especificacao.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        espec = {}
+    espec = espec if isinstance(espec, dict) else {}
+    web = dict(espec.get("web")) if isinstance(espec.get("web"), dict) else {}
+    web["estrutura"] = "apps" if (Path(projeto) / "web" / "apps").is_dir() else "plana"   # vale o que está no disco
+    return montar_spec(assunto=assunto, entidade=entidade, campos=campos, padroes=padroes, django=True, dominio=dominio,
+                       sistema=espec.get("sistema") or None, estudo=bool(espec.get("estudo", True)),
+                       comentarios=bool(espec.get("comentarios", True)), web=web, atributos=atributos)
+
+
+def _arquivos_do_modulo(projeto, s, assunto):
+    """Os arquivos da app do módulo (o núcleo dentro dela) a partir da Spec — o "transplante" do sistema gerado."""
+    projeto, app = Path(projeto), s.app
+    pacote = f"apps.{app}" if s.web["estrutura"] == "apps" else app
     base_app = f"web/{pacote.replace('.', '/')}"
     tem_admin = any((projeto / "web").glob("**/management/commands/garantir_admin.py"))
     arquivos = {}
@@ -8444,7 +8534,8 @@ def preparar_modulo(projeto, assunto, entidade=None, campos=None, padroes=None):
         arquivos[caminho] = _nucleo_dentro_da_app(arquivos[caminho], pacote)
     modulo = {"app": app, "pacote": pacote, "caminho": base_app[len("web/"):], "entidade": s.ent,
               "assunto": assunto, "dominio": s.origem.get("dominio_rotulo", ""), "padroes": s.padroes,
-              "campos": [a["nome"] for a in s.atributos]}
+              "campos": [a["nome"] for a in s.atributos],
+              "atributos": copy.deepcopy(s.atributos)}     # as regras de cada campo (sgs incrementar refaz daqui)
     arquivos[f"{base_app}/README.md"] = render(r'''
         # Módulo `@@APP@@` — @@ENT@@ (acrescentado por `sgs app`)
 
@@ -8471,7 +8562,7 @@ def preparar_modulo(projeto, assunto, entidade=None, campos=None, padroes=None):
                 ast.parse(conteudo)
             except SyntaxError as erro:  # pragma: no cover - indica bug do gerador
                 raise RuntimeError(f"código gerado inválido em {caminho}: {erro}") from erro
-    return {"arquivos": arquivos, "modulo": modulo, "spec": s}
+    return arquivos, modulo
 
 
 def aplicar_modulo(projeto, plano):
@@ -8511,13 +8602,395 @@ def aplicar_modulo(projeto, plano):
             arquivo.write(f"\n\n## Módulo `{app}` ({m['entidade']})\n\nApp Django acrescentada por `sgs app` "
                           f"(pedido: _\"{m['assunto']}\"_). Telas em `/{app}/`, API REST em `/{app}/api/v1/`, "
                           f"padrões: {', '.join(m['padroes'])}. Detalhes: `web/{m['caminho']}/README.md`.\n")
+    plano["migrations"] = atualizar_migrations(projeto)      # site que já subiu: a app nova ganha a migration
     return projeto / "web" / m["caminho"]
 
 
-def gerar_modulo(projeto, assunto, entidade=None, campos=None, padroes=None):
+def gerar_modulo(projeto, assunto, entidade=None, campos=None, padroes=None, dominio=None):
     """Planeja e aplica (no próprio projeto). A tela usa as duas etapas separadas para copiar antes (versão)."""
-    plano = preparar_modulo(projeto, assunto, entidade=entidade, campos=campos, padroes=padroes)
+    plano = preparar_modulo(projeto, assunto, entidade=entidade, campos=campos, padroes=padroes, dominio=dominio)
     return aplicar_modulo(projeto, plano), plano
+
+
+# =============================================================================
+# 7c. LIGAÇÕES: um campo de referência de uma classe para outra (Viagcert.destino → Destino)
+# =============================================================================
+ARQ_LIGACOES = "ligacoes.json"   # na raiz do sistema: as referências acrescentadas (sgs ligar / sgs app … ligar=)
+
+
+def entidades_do_projeto(projeto):
+    """{Classe: {"app", "pacote", "caminho"}} das classes (models) de cada app do sistema, lidas do disco."""
+    web = Path(projeto) / "web"
+    achadas = {}
+    for apps_py in sorted(list(web.glob("*/apps.py")) + list(web.glob("apps/*/apps.py"))):
+        pasta = apps_py.parent
+        try:
+            texto = (pasta / "models.py").read_text(encoding="utf-8")
+        except OSError:
+            continue
+        caminho = pasta.relative_to(web).as_posix()
+        for classe in re.findall(r"^class (\w+)\(models\.Model\):", texto, re.M):
+            achadas[classe] = {"app": pasta.name, "pacote": caminho.replace("/", "."), "caminho": caminho}
+    return achadas
+
+
+def ler_ligacoes(projeto):
+    try:
+        dados = json.loads((Path(projeto) / ARQ_LIGACOES).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    return [x for x in dados if isinstance(x, dict)] if isinstance(dados, list) else []
+
+
+def achar_classe(entidades, nome):
+    """O nome da classe como está no projeto (sem diferença de maiúsculas/acentos), ou None."""
+    alvo = camel(nome or "").lower()
+    return next((c for c in entidades if c.lower() == alvo), None)
+
+
+def planejar_ligacao(projeto, origem, campo, alvo, novas=None):
+    """Confere uma ligação origem.campo → alvo SEM escrever nada; devolve {"origem", "campo", "alvo"} já resolvido.
+
+    `novas`: classes que ainda vão entrar (o módulo planejado agora), para planejar antes de copiar/escrever.
+    Erro (ErroGerador) se a classe não existir, se o campo já existir ou se o nome não servir de campo.
+    """
+    entidades = dict(entidades_do_projeto(projeto))
+    entidades.update(novas or {})
+    o, a = achar_classe(entidades, origem), achar_classe(entidades, alvo)
+    if o is None or a is None:
+        falta = origem if o is None else alvo
+        raise ErroGerador(f"não existe a classe {falta!r} neste sistema — classes: {', '.join(sorted(entidades))}")
+    if o == a:
+        raise ErroGerador("a ligação precisa de duas classes diferentes (origem e alvo)")
+    campo = camel_para_snake(camel(campo)) if campo else camel_para_snake(a)
+    if not re.fullmatch(r"[a-z][a-z0-9_]*", campo) or keyword.iskeyword(campo) or campo in RESERVADOS \
+            or campo in RESERVADOS_DJANGO or campo in ("tipo", "id_interno"):
+        raise ErroGerador(f"{campo!r} não serve de nome de campo — escolha outro (ex.: {camel_para_snake(a)}_ref)")
+    if o not in (novas or {}):
+        modelo = (Path(projeto) / "web" / entidades[o]["caminho"] / "models.py").read_text(encoding="utf-8")
+        if re.search(rf"^\s+{re.escape(campo)} = models\.", modelo, re.M):
+            raise ErroGerador(f"a classe {o} já tem um campo {campo!r} — escolha outro nome (ex.: {campo}_ref)")
+    return {"origem": o, "campo": campo, "alvo": a}
+
+
+def ligar_classes(projeto, origem, campo, alvo, comentarios=True):
+    """Acrescenta origem.campo = ForeignKey(alvo) — OPCIONAL (null/blank) e SET_NULL (apagar o alvo só limpa o campo).
+
+    Mexe só no que precisa, sempre do mesmo jeito: models.py (o campo, antes do `tipo`), forms.py (o campo no
+    Meta.fields), um teste novo da ligação, ligacoes.json e uma seção no README. Se o projeto já tem migrations,
+    cria a migration nova (makemigrations) para o banco e os testes acompanharem. Devolve o dict da ligação.
+    """
+    projeto = Path(projeto)
+    lig = planejar_ligacao(projeto, origem, campo, alvo)
+    _escrever_ligacao(projeto, lig, comentarios)
+    campo, o = lig["campo"], entidades_do_projeto(projeto)[lig["origem"]]
+    ligacoes = [x for x in ler_ligacoes(projeto) if (x.get("origem"), x.get("campo")) != (lig["origem"], campo)]
+    (projeto / ARQ_LIGACOES).write_text(json.dumps(ligacoes + [dict(lig)], ensure_ascii=False, indent=2) + "\n",
+                                        encoding="utf-8")
+    readme = projeto / "README.md"
+    if readme.exists():
+        with open(readme, "a", encoding="utf-8", newline="\n") as arquivo:
+            arquivo.write(f"\n\n## Ligação `{lig['origem']}.{campo}` → `{lig['alvo']}`\n\nCampo de referência "
+                          f"(ForeignKey) opcional, acrescentado por `sgs ligar`: aparece no formulário e na API REST "
+                          f"de `{o['app']}` (o id do {lig['alvo']}); apagar o {lig['alvo']} só limpa o campo "
+                          f"(SET_NULL). Teste: `web/{o['caminho']}/tests/test_ligacao_{campo}.py`.\n")
+    lig["migrations"] = atualizar_migrations(projeto)
+    return lig
+
+
+def _escrever_ligacao(projeto, lig, comentarios=True):
+    """Só os ARQUIVOS da ligação: o campo no models.py, no Meta.fields do form, o "—" do detalhe e o teste.
+    Usado ao ligar e, depois de um sgs incrementar refazer a classe, para pôr a ligação de volta."""
+    projeto = Path(projeto)
+    entidades = entidades_do_projeto(projeto)
+    o, a, campo = entidades[lig["origem"]], entidades[lig["alvo"]], lig["campo"]
+    pasta = projeto / "web" / o["caminho"]
+    models_py, forms_py = pasta / "models.py", pasta / "forms.py"
+    modelo, form = models_py.read_text(encoding="utf-8"), forms_py.read_text(encoding="utf-8")
+    tipo = re.search(r"^(\s+)tipo = models\.CharField\(", modelo, re.M)
+    meta = re.search(r'(fields = \[[^\]]*?)("tipo"\])', form)
+    if tipo is None or meta is None:
+        raise ErroGerador(f"não reconheci o models.py/forms.py de {lig['origem']} (foi editado à mão?)")
+    rotulo = campo.replace("_", " ")
+    nota = (f"  # ligação (sgs ligar): opcional; apagar o {lig['alvo']} só limpa este campo" if comentarios else "")
+    linha = (f'{tipo.group(1)}{campo} = models.ForeignKey("{a["app"]}.{lig["alvo"]}", verbose_name="{rotulo}", '
+             f'null=True, blank=True, on_delete=models.SET_NULL, related_name="{o["app"]}_{campo}"){nota}\n')
+    models_py.write_text(modelo[:tipo.start()] + linha + modelo[tipo.start():], encoding="utf-8")
+    forms_py.write_text(form[:meta.start(2)] + f'"{campo}", ' + form[meta.start(2):], encoding="utf-8")
+    viewmodels = pasta / "viewmodels.py"
+    if viewmodels.exists():                       # detalhe: referência vazia aparece como "—" (não como None)
+        texto_vm = viewmodels.read_text(encoding="utf-8")
+        viewmodels.write_text(texto_vm.replace('valor if valor != "" else "—"', 'valor if valor not in ("", None) else "—"'),
+                              encoding="utf-8")
+    api = (pasta / "api.py").exists()
+    teste = render(r'''
+        """Ligação @@O@@.@@CAMPO@@ → @@A@@ (sgs ligar): referência OPCIONAL entre classes de apps diferentes."""
+        import pytest
+
+        from @@PKO@@.forms import @@O@@Form
+        from @@PKO@@.models import @@O@@
+        from @@PKO@@.tests.test_models import dados as dados_@@APPO@@
+        from @@PKA@@.models import @@A@@
+        from @@PKA@@.tests.test_models import dados as dados_@@APPA@@
+
+        pytestmark = pytest.mark.django_db
+
+
+        def test_o_campo_e_opcional_e_aponta_para_a_classe():
+            campo = @@O@@._meta.get_field("@@CAMPO@@")
+            assert campo.related_model is @@A@@ and campo.null and campo.blank
+            assert "@@CAMPO@@" in @@O@@Form().fields
+
+
+        def test_ligar_e_apagar_o_alvo_so_limpa_a_referencia():
+            alvo = @@A@@.objects.create(**dados_@@APPA@@())
+            obj = @@O@@.objects.create(**dados_@@APPO@@(), @@CAMPO@@=alvo)
+            assert obj.@@CAMPO@@ == alvo and obj in alvo.@@REL@@.all()
+            alvo.delete()
+            obj.refresh_from_db()
+            assert obj.@@CAMPO@@ is None
+        @@TESTE_API@@
+        ''', O=lig["origem"], A=lig["alvo"], CAMPO=campo, PKO=o["pacote"], PKA=a["pacote"], APPO=o["app"],
+        APPA=a["app"], REL=f"{o['app']}_{campo}", TESTE_API="" if not api else "\n\n" + render(r'''
+            def test_a_api_le_e_grava_a_referencia(client):
+                import json
+
+                from django.urls import reverse
+
+                alvo = @@A@@.objects.create(**dados_@@APPA@@())
+                obj = @@O@@.objects.create(**dados_@@APPO@@())
+                url = reverse("@@APPO@@:api_item", args=[obj.pk])
+                resposta = client.patch(url, data=json.dumps({"@@CAMPO@@": str(alvo.pk)}), content_type="application/json")
+                assert resposta.status_code == 200 and str(resposta.json()["@@CAMPO@@"]) == str(alvo.pk)
+            ''', A=lig["alvo"], O=lig["origem"], APPA=a["app"], APPO=o["app"], CAMPO=campo))
+    if not comentarios:
+        teste = remover_comentarios(teste)
+    ast.parse(teste)
+    (pasta / "tests" / f"test_ligacao_{campo}.py").write_text(teste, encoding="utf-8")
+
+
+# =============================================================================
+# 7d. INCREMENTAR: acrescentar ou modificar UM campo de uma classe, com a regra (o padrão) dele
+# =============================================================================
+ARQ_INCREMENTOS = "incrementos.json"   # na raiz do sistema: os campos acrescentados/modificados (sgs incrementar)
+REGRAS_DE_CAMPO = [   # (exemplo, o que faz) — o catálogo que a tela mostra
+    ("texto", "texto obrigatório (vazio é recusado)"),
+    ("texto-livre", "texto opcional, sem regra (atributo simples)"),
+    ("inteiro>=0", "inteiro com mínimo: negativo e letras são recusados (troque o 0)"),
+    ("inteiro:1..30", "inteiro numa faixa (mínimo..máximo)"),
+    ("decimal>=0", "número decimal com mínimo"),
+    ("decimal:0..100", "número decimal numa faixa"),
+    ("lista:janela,meio,corredor", "LISTA fechada: só um desses valores (inteiros também: lista:1,2,3)"),
+    ("simnao", "sim/não (só True ou False)"),
+    ("data", "data válida AAAA-MM-DD"),
+]
+
+
+def ler_regra(texto):
+    """"inteiro>=0", "inteiro:1..30", "decimal>=0", "lista:a,b,c", "texto", "texto-livre", "simnao", "data"
+    → {"tipo", "regra", "min", "max"[, "opcoes"]}. Erro (ErroGerador) com o catálogo se não entender."""
+    t = normalizar(texto or "").replace(" ", "")
+    numero = r"-?\d+(?:[.,]\d+)?"
+
+    def num(valor, inteiro):
+        valor = valor.replace(",", ".")
+        return int(valor) if inteiro else float(valor)
+
+    m = re.fullmatch(rf"(inteiro|int|decimal|float|numero)(?:>=|:min=?|min)({numero})", t)
+    if m:
+        inteiro = m.group(1) in ("inteiro", "int")
+        if inteiro and not re.fullmatch(r"-?\d+", m.group(2)):
+            raise ErroGerador("inteiro>=N: N precisa ser inteiro")
+        return {"tipo": "int" if inteiro else "float", "regra": "minimo", "min": num(m.group(2), inteiro), "max": None}
+    m = re.fullmatch(rf"(inteiro|int|decimal|float|numero|faixa):?({numero})\.\.({numero})", t)
+    if m:
+        inteiro = m.group(1) in ("inteiro", "int", "faixa") and "." not in m.group(2) + m.group(3).replace("..", "")
+        minimo, maximo = num(m.group(2), inteiro), num(m.group(3), inteiro)
+        if minimo >= maximo:
+            raise ErroGerador("faixa: o mínimo precisa ser menor que o máximo (ex.: inteiro:1..30)")
+        return {"tipo": "int" if inteiro else "float", "regra": "faixa", "min": minimo, "max": maximo}
+    m = re.fullmatch(r"(?:lista|opcoes|valores):(.+)", normalizar(texto or "").strip())
+    if m:
+        bruto = [v.strip() for v in re.split(r"[,;|]", (texto or "").split(":", 1)[1]) if v.strip()]
+        inteiros = all(re.fullmatch(r"-?\d+", v) for v in bruto)
+        opcoes = [int(v) for v in bruto] if inteiros else bruto
+        if len(opcoes) < 2 or len(set(opcoes)) != len(opcoes):
+            raise ErroGerador("lista: pelo menos 2 valores diferentes (ex.: lista:janela,meio,corredor)")
+        if not inteiros and any(PROIBIDO_EM_TEXTO.search(v) for v in opcoes):
+            raise ErroGerador("lista: os valores não podem ter aspas, chaves ou barra invertida")
+        return {"tipo": "int" if inteiros else "str", "regra": "lista", "min": None, "max": None, "opcoes": opcoes}
+    simples = {"texto": ("str", "obrigatorio"), "obrigatorio": ("str", "obrigatorio"), "str": ("str", "obrigatorio"),
+               "texto-livre": ("str", "livre"), "textolivre": ("str", "livre"), "livre": ("str", "livre"),
+               "simnao": ("bool", "obrigatorio"), "sim/nao": ("bool", "obrigatorio"), "bool": ("bool", "obrigatorio"),
+               "data": ("data", "obrigatorio")}
+    if t in simples:
+        tipo, regra = simples[t]
+        return {"tipo": tipo, "regra": regra, "min": None, "max": None}
+    raise ErroGerador(f"regra {texto!r} não reconhecida — use: " + " · ".join(r for r, _ in REGRAS_DE_CAMPO))
+
+
+def regra_em_texto(a):
+    """A regra de um atributo no formato do sgs incrementar (o inverso do ler_regra)."""
+    if a["regra"] == "lista":
+        return "lista:" + ",".join(str(o) for o in a["opcoes"])
+    if a["tipo"] in ("int", "float"):
+        nome = "inteiro" if a["tipo"] == "int" else "decimal"
+        return f"{nome}>={a['min']}" if a["regra"] == "minimo" else f"{nome}:{a['min']}..{a['max']}"
+    return {"bool": "simnao", "data": "data"}.get(a["tipo"], "texto-livre" if a["regra"] == "livre" else "texto")
+
+
+def classes_do_projeto(projeto):
+    """{Classe: {"app", "pacote", "caminho", "principal": bool, "atributos": [...]}} — as classes e os campos
+    (com as regras) que o sgs incrementar pode mudar. A principal lê do especificacao.json; os módulos, do modulos.json."""
+    projeto = Path(projeto)
+    entidades = entidades_do_projeto(projeto)
+    try:
+        espec = json.loads((projeto / "especificacao.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        espec = {}
+    saida = {}
+    if isinstance(espec, dict) and isinstance(espec.get("entidade"), str) and isinstance(espec.get("atributos"), list):
+        sem_web = {"app": None, "pacote": None, "caminho": None}           # sistema só com o núcleo (sem Django)
+        saida[espec["entidade"]] = {**entidades.get(espec["entidade"], sem_web), "principal": True,
+                                    "atributos": copy.deepcopy(espec["atributos"])}
+    for m in ler_modulos(projeto):
+        if m.get("entidade") not in entidades:
+            continue
+        atributos = m.get("atributos")
+        if not isinstance(atributos, list):                 # módulo de antes do incrementar: refaz a Spec do pedido
+            atributos = _spec_do_modulo(projeto, m["assunto"], m["entidade"], None, m.get("padroes"),
+                                        m.get("dominio") or None).atributos
+        saida[m["entidade"]] = {**entidades[m["entidade"]], "principal": False, "modulo": m,
+                                "atributos": copy.deepcopy(atributos)}
+    return saida
+
+
+def valor_padrao(a):
+    """O valor que as linhas que JÁ estão no banco recebem quando o campo é novo (vai para o default do model)."""
+    if a["regra"] == "lista":
+        return a["opcoes"][0]
+    if a["tipo"] in ("int", "float"):
+        return a["min"]
+    return {"bool": False, "data": DATAS_EXEMPLO[0]}.get(a["tipo"], "")
+
+
+def planejar_incremento(projeto, classe, campo, regra):
+    """Acrescenta (campo novo) ou modifica (campo que já existe) UM campo da classe, com a regra pedida — sem
+    escrever nada. A classe inteira é REFEITA pelo gerador a partir da Spec atualizada: o @property do núcleo, o
+    model (validators/choices), o form, a API e os testes ficam coerentes. Devolve o plano para aplicar_incremento()."""
+    projeto = Path(projeto)
+    classes = classes_do_projeto(projeto)
+    nome_classe = achar_classe(classes, classe)
+    if nome_classe is None:
+        raise ErroGerador(f"não existe a classe {classe!r} neste sistema (ou ela não foi gerada pelo SGS) — "
+                          f"classes: {', '.join(sorted(classes)) or 'nenhuma'}")
+    info = classes[nome_classe]
+    campo = camel_para_snake(camel(campo or ""))
+    if not re.fullmatch(r"[a-z][a-z0-9_]*", campo) or keyword.iskeyword(campo) or campo in RESERVADOS \
+            or campo in RESERVADOS_DJANGO or campo in ("tipo", "id_interno"):
+        raise ErroGerador(f"{campo!r} não serve de nome de campo — use letras, números e _ (ex.: assento, codigo_voo)")
+    if any(x.get("origem") == nome_classe and x.get("campo") == campo for x in ler_ligacoes(projeto)):
+        raise ErroGerador(f"{nome_classe}.{campo} é uma LIGAÇÃO (referência) — mude com sgs ligar, não com incrementar")
+    nova = ler_regra(regra) if isinstance(regra, str) else dict(regra)
+    atributos = info["atributos"]
+    atual = next((a for a in atributos if a["nome"] == campo), None)
+    if atual is not None:
+        acao = "modificado"
+        atual.update({k: nova.get(k) for k in ("tipo", "regra", "min", "max")})
+        if nova["regra"] == "lista":
+            atual["opcoes"] = nova["opcoes"]
+        else:
+            atual.pop("opcoes", None)
+        if "padrao" in atual:                               # o default acompanha a regra nova
+            atual["padrao"] = valor_padrao(atual)
+    else:
+        acao = "novo"
+        novo = {"nome": campo, **{k: nova.get(k) for k in ("tipo", "regra", "min", "max")}}
+        if nova["regra"] == "lista":
+            novo["opcoes"] = nova["opcoes"]
+        if novo["regra"] != "livre":
+            novo["padrao"] = valor_padrao(novo)
+        posicao = max([i + 1 for i, a in enumerate(atributos) if a["regra"] != "livre"] or [0])
+        atributos.insert(posicao, novo)
+    try:
+        if info["principal"]:
+            espec = json.loads((projeto / "especificacao.json").read_text(encoding="utf-8"))
+            espec["atributos"] = atributos
+            s = montar_spec(spec=espec, exercicio=(projeto / "exercicios.html").exists())
+            arquivos = montar_arquivos(s, projeto.name)
+            for intocavel in ("README.md", "iniciar.sh", "web/config/settings.py", "web/config/urls.py"):
+                arquivos.pop(intocavel, None)           # têm o que os módulos acrescentaram: ficam como estão
+        else:
+            m = info["modulo"]
+            s = _spec_do_modulo(projeto, m["assunto"], m["entidade"], [], m.get("padroes"), m.get("dominio") or None,
+                                atributos=atributos)
+            arquivos, _ = _arquivos_do_modulo(projeto, s, m["assunto"])
+    except ErroGerador as erro:
+        raise ErroGerador(f"{nome_classe}.{campo} com a regra {regra!r} não fecha com o resto da classe: {erro}") from erro
+    alvo = next(a for a in s.atributos if a["nome"] == campo)
+    return {"classe": nome_classe, "campo": campo, "acao": acao, "regra": regra_em_texto(alvo),
+            "descricao": descrever_regra(alvo), "principal": info["principal"], "arquivos": arquivos,
+            "atributos": s.atributos, "app": info["app"]}
+
+
+def aplicar_incremento(projeto, plano, comentarios=True):
+    """Escreve a classe refeita, põe de volta as ligações dela, anota (especificacao.json / modulos.json,
+    incrementos.json, README) e cria a migration se o site já subiu."""
+    projeto = Path(projeto)
+    for caminho, conteudo in plano["arquivos"].items():   # mesmo conteúdo = nem toca (data do arquivo e git quietos)
+        alvo = projeto / caminho
+        atual = alvo.read_bytes() if alvo.is_file() else None
+        novo = conteudo if isinstance(conteudo, bytes) else conteudo.encode("utf-8")
+        if atual != novo:
+            escrever(projeto, {caminho: conteudo})
+    for lig in ler_ligacoes(projeto):                    # a classe foi refeita: as referências dela voltam
+        if lig.get("origem") == plano["classe"]:
+            _escrever_ligacao(projeto, lig, comentarios)
+    if not plano["principal"]:
+        modulos = ler_modulos(projeto)
+        for m in modulos:
+            if m.get("entidade") == plano["classe"]:
+                m["atributos"] = plano["atributos"]
+                m["campos"] = [a["nome"] for a in plano["atributos"]]
+        (projeto / MODULOS).write_text(json.dumps(modulos, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    try:
+        historico = json.loads((projeto / ARQ_INCREMENTOS).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        historico = []
+    registro = {k: plano[k] for k in ("classe", "campo", "acao", "regra")}
+    (projeto / ARQ_INCREMENTOS).write_text(
+        json.dumps((historico if isinstance(historico, list) else []) + [registro], ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8")
+    readme = projeto / "README.md"
+    if readme.exists():
+        with open(readme, "a", encoding="utf-8", newline="\n") as arquivo:
+            arquivo.write(f"\n\n## Campo `{plano['classe']}.{plano['campo']}` ({plano['acao']})\n\nRegra: "
+                          f"{plano['descricao']} — `{plano['regra']}` (sgs incrementar). Vale no @property do núcleo, "
+                          f"no model (validators/choices), no form e na API; os testes da classe foram refeitos.\n")
+    plano["migrations"] = atualizar_migrations(projeto)
+    return plano
+
+
+def incrementar_campo(projeto, classe, campo, regra, comentarios=True):
+    """Planeja e aplica no próprio projeto (a tela separa as etapas para copiar antes, na versão)."""
+    return aplicar_incremento(projeto, planejar_incremento(projeto, classe, campo, regra), comentarios)
+
+
+def atualizar_migrations(projeto):
+    """Se o sistema JÁ tem migrations (o site já subiu), cria as novas (makemigrations de todas as apps) para o
+    banco e os testes acompanharem a mudança. Sem migrations ainda: nada (o iniciar.sh cria na hora de subir)."""
+    web = Path(projeto) / "web"
+    if not any(web.glob("**/migrations/0*.py")):
+        return "sem migrations ainda — o iniciar.sh cria quando o site subir"
+    if importlib.util.find_spec("django") is None:
+        return "Django não está instalado neste Python — rode: bash iniciar.sh migrar"
+    apps = sorted({info["app"] for info in entidades_do_projeto(Path(projeto)).values()})
+    r = subprocess.run([sys.executable, "manage.py", "makemigrations", *apps], cwd=web, capture_output=True,
+                       text=True, timeout=300, env=dict(os.environ, DJANGO_SETTINGS_MODULE="config.settings"))
+    saida = (r.stdout + r.stderr).strip().splitlines()
+    if r.returncode:
+        raise ErroGerador("makemigrations falhou: " + " | ".join(saida[-5:]))
+    return " · ".join(linha.strip() for linha in saida if linha.strip()) or "nenhuma mudança"
 
 
 # =============================================================================
