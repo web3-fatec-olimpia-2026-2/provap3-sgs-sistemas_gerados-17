@@ -220,9 +220,10 @@ CATALOGO = [
      "o resumo em 9 passos + a página /tutorial", "Abre ao lado da Wiki e do Django Study Hub.", "comando sgs"),
     ("sgs hub", "8 · SGS", "Abre a cópia do Django Study Hub (models, views, ORM, forms, DRF).", "sgs hub", "sgs hub",
      "(abre a página)", "", "comando sgs"),
-    ("sgs visual", "8 · SGS", "A cor da janela desta tela: CMD/PowerShell (padrão ao abrir) ou a do SGS.",
-     "sgs visual [powershell|sgs]", "sgs visual sgs", "a tela passa para o prompt verde do SGS",
-     "Também no topo da tela: janela[CMD/PowerShell|SGS].", "comando sgs"),
+    ("sgs cmd", "8 · SGS", "O estilo desta tela: sgs cmd = como o Prompt de Comando do Windows (preto e cinza, o "
+     "padrão ao abrir) · sgs cmd sgs = as cores do SGS (prompt verde).", "sgs cmd [sgs]   ou   cmd [sgs]",
+     "sgs cmd sgs", "a tela passa para as cores do SGS", "Sem o sgs na frente também vale: cmd · cmd sgs.",
+     "comando sgs"),
     ("sgs comand", "8 · SGS", "Este módulo: a lista numerada dos comandos.", "sgs comand [n]", "sgs comand 24",
      "(a explicação do comando 24)", "Dentro do módulo, digitar só o número também funciona.", "comando sgs"),
     ("sgs exit", "8 · SGS", "Sai do módulo comand e volta para a tela principal (como estava).", "sgs exit   ou   exit",

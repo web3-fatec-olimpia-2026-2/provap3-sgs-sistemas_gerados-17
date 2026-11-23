@@ -31,13 +31,14 @@ python Gerador_Sistemas/tela_prompt.py
 ```
 
 Abre em **http://127.0.0.1:6100**, numa janela de app (PWA). Ctrl+C no terminal para parar;
-`--sem-abrir` só sobe o servidor. A tela começa com o nome e **três linhas de comandos principais** (fonte menor,
-separados por `|`, clique executa ou escreve no prompt). A primeira começa pela **cor da janela**:
-`janela[CMD/PowerShell|SGS]`.
+`--sem-abrir` só sobe o servidor. Na barra da janela fica só **SGS**; no topo, os **comandos principais sem o
+`sgs` na frente** (`ajuda|gerar|listar|…|cmd`), em fonte menor, separados por `|` e até o fim da tela (o clique
+executa ou escreve no prompt o comando inteiro).
 
-A tela **abre sempre como o CMD/PowerShell** do Windows (fundo `#0c0c0c`, texto cinza `#cccccc`): o prompt tem
-**duas linhas**, em cima `PS ~\caminho` (quebra se o caminho for comprido), embaixo `>` e o comando. No visual
-`sgs` (`sgs visual sgs` ou o clique no topo) o prompt fica verde: `sgs@ilp037:~/caminho` e `$>`.
+A tela **abre sempre no estilo do Prompt de Comando** do Windows (`sgs cmd`): fundo `#0c0c0c` e tudo em cinza
+`#cccccc` — o prompt numa linha só, `~\caminho>comando`, e as caixas do rodapé numa linha, sem cor. Para as cores
+do SGS: `sgs cmd sgs` (prompt verde em duas linhas: `sgs@ilp037:~/caminho` em cima, `$>` e o comando embaixo).
+Sem o `sgs` na frente também vale: `cmd` · `cmd sgs`.
 
 **Estudo lado a lado:** `sgs tutorial` (classe nova, ligar, campos, o padrão de um campo, padrões de projeto, API),
 `sgs wiki` (cópia da Wikipédia, com o CSS dela) e `sgs hub` (cópia do Django Study Hub). As três páginas têm a mesma
@@ -97,7 +98,7 @@ Principais comandos `sgs`:
 | `sgs dominios [termo]` | os 100 domínios por setor; com termo, só os que batem (`sgs dominios saude`, `sgs dominios pet`) |
 | `sgs padroes` · `sgs config` · `sgs pwa=false` · `clear` | catálogo, configuração, PWA, limpar |
 | `sgs tutorial` · `sgs wiki` · `sgs hub` | tutorial prático · Wikipédia (padrões GoF) · Django Study Hub, lado a lado |
-| `sgs visual [powershell\|sgs]` | cor da janela: CMD/PowerShell (padrão ao abrir) ou a do SGS |
+| `sgs cmd` · `sgs cmd sgs` (ou `cmd` · `cmd sgs`) | estilo da tela: Prompt de Comando (padrão ao abrir) · cores do SGS |
 
 As caixas embaixo valem para o `sgs gerar` e ficam salvas: **+ Django**, **Modo exercício**, **Rodar testes**,
 **Para estudo** (desmarcada = só gerar), **Comentários no código**, **Notas na web** e **Perguntar antes de gerar**.

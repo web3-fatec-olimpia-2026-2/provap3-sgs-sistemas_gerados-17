@@ -99,12 +99,12 @@ CONFIG_INICIAL = {
     "comentarios_web": False, "perguntar": False, "estilo": "web", "tema": "T01", "tom": "tom3", "paleta": "P02",
     "id_publico": "inteiro", "id_interno": False, "lnnl_tipo": "21", "estrutura": "plana", "seguranca": "basica",
     "pwa": True, "porta_base": PORTA_PADRAO, "admin_usuario": "admin", "admin_email": "admin@exemplo.com",
-    "admin_senha": "admin123", "visual": "powershell",
+    "admin_senha": "admin123", "visual": "cmd",
 }
 # Valores fechados (listas): nada de texto livre vira CSS ou código.
 ESCOLHAS = {"estilo": list(gs.ESTILOS), "tema": list(temas_web.TEMAS), "tom": temas_web.TONS,
             "paleta": list(temas_web.PALETAS), "id_publico": ["inteiro", "uuid"], "estrutura": ["plana", "apps"],
-            "seguranca": ["basica", "baseline"], "visual": ["powershell", "sgs"]}
+            "seguranca": ["basica", "baseline"], "visual": ["cmd", "sgs"]}
 EXPLICA_CONFIG = {
     "django": "gerar também o site Django (caixa “+ Django”)",
     "exercicio": "modo exercício: questionário de revisão (exercicios.html, resposta oculta em “Ver resposta”); o código sai completo",
@@ -127,8 +127,8 @@ EXPLICA_CONFIG = {
     "admin_usuario": "superusuário do Django criado pelo sgs rodar",
     "admin_email": "e-mail do superusuário",
     "admin_senha": "senha do superusuário (mín. 6 caracteres; vai para o web/.env do sistema)",
-    "visual": "a cor da janela desta tela: powershell (o padrão: como o CMD/PowerShell do Windows — preto, texto cinza, "
-              "prompt PS) · sgs (prompt verde)",
+    "visual": "o estilo desta tela: cmd (o padrão ao abrir: como o Prompt de Comando do Windows — preto e cinza) · "
+              "sgs (as cores do SGS, prompt verde) — mude com sgs cmd / sgs cmd sgs",
 }
 SIM = {"sim", "s", "true", "1", "on", "yes", "y"}
 NAO = {"nao", "não", "n", "false", "0", "off", "no"}
@@ -150,6 +150,8 @@ class Config:
         if self.valores["porta_base"] == PORTA_ANTIGA:
             # A base mudou de 8100 para 6100: com 8100 as portas das versões (81011…) passariam de 65535.
             self.valores["porta_base"] = PORTA_PADRAO
+        if self.valores["visual"] not in ESCOLHAS["visual"]:     # "powershell" (o nome antigo) → cmd
+            self.valores["visual"] = CONFIG_INICIAL["visual"]
 
     def alterar(self, chave, valor):
         """Valida e troca UMA chave. O valor pode vir como texto (do sgs) ou já no tipo certo (da caixa)."""
@@ -566,6 +568,10 @@ def sugestoes(ctx, limite_historico=40):
         if "=" in base:
             base = base.split("=")[0] + "="
         add(base + (" " if preencher and not base.endswith("=") else ""), descricao, "sgs")
+    for comando, descricao in (("sgs cmd sgs", "tela nas cores do SGS (prompt verde)"),
+                               ("cmd", "tela no estilo do Prompt de Comando (= sgs cmd)"),
+                               ("cmd sgs", "tela nas cores do SGS (= sgs cmd sgs)")):
+        add(comando, descricao, "sgs")
     for comando, descricao in TERMINAL_SUGERIDOS:
         add(comando, descricao, "terminal")
         add(f"sgs {comando}", descricao + " (com sgs)", "terminal")
@@ -1135,8 +1141,8 @@ COMANDOS_SGS = [
                      "projeto, API (abre ao lado da Wiki e do Study Hub)", False),
     ("sgs wiki", "abre a cópia da Wikipédia (lista GoF), com o layout da Wikipédia", False),
     ("sgs hub", "abre a cópia do Django Study Hub (estudo de Django: models, views, ORM, forms, DRF, P3)", False),
-    ("sgs visual [powershell|sgs]", "a cor da janela desta tela: CMD/PowerShell (o padrão ao abrir) ou a do SGS "
-                                    "(prompt verde) · também no topo: janela[CMD/PowerShell|SGS]", True),
+    ("sgs cmd [sgs]", "estilo da tela: sgs cmd = como o Prompt de Comando do Windows (o padrão ao abrir) · "
+                      "sgs cmd sgs = as cores do SGS · sem o sgs também vale: cmd · cmd sgs", False),
     ("sgs clear  (ou clear)", "limpa a tela — ficam só as duas linhas do topo", False),
     ("sgs history  (ou history)", "histórico de comandos (arquivo .sgs_historico: sobrevive ao F5) · history N · "
                                   "history -c limpa · history -d N apaga um", False),
@@ -1633,22 +1639,22 @@ def sgs_tutorial_cmd(ctx, _args, _opcoes=None):
               _paginas_de_estudo(), abrir="/tutorial")
 
 
-def sgs_visual(ctx, args, _opcoes=None):
-    """sgs visual [powershell|sgs] — a cor da janela desta tela (CMD/PowerShell, o padrão ao abrir, ou a do SGS)."""
-    if args:
-        escolha = args[0].split("=", 1)[-1].strip().lower()
-        try:
-            ctx.config.alterar("visual", "powershell" if escolha in ("cmd", "ps", "windows") else escolha)
-        except ValueError as erro:
-            return falha(f"{erro} (ou cmd, ps, windows = powershell)", config=ctx.config.publica())
-        ctx.config.salvar()
-    atual = ctx.config.valores["visual"]
-    linhas = [[cmd(v, f"sgs visual {v}"), descricao, "← atual" if v == atual else ""]
-              for v, descricao in (("powershell", "CMD/PowerShell (o padrão ao abrir): fundo preto, texto cinza, "
-                                                  "prompt PS ~\\pasta"),
-                                   ("sgs", "o do SGS: prompt verde, caminho em azul"))]
-    return ok(texto(f"✓ visual: {atual}" if args else f"visual atual: {atual}", "ok"),
-              bloco("tabela", colunas=["visual", "como fica", ""], linhas=linhas), config=ctx.config.publica())
+def sgs_cmd(ctx, args, _opcoes=None):
+    """sgs cmd [sgs] — o estilo desta tela. sgs cmd = como o Prompt de Comando do Windows (preto e cinza, o padrão
+    ao abrir) · sgs cmd sgs = as cores do SGS (prompt verde). Sem o "sgs" na frente também vale: cmd · cmd sgs."""
+    escolha = args[0].split("=", 1)[-1].strip().lower() if args else "cmd"
+    escolha = "cmd" if escolha in ("cmd", "ps", "powershell", "windows") else escolha
+    try:
+        ctx.config.alterar("visual", escolha)
+    except ValueError:
+        return falha(f"estilo desconhecido: {args[0]} — use sgs cmd (Prompt de Comando) ou sgs cmd sgs (cores do SGS)",
+                     config=ctx.config.publica())
+    ctx.config.salvar()
+    if escolha == "cmd":
+        return ok(texto("tela no estilo do Prompt de Comando · para as cores do SGS: sgs cmd sgs", "suave"),
+                  config=ctx.config.publica())
+    return ok(texto("tela nas cores do SGS · para voltar ao estilo do Prompt de Comando: sgs cmd", "suave"),
+              config=ctx.config.publica())
 
 
 def sgs_limpar(ctx, _args, _opcoes=None):
@@ -2115,7 +2121,7 @@ SGS = {"ajuda": sgs_ajuda, "help": sgs_ajuda, "gerar": sgs_gerar, "listar": sgs_
        "tipo": sgs_tipos, "editar": sgs_editar, "versao": sgs_editar, "versão": sgs_editar, "app": sgs_app,
        "modulo": sgs_app, "módulo": sgs_app, "ligar": sgs_ligar, "incrementar": sgs_incrementar,
        "modificar": sgs_incrementar, "api": sgs_api, "tutorial": sgs_tutorial_cmd, "hub": sgs_hub,
-       "visual": sgs_visual, "cor": sgs_visual}
+       "cmd": sgs_cmd, "visual": sgs_cmd, "cor": sgs_cmd}
 
 
 def executar_linha(linha, ctx, opcoes=None):
@@ -2175,6 +2181,8 @@ def _executar(linha, ctx, opcoes):
         return sgs_limpar(ctx, [])
     if primeira == "exit":
         return sgs_exit(ctx, [])
+    if primeira == "cmd":                                 # o estilo da tela, sem o sgs: cmd · cmd sgs
+        return sgs_cmd(ctx, partes[1:])
     if primeira == "sgs":
         if len(partes) == 1:
             return sgs_ajuda(ctx, [])
@@ -2208,7 +2216,7 @@ def executar_sgs(linha, ctx, opcoes=None):
 # 7. SERVIDOR HTTP (só costura: lê a requisição, chama a regra, devolve JSON/HTML)
 # =============================================================================
 MANIFEST = json.dumps({
-    "name": NOME_SGS, "short_name": "SGS", "start_url": "/", "scope": "/", "display": "standalone",
+    "name": "SGS", "short_name": "SGS", "description": NOME_SGS, "start_url": "/", "scope": "/", "display": "standalone",
     "background_color": "#0c0c0c", "theme_color": "#0c0c0c",
     "icons": [{"src": "/icone-192.png", "sizes": "192x192", "type": "image/png"},
               {"src": "/icone-512.png", "sizes": "512x512", "type": "image/png"}],
@@ -2399,7 +2407,7 @@ def principal(argv=None):
     ctx = servidor.ctx
     for caixa in OPCOES_CAIXA:                    # ao abrir, TODAS as caixas começam marcadas (desmarque na tela)
         ctx.config.alterar(caixa, True)
-    ctx.config.alterar("visual", "powershell")    # ao abrir, sempre com as cores do CMD/PowerShell
+    ctx.config.alterar("visual", "cmd")           # ao abrir, sempre no estilo do Prompt de Comando (sgs cmd)
     ctx.config.salvar()
     for chave, porta in ctx.servidores.encerrar_orfaos():   # sites de uma tela anterior que caiu sem limpar
         print(f"  porta {porta} liberada (site {chave} que ficou no ar de uma sessão anterior)")
@@ -2435,42 +2443,43 @@ def principal(argv=None):
 #    Texto que vem do servidor entra com textContent (nunca innerHTML).
 # =============================================================================
 PAGINA = r"""<!doctype html>
-<html lang="pt-br" data-visual="powershell">
+<html lang="pt-br" data-visual="cmd">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#0c0c0c">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/icone-192.png">
-<title>SGS - Sistema Gerador de Sistema</title>
+<title>SGS</title>
 <style>
   :root {
     --fundo: #0c0c0c; --painel: #151515; --texto: #cccccc; --forte: #f2f2f2; --suave: #7c7c7c;
     --verde: #16c60c; --ciano: #61d6d6; --amarelo: #e5c07b; --vermelho: #f14c4c; --azul: #6ea8fe;
     --borda: #2c2c2c; --selecao: #264f78;
-    --prompt: var(--verde); --prompt-dir: var(--azul); --prompt-peso: 700; --banner: var(--verde); --cursor: var(--verde);
+    --prompt: var(--verde); --prompt-dir: var(--azul); --prompt-peso: 700; --cursor: var(--verde);
+    --topo: var(--ciano); --marca: var(--verde); --rotulo: var(--suave); --sug-ativa: #1f2a1f; --sug-letra: var(--verde);
     --mono: "Cascadia Mono", "Cascadia Code", Consolas, "DejaVu Sans Mono", "Liberation Mono", monospace;
   }
-  /* visual "powershell" (o padrão ao abrir): as cores Campbell do CMD/PowerShell do Windows Terminal —
-     fundo #0c0c0c, texto cinza #cccccc, prompt "PS ~\pasta>" no mesmo cinza, sem negrito */
-  :root[data-visual="powershell"] {
+  /* estilo "cmd" (o padrão ao abrir · sgs cmd): o Prompt de Comando do Windows — fundo #0c0c0c e TUDO em cinza
+     #cccccc (prompt "~\pasta>" numa linha só, comandos do topo, caixas e botão); cor só no que o comando responde */
+  :root[data-visual="cmd"] {
     --painel: #0c0c0c; --borda: #242424; --forte: #cccccc; --suave: #767676; --amarelo: #f9f1a5;
     --vermelho: #e74856; --azul: #3a96dd; --selecao: #3a3a3a;
-    --prompt: #cccccc; --prompt-dir: #cccccc; --prompt-peso: normal; --banner: #cccccc; --cursor: #cccccc;
+    --prompt: #cccccc; --prompt-dir: #cccccc; --prompt-peso: normal; --cursor: #cccccc;
+    --topo: #cccccc; --marca: #cccccc; --rotulo: #cccccc; --sug-ativa: #262626; --sug-letra: #ffffff;
   }
-  :root[data-visual="powershell"] #caixa.focado { border-color: var(--borda); }
+  :root[data-visual="cmd"] #caixa.focado { border-color: var(--borda); }
+  :root[data-visual="cmd"] .linha-prompt { display: flex; flex-wrap: wrap; align-items: flex-start; }
+  :root[data-visual="cmd"] .linha-comando { flex: 1 1 240px; gap: 0; }
+  .eco-cmd.em-linha .ps1 { display: inline; }   /* o eco guarda o formato de quando foi digitado */
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--fundo); color: var(--texto); font: 14px/1.55 var(--mono); }
   ::selection { background: var(--selecao); color: #fff; }
-  main { max-width: 1100px; margin: 0 auto; padding: 18px 16px 230px; }
-  .banner { color: var(--banner); font-weight: var(--prompt-peso); margin: 0; }
-  /* as 3 linhas de comandos principais: fonte menor, separados por "|" (sem espaço) */
-  .principais { margin: 2px 0 8px; font-size: 12px; line-height: 1.5; color: var(--suave); }
-  .principais p { margin: 0; overflow-wrap: anywhere; }
-  .principais .cmd { text-decoration: none; }
-  .principais .cmd:hover { text-decoration: underline; }
-  .visual-op.ativo { color: var(--fundo); background: var(--ciano); padding: 0 3px; }
-  .visual-op.ativo:hover { color: var(--fundo); text-decoration: none; }
+  main { padding: 10px 16px 190px; }
+  /* os comandos principais (sem o "sgs" na frente): fonte menor, separados por "|", até o fim da tela */
+  .principais { margin: 0 0 8px; font-size: 12px; line-height: 1.5; color: var(--suave); overflow-wrap: anywhere; }
+  .principais .cmd { color: var(--topo); text-decoration: none; white-space: nowrap; }   /* "api config" não parte */
+  .principais .cmd:hover { color: #ffffff; text-decoration: underline; }
   .eco-cmd { margin-top: 14px; color: var(--forte); white-space: pre-wrap; overflow-wrap: anywhere; }
   .eco-cmd .ps1 { display: block; }
   .seta { color: var(--prompt); font-weight: var(--prompt-peso); white-space: nowrap; }
@@ -2502,16 +2511,16 @@ PAGINA = r"""<!doctype html>
   /* ---- caixa do prompt (fixa embaixo) ---- */
   #prompt { position: fixed; left: 0; right: 0; bottom: 0; padding: 18px 16px 14px;
             background: linear-gradient(to bottom, transparent, var(--fundo) 18px); }
-  #caixa { position: relative; max-width: 1100px; margin: 0 auto; background: var(--painel); border: 1px solid var(--borda);
-           border-radius: 6px; padding: 10px 12px 8px; }
+  #caixa { position: relative; margin: 0; background: var(--painel); border: 1px solid var(--borda);
+           border-radius: 6px; padding: 8px 10px 7px; }
   /* ---- INTELLISENSE: até 5 sugestões acima do prompt (clique escolhe) e a sugestão "fantasma" na linha (TAB) ---- */
   #sugestoes { position: absolute; left: 12px; right: 12px; bottom: calc(100% + 4px); z-index: 5; background: var(--painel);
                border: 1px solid #3d3d3d; border-radius: 6px; padding: 4px 0; box-shadow: 0 -6px 18px rgba(0, 0, 0, .55); }
   .sug { display: flex; gap: 14px; align-items: baseline; padding: 2px 12px; cursor: pointer; }
-  .sug.ativa { background: #1f2a1f; }
+  .sug.ativa { background: var(--sug-ativa); }
   .sug:hover { background: var(--selecao); }
   .sug-cmd { color: var(--texto); white-space: pre; }
-  .sug-cmd b { color: var(--verde); font-weight: 700; }
+  .sug-cmd b { color: var(--sug-letra); font-weight: 700; }
   .sug-desc { margin-left: auto; color: var(--suave); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
               font-size: 12.5px; }
   .sug-tab { color: var(--suave); font-size: 11.5px; border: 1px solid var(--borda); border-radius: 3px; padding: 0 4px; }
@@ -2532,20 +2541,23 @@ PAGINA = r"""<!doctype html>
   #caixa:not(.focado) #cursor { outline: 1px solid var(--cursor); outline-offset: -1px; }
   @keyframes piscar { 50% { background: transparent; color: var(--forte); } }
   #dica { color: var(--suave); }
-  .opcoes { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: center; margin-top: 8px; color: var(--suave);
-            font-size: 12.5px; }
-  .opcoes label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
-  .opcoes input { accent-color: var(--verde); margin: 0; }
-  #enviar { margin-left: auto; font: inherit; background: transparent; color: var(--verde); border: 1px solid var(--verde);
-            border-radius: 4px; padding: 3px 12px; cursor: pointer; }
-  #enviar:hover { background: var(--verde); color: var(--fundo); }
+  /* rodapé: as caixas numa linha só (se faltar largura, rola de lado); no estilo cmd, só preto e cinza */
+  .opcoes { display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; margin-top: 6px; color: var(--rotulo);
+            font-size: 11.5px; white-space: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .opcoes label { display: inline-flex; gap: 5px; align-items: center; cursor: pointer; flex: none; }
+  .opcoes input { appearance: none; flex: none; width: 11px; height: 11px; margin: 0; cursor: pointer;
+                  border: 1px solid var(--marca); border-radius: 1px; background: var(--fundo); }
+  .opcoes input:checked { background: var(--marca); box-shadow: inset 0 0 0 2px var(--fundo); }
+  .opcoes input:focus-visible { outline: 1px solid #ffffff; outline-offset: 1px; }
+  #enviar { margin-left: auto; flex: none; font: inherit; background: transparent; color: var(--marca);
+            border: 1px solid var(--marca); border-radius: 3px; padding: 0 7px; cursor: pointer; }
+  #enviar:hover { background: var(--marca); color: var(--fundo); }
   #enviar:disabled { opacity: .4; cursor: wait; }
 </style>
 </head>
 <body>
 <main>
-  <p class="banner">SGS - Sistema Gerador de Sistema</p>
-  <div class="principais" id="principais"></div>
+  <p class="principais" id="principais"></p>
   <section id="saida"></section>
 </main>
 <div id="prompt">
@@ -2561,7 +2573,7 @@ PAGINA = r"""<!doctype html>
       </div>
       </div>
     </div>
-    <div class="opcoes">
+    <div class="opcoes" title="as caixas valem para o sgs gerar (e ficam salvas)">
       <label><input type="checkbox" data-opcao="django"> + Django (site)</label>
       <label><input type="checkbox" data-opcao="exercicio"> Modo exercício</label>
       <label><input type="checkbox" data-opcao="testar"> Rodar testes</label>
@@ -2569,8 +2581,7 @@ PAGINA = r"""<!doctype html>
       <label><input type="checkbox" data-opcao="comentarios"> Comentários no código</label>
       <label><input type="checkbox" data-opcao="comentarios_web"> Notas na web</label>
       <label><input type="checkbox" data-opcao="perguntar"> Perguntar antes de gerar</label>
-      <span class="suave">(valem para o sgs gerar)</span>
-      <button id="enviar" type="button">Executar ⏎</button>
+      <button id="enviar" type="button" title="Executar (Enter)" aria-label="Executar">⏎</button>
     </div>
   </div>
 </div>
@@ -2579,15 +2590,16 @@ const $ = (id) => document.getElementById(id);
 const saida = $("saida"), ta = $("texto"), caixa = $("caixa");
 // As 3 linhas de comandos principais: [comando, preencher?] — preencher = só escreve no prompt (falta o NN…).
 // A 1ª linha começa pela cor da janela (CMD/PowerShell ou SGS).
+// Os comandos principais do topo, mostrados SEM o "sgs" na frente (o clique manda o comando inteiro).
+// [comando, preencher?] — preencher = só escreve no prompt (falta o NN…). O "sgs" sozinho aparece como "ajuda".
 const PRINCIPAIS = [
-  [["sgs", false], ["sgs gerar ", true], ["sgs listar", false], ["sgs comand", false], ["sgs rodar ", true],
-   ["sgs estilo", false], ["sgs padroes", false], ["sgs config", false], ["clear", false]],
-  [["sgs info ", true], ["sgs testar ", true], ["sgs servidores", false], ["sgs parar ", true], ["sgs editar ", true],
-   ["sgs app ", true], ["sgs ligar ", true], ["sgs incrementar ", true], ["sgs api config ", true], ["history", false]],
-  [["sgs dominios", false], ["sgs tipos ", true], ["sgs tema", false], ["sgs comandos ", true], ["sgs cancelar", false],
-   ["sgs tutorial", false], ["sgs wiki", false], ["sgs hub", false], ["sgs visual", false]],
+  ["sgs", false], ["sgs gerar ", true], ["sgs listar", false], ["sgs comand", false], ["sgs rodar ", true],
+  ["sgs estilo", false], ["sgs padroes", false], ["sgs config", false], ["clear", false],
+  ["sgs info ", true], ["sgs testar ", true], ["sgs servidores", false], ["sgs parar ", true], ["sgs editar ", true],
+  ["sgs app ", true], ["sgs ligar ", true], ["sgs incrementar ", true], ["sgs api config ", true], ["history", false],
+  ["sgs dominios", false], ["sgs tipos ", true], ["sgs tema", false], ["sgs comandos ", true], ["sgs cancelar", false],
+  ["sgs tutorial", false], ["sgs wiki", false], ["sgs hub", false], ["sgs cmd ", true]
 ];
-const VISUAIS = [["powershell", "CMD/PowerShell"], ["sgs", "SGS"]];
 const historico = [];             // cópia do arquivo .sgs_historico (vem do servidor: sobrevive ao F5)
 let posHist = 0;
 let prompt = { cwd: "~", venv: "" };
@@ -2614,12 +2626,12 @@ function rolar() { window.scrollTo({ top: document.body.scrollHeight }); }
 
 /* ---------- prompt (PS1) e cursor de bloco ---------- */
 // Linha 1 do prompt: "(venv) sgs@ilp037:~/caminho" — a linha 2 é o "$>" com o comando (caminho longo não espreme nada).
-// No visual CMD/PowerShell: "(venv) PS ~\caminho" e embaixo ">" com o comando.
-function modoPS() { return document.documentElement.dataset.visual !== "sgs"; }
-function seta() { return modoPS() ? ">" : "$>"; }
+// No estilo cmd (sgs cmd): como o Prompt de Comando, numa linha só — "(venv) ~\caminho>comando".
+function modoCmd() { return document.documentElement.dataset.visual !== "sgs"; }
+function seta() { return modoCmd() ? ">" : "$>"; }
 function ps1(p) {
   const venv = p.venv ? el("span", { class: "venv" }, `(${p.venv}) `) : null;
-  if (modoPS()) return [venv, "PS ", el("span", { class: "dir" }, p.cwd.replaceAll("/", "\\"))];
+  if (modoCmd()) return [venv, el("span", { class: "dir" }, p.cwd.replaceAll("/", "\\"))];
   return [venv, "sgs@ilp037:", el("span", { class: "dir" }, p.cwd)];
 }
 function desenharPrompt() {
@@ -2756,32 +2768,11 @@ function comandoClicavel(rotulo, comando, preencher) {
   s.addEventListener("click", () => (preencher ? escrever(comando) : executar(comando)));
   return s;
 }
-// A cor da janela: muda na hora e grava no sgs config (visual=powershell|sgs).
-function marcarVisual() {
-  for (const s of document.querySelectorAll(".visual-op"))
-    s.classList.toggle("ativo", s.dataset.visual === document.documentElement.dataset.visual);
-}
-async function trocarVisual(v) {
-  document.documentElement.dataset.visual = v;
-  marcarVisual();
-  desenharPrompt();
-  try {
-    const r = await fetch("/config", { method: "POST", headers: { "Content-Type": "application/json" },
-                                       body: JSON.stringify({ visual: v }) });
-    aplicarConfig((await r.json()).config);
-  } catch (e) { /* sem servidor: vale só para esta página */ }
-}
-function seletorVisual() {
-  return el("span", { class: "visuais" }, "janela[",
-    VISUAIS.flatMap(([v, rotulo], i) => [i ? "|" : "", el("span", { class: "cmd visual-op", "data-visual": v,
-      title: `cor da janela: ${rotulo}`, onclick: () => trocarVisual(v) }, rotulo)]), "]");
-}
-PRINCIPAIS.forEach((linha, n) => {
-  const itens = linha.map(([c, preencher]) => comandoClicavel(c.trim(), c, preencher));
-  if (n === 0) itens.unshift(seletorVisual());
-  $("principais").append(el("p", {}, itens.flatMap((x, i) => [i ? "|" : "", x])));
-});
-marcarVisual();
+$("principais").append(...PRINCIPAIS.flatMap(([c, preencher], i) => {
+  const item = comandoClicavel(c.trim() === "sgs" ? "ajuda" : c.trim().replace(/^sgs /, ""), c, preencher);
+  item.title = `${c.trim()} — ${item.title}`;                       // o comando inteiro aparece ao passar o mouse
+  return [i ? "|" : "", item];
+}));
 
 /* ---------- desenhar as respostas ---------- */
 function celula(c) {
@@ -2912,9 +2903,8 @@ function voltarPrincipal() {
 const caixas = [...document.querySelectorAll("[data-opcao]")];
 function aplicarConfig(c) {
   for (const cx of caixas) cx.checked = !!c[cx.dataset.opcao];
-  if (c.visual && c.visual !== document.documentElement.dataset.visual) {   // sgs visual … ou a escolha no topo
+  if (c.visual && c.visual !== document.documentElement.dataset.visual) {   // sgs cmd · sgs cmd sgs
     document.documentElement.dataset.visual = c.visual;
-    marcarVisual();
     desenharPrompt();
   }
 }
@@ -2936,9 +2926,10 @@ async function executar(forcado) {
   posHist = historico.length;
   ta.value = "";
   atualizarSugestoes();                                         // linha vazia: a caixa de sugestões fecha
-  // O eco também em duas linhas: o caminho em cima, "$> comando" (ou "> comando" no CMD/PowerShell) embaixo.
-  const eco = el("div", { class: "eco-cmd" }, el("span", { class: "ps1" }, ps1(prompt)),
-                 el("span", { class: "seta" }, seta() + " "), texto || el("span", { class: "suave" }, "(Enter: padrão)"));
+  // O eco como o prompt: no sgs, o caminho em cima e "$> comando" embaixo; no cmd, "~\caminho>comando".
+  const eco = el("div", { class: modoCmd() ? "eco-cmd em-linha" : "eco-cmd" }, el("span", { class: "ps1" }, ps1(prompt)),
+                 el("span", { class: "seta" }, modoCmd() ? seta() : seta() + " "),
+                 texto || el("span", { class: "suave" }, "(Enter: padrão)"));
   saida.append(eco);
   if (telaGuardada && !pergunta && /^\d{1,2}$/.test(texto)) texto = "sgs comand " + texto;   // no módulo: só o número
   const resposta = el("div", { class: "resp" }, el("p", { class: "suave espera" }, "executando "));

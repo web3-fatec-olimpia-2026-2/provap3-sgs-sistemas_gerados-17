@@ -137,3 +137,6 @@ cd "Treino_Prova/exercicios/ex01_strategy_frete" && ALVO=exercicio ../../../.ven
       lado a lado com a Wiki (formatação corrigida: servida da pasta `referencias/`, o CSS carrega) e o Django Study
       Hub (`sgs hub`); três linhas de comandos principais separados por `|`, a 1ª começando pela cor da janela
       (`sgs visual`: CMD/PowerShell, o padrão ao abrir, ou a do SGS)
+- [x] Tela no estilo do Prompt de Comando: `sgs cmd` (o padrão ao abrir; também `cmd`) e `sgs cmd sgs` (as cores do
+      SGS) no lugar do seletor do topo; topo sem o nome, com os comandos sem o `sgs` até o fim da tela; barra da
+      janela só "SGS"; prompt `~\caminho>` numa linha; caixas do rodapé numa linha, sem cor

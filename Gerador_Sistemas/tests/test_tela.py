@@ -391,7 +391,8 @@ def test_todos_os_comandos_listados_funcionam_com_e_sem_sgs(ctx, tmp_path):
                  {"sgs", "sgs listar", "sgs info 01", "sgs comandos 01", "sgs ligar 01", "sgs incrementar 01",
                   "sgs padroes", "sgs dominios saude", "sgs tipos nome, idade", "sgs config", "sgs estilo", "sgs tema",
                   "sgs pwa", "sgs servidores", "sgs comand", "sgs comand 3", "sgs wiki", "sgs cancelar", "sgs exit",
-                  "sgs clear", "sgs cls", "sgs history", "sgs help", "sgs tutorial", "sgs hub", "sgs visual"})
+                  "sgs clear", "sgs cls", "sgs history", "sgs help", "sgs tutorial", "sgs hub", "sgs cmd", "sgs cmd sgs", "cmd",
+                  "cmd sgs"})
     formas = sgs + [forma for linha in TERMINAL_VERIFICADOS for forma in (linha, f"sgs {linha}")]
     falhas = []
     for linha in formas:
@@ -980,27 +981,30 @@ def postar(porta, caminho, dados):
     return status, json.loads(corpo)
 
 
-def test_pagina_tem_as_duas_linhas_do_topo_e_o_terminal(servidor):
+def test_pagina_tem_os_comandos_do_topo_e_o_terminal(servidor):
     status, tipo, html = pedir(servidor, "GET", "/")
     html = html.decode("utf-8")
     assert status == 200 and tipo.startswith("text/html")
-    assert '<p class="banner">SGS - Sistema Gerador de Sistema</p>' in html
+    assert "<title>SGS</title>" in html and 'class="banner"' not in html   # na barra só a sigla; topo sem o nome
+    assert "Sistema Gerador de Sistema" not in html
     principais = re.search(r"const PRINCIPAIS = (\[.*?\]);", html, re.S).group(1)
     assert '"sgs comand"' in principais and "pwa" not in principais       # pwa só na lista completa
-    linhas = json.loads(re.sub(r",\s*\]", "]", principais))                # as 3 linhas de comandos principais
-    assert len(linhas) == 3 and linhas[0][0] == ["sgs", False]
-    todos = {c.strip() for linha in linhas for c, _ in linha}
-    assert {"sgs gerar", "sgs listar", "sgs rodar", "sgs estilo", "sgs config", "clear",          # as de antes
-            "sgs info", "sgs parar", "sgs app", "sgs ligar", "sgs incrementar", "sgs api config", "sgs dominios",
-            "sgs tipos", "sgs tutorial", "sgs wiki", "sgs hub", "sgs visual"} <= todos
-    assert 'class="principais"' in html and 'i ? "|" : ""' in html        # separados por "|" sem espaço
-    assert 'const VISUAIS = [["powershell", "CMD/PowerShell"], ["sgs", "SGS"]]' in html   # 1º: a cor da janela
-    assert '<html lang="pt-br" data-visual="powershell">' in html         # abre sempre como o CMD/PowerShell
-    assert ':root[data-visual="powershell"]' in html and "#0c0c0c" in html and "--prompt: #cccccc" in html
+    comandos = {c.strip() for c, _ in json.loads(principais)}
+    assert {"sgs", "sgs gerar", "sgs listar", "sgs rodar", "sgs estilo", "sgs config", "clear", "sgs info",
+            "sgs parar", "sgs app", "sgs ligar", "sgs incrementar", "sgs api config", "sgs dominios", "sgs tipos",
+            "sgs tutorial", "sgs wiki", "sgs hub", "sgs cmd"} <= comandos
+    assert 'c.trim().replace(/^sgs /, "")' in html                         # no topo, sem o "sgs" na frente
+    assert '<p class="principais" id="principais"></p>' in html and '[i ? "|" : "", item]' in html   # "|" sem espaço
+    assert "max-width: 1100px" not in html                                 # até o fim da tela
+    assert "VISUAIS" not in html and "janela[" not in html                  # o estilo muda por comando (sgs cmd)
+    assert '<html lang="pt-br" data-visual="cmd">' in html                 # abre sempre no estilo cmd
+    assert ':root[data-visual="cmd"]' in html and "#0c0c0c" in html and "--prompt: #cccccc" in html
+    assert "--marca: #cccccc" in html and "appearance: none" in html      # caixas do rodapé sem cor
+    assert "flex-wrap: nowrap" in html and "(valem para o sgs gerar)" not in html   # rodapé numa linha só
     assert "exemplos" not in html.lower()                                 # sem exemplos na tela inicial
     assert 'id="cursor"' in html and 'rel="manifest"' in html and "serviceWorker" in html
-    assert 'class="ps1-linha"' in html and 'id="seta">&gt;</span>' in html    # prompt em 2 linhas: ">" embaixo
-    assert '"PS "' in html and 'modoPS() ? ">" : "$>"' in html             # PS ~\pasta · no visual sgs, "$>"
+    assert 'class="ps1-linha"' in html and 'id="seta">&gt;</span>' in html
+    assert 'modoCmd() ? ">" : "$>"' in html and 'replaceAll("/", "\\\\")' in html   # ~\pasta> · no sgs, "$>"
     assert "trocarHistorico(d.historico)" in html                          # o histórico volta depois do F5
     for opcao in ("django", "exercicio", "testar", "estudo", "comentarios", "comentarios_web", "perguntar"):
         assert f'data-opcao="{opcao}"' in html                           # as caixas da geração
@@ -1093,13 +1097,19 @@ def test_sgs_tutorial_hub_e_wiki_abrem_lado_a_lado(ctx):
         assert [c["href"] for c in botoes[0]["itens"]] == ["/tutorial", "/referencia", "/hub"], comando
 
 
-def test_sgs_visual_troca_a_cor_da_janela(ctx):
-    assert ctx.config.valores["visual"] == "powershell"                    # o padrão: CMD/PowerShell
-    r = rodar(ctx, "sgs visual sgs")
-    assert r["ok"] and r["config"]["visual"] == "sgs"
-    assert rodar(ctx, "sgs visual cmd")["config"]["visual"] == "powershell"   # cmd/ps/windows = powershell
-    assert rodar(ctx, "sgs visual roxo")["ok"] is False
-    assert rodar(ctx, "sgs visual")["config"]["visual"] == "powershell"    # sozinho: mostra as duas
+def test_sgs_cmd_troca_o_estilo_da_tela(ctx, tmp_path):
+    assert ctx.config.valores["visual"] == "cmd"                           # o padrão: Prompt de Comando
+    r = rodar(ctx, "sgs cmd sgs")
+    assert r["ok"] and r["config"]["visual"] == "sgs" and "sgs cmd" in textos(r)
+    assert rodar(ctx, "sgs cmd")["config"]["visual"] == "cmd"              # sozinho: volta ao estilo cmd
+    assert rodar(ctx, "cmd sgs")["config"]["visual"] == "sgs"              # sem o sgs na frente também
+    assert rodar(ctx, "cmd")["config"]["visual"] == "cmd"
+    assert rodar(ctx, "sgs cmd roxo")["ok"] is False
+    assert rodar(ctx, "sgs visual sgs")["config"]["visual"] == "sgs"       # o nome antigo continua valendo
+    (tmp_path / "antigo.json").write_text(json.dumps({"visual": "powershell"}), encoding="utf-8")
+    assert tela.Config(tmp_path / "antigo.json").valores["visual"] == "cmd"   # config antiga → cmd
+    itens = {i["cmd"] for i in tela.sugestoes(ctx)}
+    assert {"sgs cmd", "sgs cmd sgs", "cmd", "cmd sgs"} <= itens            # no intellisense
 
 
 @pytest.mark.parametrize("metodo, caminho, corpo, cabecalhos, esperado", [
