@@ -212,8 +212,17 @@ CATALOGO = [
      "Sites passam a abrir numa ABA do navegador. sgs pwa=true volta ao padrão: janela de app (PWA isolado).",
      "sgs pwa=true | sgs pwa=false | sgs pwa", "sgs pwa=false", "PWA desligado: os sites abrem numa aba comum",
      "O padrão é PWA: janela própria, sem abas nem barra de endereço.", "comando sgs"),
-    ("sgs wiki", "8 · SGS", "Abre a cópia da Wikipédia com a lista dos padrões GoF.", "sgs wiki", "sgs wiki",
+    ("sgs wiki", "8 · SGS", "Abre a cópia da Wikipédia com a lista dos padrões GoF (com o layout da Wikipédia).",
+     "sgs wiki", "sgs wiki", "(abre a página)", "No topo: Tutorial | Wiki · padrões GoF | Django Study Hub.",
+     "comando sgs"),
+    ("sgs tutorial", "8 · SGS", "Tutorial prático: classe nova, ligar classes, campos, o padrão de um campo "
+     "(tipo, @property, lista…), padrões de projeto e API.", "sgs tutorial", "sgs tutorial",
+     "o resumo em 9 passos + a página /tutorial", "Abre ao lado da Wiki e do Django Study Hub.", "comando sgs"),
+    ("sgs hub", "8 · SGS", "Abre a cópia do Django Study Hub (models, views, ORM, forms, DRF).", "sgs hub", "sgs hub",
      "(abre a página)", "", "comando sgs"),
+    ("sgs visual", "8 · SGS", "A cor da janela desta tela: CMD/PowerShell (padrão ao abrir) ou a do SGS.",
+     "sgs visual [powershell|sgs]", "sgs visual sgs", "a tela passa para o prompt verde do SGS",
+     "Também no topo da tela: janela[CMD/PowerShell|SGS].", "comando sgs"),
     ("sgs comand", "8 · SGS", "Este módulo: a lista numerada dos comandos.", "sgs comand [n]", "sgs comand 24",
      "(a explicação do comando 24)", "Dentro do módulo, digitar só o número também funciona.", "comando sgs"),
     ("sgs exit", "8 · SGS", "Sai do módulo comand e volta para a tela principal (como estava).", "sgs exit   ou   exit",
@@ -227,7 +236,7 @@ CATALOGO = [
 SO_LEITURA = ("pwd", "ls", "cd", "tree", "cat ", "head ", "tail ", "python --version", "which ", "pip list",
               "python manage.py check", "python manage.py showmigrations", "git status", "history",
               "sgs listar", "sgs info", "sgs padroes", "sgs dominios", "sgs servidores", "sgs comand", "sgs wiki",
-              "sgs cancelar", "sgs tipos")
+              "sgs cancelar", "sgs tipos", "sgs tutorial", "sgs hub")
 
 
 def _comando_executavel(exemplo):

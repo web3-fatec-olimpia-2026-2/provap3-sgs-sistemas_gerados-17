@@ -133,3 +133,7 @@ cd "Treino_Prova/exercicios/ex01_strategy_frete" && ALVO=exercicio ../../../.ven
       escolhe) e verificação de todos os comandos listados, com e sem `sgs`
 - [x] `sgs api config NN`: os campos de cada endpoint da API (v1 e resumo de cada app) expostos ou ocultos, campo a
       campo (gravado no `config/settings.py`); `?campos=` escolhe entre os expostos; `/api/v1/campos/` lista
+- [x] `sgs tutorial` (classe nova, ligar, campos, padrão de um campo: tipo, @property, lista; padrões de projeto; API)
+      lado a lado com a Wiki (formatação corrigida: servida da pasta `referencias/`, o CSS carrega) e o Django Study
+      Hub (`sgs hub`); três linhas de comandos principais separados por `|`, a 1ª começando pela cor da janela
+      (`sgs visual`: CMD/PowerShell, o padrão ao abrir, ou a do SGS)

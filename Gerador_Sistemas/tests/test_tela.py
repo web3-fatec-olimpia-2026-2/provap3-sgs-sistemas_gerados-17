@@ -391,7 +391,7 @@ def test_todos_os_comandos_listados_funcionam_com_e_sem_sgs(ctx, tmp_path):
                  {"sgs", "sgs listar", "sgs info 01", "sgs comandos 01", "sgs ligar 01", "sgs incrementar 01",
                   "sgs padroes", "sgs dominios saude", "sgs tipos nome, idade", "sgs config", "sgs estilo", "sgs tema",
                   "sgs pwa", "sgs servidores", "sgs comand", "sgs comand 3", "sgs wiki", "sgs cancelar", "sgs exit",
-                  "sgs clear", "sgs cls", "sgs history", "sgs help"})
+                  "sgs clear", "sgs cls", "sgs history", "sgs help", "sgs tutorial", "sgs hub", "sgs visual"})
     formas = sgs + [forma for linha in TERMINAL_VERIFICADOS for forma in (linha, f"sgs {linha}")]
     falhas = []
     for linha in formas:
@@ -987,9 +987,20 @@ def test_pagina_tem_as_duas_linhas_do_topo_e_o_terminal(servidor):
     assert '<p class="banner">SGS - Sistema Gerador de Sistema</p>' in html
     principais = re.search(r"const PRINCIPAIS = (\[.*?\]);", html, re.S).group(1)
     assert '"sgs comand"' in principais and "pwa" not in principais       # pwa só na lista completa
+    linhas = json.loads(re.sub(r",\s*\]", "]", principais))                # as 3 linhas de comandos principais
+    assert len(linhas) == 3 and linhas[0][0] == ["sgs", False]
+    todos = {c.strip() for linha in linhas for c, _ in linha}
+    assert {"sgs gerar", "sgs listar", "sgs rodar", "sgs estilo", "sgs config", "clear",          # as de antes
+            "sgs info", "sgs parar", "sgs app", "sgs ligar", "sgs incrementar", "sgs api config", "sgs dominios",
+            "sgs tipos", "sgs tutorial", "sgs wiki", "sgs hub", "sgs visual"} <= todos
+    assert 'class="principais"' in html and 'i ? "|" : ""' in html        # separados por "|" sem espaço
+    assert 'const VISUAIS = [["powershell", "CMD/PowerShell"], ["sgs", "SGS"]]' in html   # 1º: a cor da janela
+    assert '<html lang="pt-br" data-visual="powershell">' in html         # abre sempre como o CMD/PowerShell
+    assert ':root[data-visual="powershell"]' in html and "#0c0c0c" in html and "--prompt: #cccccc" in html
     assert "exemplos" not in html.lower()                                 # sem exemplos na tela inicial
     assert 'id="cursor"' in html and 'rel="manifest"' in html and "serviceWorker" in html
-    assert 'class="ps1-linha"' in html and 'id="seta">$&gt;</span>' in html   # prompt em 2 linhas: "$>" embaixo
+    assert 'class="ps1-linha"' in html and 'id="seta">&gt;</span>' in html    # prompt em 2 linhas: ">" embaixo
+    assert '"PS "' in html and 'modoPS() ? ">" : "$>"' in html             # PS ~\pasta · no visual sgs, "$>"
     assert "trocarHistorico(d.historico)" in html                          # o histórico volta depois do F5
     for opcao in ("django", "exercicio", "testar", "estudo", "comentarios", "comentarios_web", "perguntar"):
         assert f'data-opcao="{opcao}"' in html                           # as caixas da geração
@@ -1022,9 +1033,73 @@ def test_config_pelo_servidor(servidor):
 
 
 def test_referencia_da_wikipedia(servidor):
-    status, tipo, html = pedir(servidor, "GET", "/referencia")
+    """/referencia leva para a pasta referencias/: assim o CSS da cópia (caminho relativo) carrega — a formatação
+    da Wikipédia volta. A barra Tutorial | Wiki | Hub entra só na resposta (o arquivo não muda)."""
+    status, _, _ = pedir(servidor, "GET", "/referencia")
+    assert status == 302
+    status, tipo, html = pedir(servidor, "GET", "/referencias/wikipedia_padrao_de_projeto_de_software.html")
     html = html.decode("utf-8")
-    assert status == 200 and "oldid=" in html and "22/11/2026" in html and "Abstract Factory" in html
+    assert status == 200 and tipo.startswith("text/html")
+    assert "oldid=" in html and "22/11/2026" in html and "Abstract Factory" in html
+    assert 'href="/tutorial"' in html and 'href="/hub"' in html             # lado a lado com o tutorial
+    css = re.search(r'href="(wikipedia_padrao_de_projeto_de_software_arquivos/[^"]+\.css)"', html).group(1)
+    status, tipo, _ = pedir(servidor, "GET", "/referencias/" + css)
+    assert status == 200 and tipo.startswith("text/css")
+    arquivo = (tela.PASTA_REFERENCIAS / "wikipedia_padrao_de_projeto_de_software.html").read_text(encoding="utf-8")
+    assert 'href="/tutorial"' not in arquivo                               # a cópia fica intacta
+
+
+def test_tutorial_e_django_study_hub(servidor):
+    status, tipo, html = pedir(servidor, "GET", "/tutorial")
+    html = html.decode("utf-8")
+    assert status == 200 and tipo.startswith("text/html")
+    for trecho in ("sgs app", "sgs ligar", "sgs incrementar", "@property", "sgs api config", 'href="/referencia"',
+                   'href="/hub"'):
+        assert trecho in html, trecho
+    status, _, _ = pedir(servidor, "GET", "/hub")
+    assert status == 302
+    status, tipo, html = pedir(servidor, "GET", "/referencias/django_study_hub.html")
+    assert status == 200 and 'href="/tutorial"' in html.decode("utf-8")
+
+
+def test_respostas_grandes_vao_em_gzip_se_o_navegador_aceitar(servidor):
+    """Pelo repasse localhost do WSL2, respostas de ~200 KB travavam no fim: o texto grande vai comprimido."""
+    import gzip
+    css = "/referencias/wikipedia_padrao_de_projeto_de_software_arquivos/estilo1.css"
+    conexao = http.client.HTTPConnection("127.0.0.1", servidor, timeout=10)
+    conexao.request("GET", css, headers={"Accept-Encoding": "gzip, deflate, br"})
+    r = conexao.getresponse()
+    comprimido = r.read()
+    assert r.status == 200 and r.getheader("Content-Encoding") == "gzip"
+    assert int(r.getheader("Content-Length")) == len(comprimido) < 60_000
+    original = (tela.PASTA_REFERENCIAS / css.removeprefix("/referencias/")).read_bytes()
+    assert gzip.decompress(comprimido) == original
+    status, _, corpo = pedir(servidor, "GET", css)                       # sem Accept-Encoding: como está
+    assert status == 200 and corpo == original
+
+
+@pytest.mark.parametrize("caminho", ["/referencias/../tela_prompt.py", "/referencias/%2e%2e/tela_prompt.py",
+                                     "/referencias/README.md", "/referencias/nada.html"])
+def test_referencias_nao_servem_fora_da_pasta_nem_outros_tipos(servidor, caminho):
+    assert pedir(servidor, "GET", caminho)[0] == 404
+
+
+def test_sgs_tutorial_hub_e_wiki_abrem_lado_a_lado(ctx):
+    r = rodar(ctx, "sgs tutorial")
+    assert r["ok"] and r["abrir"] == "/tutorial"
+    assert "sgs incrementar" in textos(r) and "sgs ligar" in textos(r)
+    for comando in ("sgs tutorial", "sgs wiki", "sgs hub"):
+        botoes = [b for b in rodar(ctx, comando)["blocos"] if b["t"] == "botoes"]
+        assert [c["href"] for c in botoes[0]["itens"]] == ["/tutorial", "/referencia", "/hub"], comando
+
+
+def test_sgs_visual_troca_a_cor_da_janela(ctx):
+    assert ctx.config.valores["visual"] == "powershell"                    # o padrão: CMD/PowerShell
+    r = rodar(ctx, "sgs visual sgs")
+    assert r["ok"] and r["config"]["visual"] == "sgs"
+    assert rodar(ctx, "sgs visual cmd")["config"]["visual"] == "powershell"   # cmd/ps/windows = powershell
+    assert rodar(ctx, "sgs visual roxo")["ok"] is False
+    assert rodar(ctx, "sgs visual")["config"]["visual"] == "powershell"    # sozinho: mostra as duas
 
 
 @pytest.mark.parametrize("metodo, caminho, corpo, cabecalhos, esperado", [
