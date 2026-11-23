@@ -1,0 +1,174 @@
+{
+  "atributos": [
+    {
+      "max": null,
+      "min": null,
+      "nome": "viajante",
+      "regra": "obrigatorio",
+      "tipo": "str"
+    },
+    {
+      "max": null,
+      "min": 1,
+      "nome": "voo",
+      "regra": "minimo",
+      "tipo": "int"
+    },
+    {
+      "max": 30,
+      "min": 1,
+      "nome": "noites",
+      "regra": "faixa",
+      "tipo": "int"
+    },
+    {
+      "max": null,
+      "min": 0,
+      "nome": "valor_noite",
+      "regra": "minimo",
+      "tipo": "float"
+    },
+    {
+      "max": null,
+      "min": null,
+      "nome": "observacao",
+      "regra": "livre",
+      "tipo": "str"
+    }
+  ],
+  "categorias": {
+    "base": [
+      "Economico",
+      "Pacote econômico",
+      350.0
+    ],
+    "nova": [
+      "Aventura",
+      "Pacote aventura",
+      480.0
+    ],
+    "subtipos": [
+      [
+        "Executivo",
+        "Pacote executivo",
+        650.0
+      ],
+      [
+        "Luxo",
+        "Pacote luxo",
+        1200.0
+      ]
+    ],
+    "unidade": "noite"
+  },
+  "comentarios": true,
+  "django": true,
+  "entidade": "Viagcert",
+  "estudo": true,
+  "extras": {
+    "fixos": [
+      [
+        "SeguroViagem",
+        90.0,
+        "seguro viagem"
+      ],
+      [
+        "Translado",
+        120.0,
+        "translado"
+      ],
+      [
+        "PasseioGuiado",
+        150.0,
+        "passeio guiado"
+      ]
+    ],
+    "percentual": [
+      "AltaTemporada",
+      1.25,
+      "+25% alta temporada"
+    ]
+  },
+  "gateway": "PagaTur",
+  "ident": "viajante",
+  "nomes": [
+    "Elisa",
+    "Fábio",
+    "Gabriela",
+    "Henrique"
+  ],
+  "padroes": [
+    "encapsulamento",
+    "polimorfismo",
+    "srp",
+    "service",
+    "mvvm",
+    "singleton",
+    "factory_method",
+    "abstract_factory",
+    "adapter",
+    "composite",
+    "decorator",
+    "facade",
+    "state",
+    "strategy"
+  ],
+  "painel": {
+    "acao_livre": "Reservar",
+    "acao_ocupado": "(lista de espera)",
+    "contagem": "voo(s) com assento",
+    "livre": "com assentos",
+    "ocupado": "ESGOTADO",
+    "titulo": "Voo",
+    "zero": "ESGOTADO - nenhum voo com assento"
+  },
+  "preco": "valor_noite",
+  "precos_exemplo": [
+    350.0,
+    280.0,
+    520.0,
+    0.0
+  ],
+  "quantidade": "noites",
+  "recurso": "voo",
+  "recursos": [
+    301,
+    302,
+    303
+  ],
+  "sistema": "ViagemCerta",
+  "unidade": "noite(s)",
+  "variantes": {
+    "conceito": "tipo de cliente",
+    "itens": [
+      [
+        "Comum",
+        1.0
+      ],
+      [
+        "Fidelidade",
+        0.92
+      ],
+      [
+        "Corporativo",
+        0.85
+      ]
+    ],
+    "nova": [
+      "Estudante",
+      0.8
+    ]
+  },
+  "web": {
+    "comentarios_web": true,
+    "estilo": "web",
+    "estrutura": "plana",
+    "id_interno": true,
+    "id_publico": "uuid",
+    "lnnl_tipo": "25",
+    "paleta": "P02",
+    "seguranca": "baseline",
+    "tema": "T03",
+    "tom": "tom3"
+  }
+}

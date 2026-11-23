@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exercícios — ViagemCerta</title>
+<style>
+body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; max-width: 52rem; margin: 0 auto;
+       padding: 1.5rem 1rem 3rem; line-height: 1.55; color: #1c1c1c; background: #ffffff; }
+h1 { font-size: 1.6rem; margin-bottom: .25rem; }
+h2 { font-size: 1.15rem; margin: 2rem 0 .1rem; border-bottom: 1px solid #d0d7de; padding-bottom: .3rem; }
+.familia, .intro { color: #57606a; }
+.pergunta { border: 1px solid #d0d7de; border-radius: .5rem; padding: .75rem 1rem; margin: .75rem 0; }
+.pergunta p { margin: 0 0 .5rem; }
+summary { display: inline-block; cursor: pointer; padding: .25rem .8rem; border: 1px solid #0969da;
+          border-radius: .4rem; color: #0969da; list-style: none; user-select: none; }
+summary::-webkit-details-marker { display: none; }
+details[open] summary { background: #0969da; color: #ffffff; }
+.resposta { margin-top: .6rem; padding: .6rem .8rem; background: #f6f8fa; border-left: 3px solid #0969da; }
+code { background: #eff1f3; padding: 0 .25rem; border-radius: .25rem; font-size: .92em; }
+@media (prefers-color-scheme: dark) {
+  body { color: #e6edf3; background: #0d1117; }
+  h2, .pergunta { border-color: #30363d; }
+  .familia, .intro { color: #8b949e; }
+  summary { border-color: #4493f8; color: #4493f8; }
+  details[open] summary { background: #4493f8; color: #0d1117; }
+  .resposta { background: #161b22; border-left-color: #4493f8; }
+  code { background: #262c36; }
+}
+</style>
+</head>
+<body>
+<h1>Exercícios — ViagemCerta</h1>
+<p class="intro">Questionário de revisão sobre os 14 padrões deste sistema (formato da P3: o que faz, por que
+assim, o que muda se). Responda de cabeça e depois abra a resposta no botão. O código do sistema está completo —
+não há nada para corrigir; consulte <code>README.md</code>, <code>docs/</code> e <code>nucleo/</code>.</p>
+<section class="padrao">
+<h2>1. Encapsulamento com @property</h2>
+<p class="familia">Fundamento de OO — Aulas 02 e 03</p>
+<article class="pergunta">
+<p><strong>Pergunta 1.</strong> Que problema (smell) leva a usar Encapsulamento com @property neste sistema?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta">Um atributo público aceita qualquer valor: <code>obj.noites = 0</code> ou <code>obj.valor_noite = -50</code> passariam e o <code>total</code> ficaria errado — a regra existiria só na cabeça de quem programa.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 2.</strong> Como Encapsulamento com @property aparece no código deste sistema?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta">O objeto controla o acesso ao próprio estado: cada atributo com regra vira <code>@property</code> + setter que valida ANTES de gravar no atributo interno <code>_nome</code>; o <code>__init__</code> usa <code>self.x = x</code> (passa pelo setter); <code>total</code> é property CALCULADA, sem setter.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 3.</strong> Sobre <code>Viagcert.noites</code> (setter): o que faz, por que foi feito assim e o que muda se for diferente?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><strong>O que faz:</strong> Intercepta toda escrita em <code>noites</code> e só grava se a regra for respeitada; senão levanta <code>ValueError</code>.<br>
+<strong>Por que assim:</strong> Encapsulamento: a regra mora no objeto, num lugar só; como o <code>__init__</code> faz <code>self.noites = ...</code>, vale também na criação. Descartado: validar só na tela.<br>
+<strong>O que muda se:</strong> Sem o setter, um valor inválido entra e o <code>total</code> sai errado; se o <code>__init__</code> gravar direto em <code>_noites</code>, o objeto pode nascer inválido.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 4.</strong> Sobre <code>Viagcert.total</code>: o que faz, por que foi feito assim e o que muda se for diferente?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><strong>O que faz:</strong> Calcula <code>noites × valor_noite</code> na hora.<br>
+<strong>Por que assim:</strong> Dado derivado não se guarda: se fosse atributo, mudar <code>noites</code> deixaria o total desatualizado.<br>
+<strong>O que muda se:</strong> Virando atributo comum, dois dados podem discordar; com setter, alguém gravaria um total que não bate com a conta.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 5.</strong> Quando NÃO vale a pena usar Encapsulamento com @property?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta">Atributo sem regra (texto livre) fica simples — <code>@property</code> sem problema que a justifique é cerimônia. No model Django a regra vai em <code>validators</code>/<code>clean()</code>: setter em campo quebra ModelForm, admin e ORM.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 6.</strong> Que alternativa foi descartada e qual a consequência da escolha feita?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><strong>Alternativa descartada:</strong> Validar só no formulário da tela — não protege quem cria o objeto pelo shell, admin, importação ou outro código.<br>
+<strong>Consequência:</strong> O objeto nunca fica inválido e o erro aparece perto da causa; em troca, quem cria a Viagcert precisa tratar <code>ValueError</code>.</div>
+</details>
+</article>
+</section>
+<section class="padrao">
+<h2>2. Polimorfismo (herança + sobrescrita)</h2>
+<p class="familia">Fundamento de OO — Aula 04</p>
+<article class="pergunta">
+<p><strong>Pergunta 7.</strong> Que problema (smell) leva a usar Polimorfismo (herança + sobrescrita) neste sistema?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><code>imprimir_preco(tipo)</code> decide o texto com <code>if/elif</code> por categoria; cada categoria nova obriga a editar a função (e arriscar as que já funcionavam).</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 8.</strong> Como Polimorfismo (herança + sobrescrita) aparece no código deste sistema?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta">Cada categoria é uma subclasse de <code>Economico</code> que SOBRESCREVE <code>descricao()</code> e <code>preco_unidade()</code>. <code>imprimir_preco(categoria)</code> só chama os métodos — o Python escolhe a versão pelo tipo real do objeto, em tempo de execução.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 9.</strong> Sobre <code>imprimir_preco(categoria)</code>: o que faz, por que foi feito assim e o que muda se for diferente?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><strong>O que faz:</strong> Monta "descrição: R$ preço por noite" de qualquer categoria.<br>
+<strong>Por que assim:</strong> Polimorfismo: não pergunta o tipo (zero <code>if</code>); cada subclasse responde a seu modo.<br>
+<strong>O que muda se:</strong> Com <code>if/elif</code>, o <code>Aventura</code> exigiria editar a função; hoje entra sem mudar uma linha. Se um subtipo não sobrescrever, usa o método da mãe.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 10.</strong> Quando NÃO vale a pena usar Polimorfismo (herança + sobrescrita)?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta">Se as categorias só diferem num número (sem comportamento próprio), um atributo ou tabela basta. Herança só para relação É-UM; TEM-UM é composição.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 11.</strong> Que alternativa foi descartada e qual a consequência da escolha feita?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><strong>Alternativa descartada:</strong> Manter o <code>if/elif</code> por tipo — cada categoria nova reabriria a função.<br>
+<strong>Consequência:</strong> Categoria nova = classe nova; a função não muda. Custo: uma classe por categoria.</div>
+</details>
+</article>
+</section>
+<section class="padrao">
+<h2>3. SRP + OCP (separar responsabilidades)</h2>
+<p class="familia">Princípios SOLID — Aula 06</p>
+<article class="pergunta">
+<p><strong>Pergunta 12.</strong> Que problema (smell) leva a usar SRP + OCP (separar responsabilidades) neste sistema?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><code>ViagcertFazTudo</code> calcula, formata o recibo e grava em arquivo: três motivos para mudar na mesma classe.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 13.</strong> Como SRP + OCP (separar responsabilidades) aparece no código deste sistema?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><code>Viagcert</code> fica com dados + <code>total</code> (negócio); <code>ReciboFormatter</code> só formata (apresentação); <code>ArquivoRepository</code> só grava (infraestrutura). Formato novo = classe nova (<code>ReciboCsvFormatter</code>) → OCP.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 14.</strong> Sobre <code>ReciboFormatter.formatar(item)</code>: o que faz, por que foi feito assim e o que muda se for diferente?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><strong>O que faz:</strong> Recebe a Viagcert e devolve o texto do recibo.<br>
+<strong>Por que assim:</strong> SRP: layout tem motivo de mudança próprio; recebe a entidade por parâmetro e só lê.<br>
+<strong>O que muda se:</strong> Layout novo mexe só aqui; formato novo é outra classe; devolver isto para a Viagcert recriaria os 3 motivos para mudar.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 15.</strong> Quando NÃO vale a pena usar SRP + OCP (separar responsabilidades)?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta">SRP não é uma classe por método: separar "calcula", "soma", "arredonda" em classes é tão ruim quanto juntar tudo. A unidade é a responsabilidade (motivo para mudar).</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 16.</strong> Que alternativa foi descartada e qual a consequência da escolha feita?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><strong>Alternativa descartada:</strong> Manter tudo na entidade — layout, destino e regra mudariam a mesma classe.<br>
+<strong>Consequência:</strong> Cada mudança mexe num lugar só; formato novo não reabre nada. Custo: mais classes pequenas.</div>
+</details>
+</article>
+</section>
+<section class="padrao">
+<h2>4. Camada de Service (MVC/MVT/MVP — a regra não sabe o que é web)</h2>
+<p class="familia">Arquitetura — Aula 07</p>
+<article class="pergunta">
+<p><strong>Pergunta 17.</strong> Que problema (smell) leva a usar Camada de Service (MVC/MVT/MVP — a regra não sabe o que é web) neste sistema?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><code>relatorio_view</code> mistura a regra (desconto por tipo de cliente) com a apresentação (texto); para testar a conta é preciso chamar a view e ler texto.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 18.</strong> Como Camada de Service (MVC/MVT/MVP — a regra não sabe o que é web) aparece no código deste sistema?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><code>RelatorioService.calcular()</code> faz só a regra e devolve DADOS; a view fica fina (chama e formata); a mesma regra serve a API (<code>relatorio_api</code>). No Django: models = dado, views = regra/orquestração, template = apresentação, services.py = a regra complexa.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 19.</strong> Sobre <code>RelatorioService.calcular()</code>: o que faz, por que foi feito assim e o que muda se for diferente?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><strong>O que faz:</strong> Aplica o fator de cada tipo de cliente e devolve <code>(linhas, total_geral)</code>.<br>
+<strong>Por que assim:</strong> A regra fica fora da web: testável sem request/servidor e reaproveitável pela API.<br>
+<strong>O que muda se:</strong> Se passar a receber <code>request</code> ou devolver texto, volta a exigir a web para testar e a API teria que duplicar a conta.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 20.</strong> Quando NÃO vale a pena usar Camada de Service (MVC/MVT/MVP — a regra não sabe o que é web)?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta">View que só lista e renderiza não precisa de Service — só há Service quando há cálculo, decisão ou orquestração de vários passos.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 21.</strong> Que alternativa foi descartada e qual a consequência da escolha feita?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><strong>Alternativa descartada:</strong> Deixar a regra na view e testar com o client HTTP — teste lento e acoplado; a API teria que duplicar a conta.<br>
+<strong>Consequência:</strong> Regra testável sem HTTP e reaproveitável. Custo: uma camada a mais.</div>
+</details>
+</article>
+</section>
+<section class="padrao">
+<h2>5. MVVM (ViewModel)</h2>
+<p class="familia">Arquitetura — Aulas 08 e 09</p>
+<article class="pergunta">
+<p><strong>Pergunta 22.</strong> Que problema (smell) leva a usar MVVM (ViewModel) neste sistema?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><code>tela_painel</code> decide no meio do desenho o status, o rótulo do botão, o "R$" e o rodapé "ESGOTADO - nenhum voo com assento" — só dá para testar lendo a tela.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 23.</strong> Como MVVM (ViewModel) aparece no código deste sistema?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><code>ItemViewModel</code> / <code>PainelVM</code> traduzem o dado cru em dado pronto (<code>status_label</code>, <code>acao_label</code>, <code>preco_formatado</code>, <code>rodape</code>); a View só costura. No Django não há binding: o ViewModel é preparação chamada antes do <code>render</code>.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 24.</strong> Sobre <code>ItemViewModel.__init__</code>: o que faz, por que foi feito assim e o que muda se for diferente?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><strong>O que faz:</strong> Transforma o dict cru em textos prontos para a tela (status, ação, preço formatado).<br>
+<strong>Por que assim:</strong> MVVM: a decisão de como mostrar fica num lugar só e testável sem renderizar.<br>
+<strong>O que muda se:</strong> Status novo muda só o ViewModel; voltar os <code>if</code> para a tela obriga a ler HTML para testar.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 25.</strong> Quando NÃO vale a pena usar MVVM (ViewModel)?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta">Tela que mostra o dado como está não precisa de ViewModel. Service × ViewModel: regra de negócio (o que é verdade) × lógica de exibição (como aparece).</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 26.</strong> Que alternativa foi descartada e qual a consequência da escolha feita?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><strong>Alternativa descartada:</strong> Manter os <code>if</code> de exibição no template — só se testaria lendo HTML.<br>
+<strong>Consequência:</strong> Rótulo/estado novo muda só o ViewModel; testes sem renderizar. Custo: uma camada a mais.</div>
+</details>
+</article>
+</section>
+<section class="padrao">
+<h2>6. Singleton</h2>
+<p class="familia">Padrão de criação (GoF) — além das aulas; referência: lista GoF da Wikipédia</p>
+<article class="pergunta">
+<p><strong>Pergunta 27.</strong> Que problema (smell) leva a usar Singleton neste sistema?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta">Cada parte do sistema cria a sua <code>ConfiguracaoAntiga()</code>; mudar a taxa no caixa não muda no relatório — dois lugares cobrando valores diferentes.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 28.</strong> Como Singleton aparece no código deste sistema?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><code>Configuracao.__new__</code> devolve SEMPRE o mesmo objeto (guardado em <code>_instancia</code>); quem precisa chama <code>Configuracao()</code> e recebe a única que existe. <code>reiniciar()</code> existe só para os testes.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 29.</strong> Sobre <code>Configuracao.__new__</code>: o que faz, por que foi feito assim e o que muda se for diferente?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><strong>O que faz:</strong> Cria o objeto na primeira chamada e devolve o mesmo nas seguintes.<br>
+<strong>Por que assim:</strong> Singleton: <code>__new__</code> decide qual objeto sai (antes do <code>__init__</code>); guardar na classe garante um só.<br>
+<strong>O que muda se:</strong> Sem o <code>if _instancia is None</code>, cada chamada criaria outro objeto e as partes divergiriam; com um <code>__init__</code> atribuindo valores, cada <code>Configuracao()</code> apagaria as mudanças.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 30.</strong> Quando NÃO vale a pena usar Singleton?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta">Em Python um módulo já é único: uma variável no módulo resolve sem cerimônia. Singleton é estado global escondido — dificulta testes; prefira injetar a dependência quando der.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 31.</strong> Que alternativa foi descartada e qual a consequência da escolha feita?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><strong>Alternativa descartada:</strong> Passar a configuração por parâmetro (injeção) — mais explícito, mas todo construtor a recebe.<br>
+<strong>Consequência:</strong> Um ponto só de verdade para a configuração. Custo: estado global (testes precisam reiniciar).</div>
+</details>
+</article>
+</section>
+<section class="padrao">
+<h2>7. Factory Method</h2>
+<p class="familia">Padrão de criação (GoF) — além das aulas; referência: lista GoF da Wikipédia</p>
+<article class="pergunta">
+<p><strong>Pergunta 32.</strong> Que problema (smell) leva a usar Factory Method neste sistema?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><code>avisar_antigo(item, canal)</code> tem um <code>if/elif</code> para CRIAR o canal certo no meio do algoritmo — canal novo reabre a função.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 33.</strong> Como Factory Method aparece no código deste sistema?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><code>Avisador.avisar(item)</code> é o algoritmo comum; o passo que varia — QUAL canal criar — é o método fábrica <code>criar_canal()</code>, sobrescrito por <code>AvisadorEmail</code>, <code>AvisadorSms</code>… O criador não conhece as classes concretas dos produtos.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 34.</strong> Sobre <code>Avisador.avisar(item)</code>: o que faz, por que foi feito assim e o que muda se for diferente?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><strong>O que faz:</strong> Monta a mensagem da Viagcert e envia pelo canal que <code>criar_canal()</code> devolver.<br>
+<strong>Por que assim:</strong> Factory Method: o algoritmo é comum e só a criação do produto varia — fica num método que a subclasse sobrescreve.<br>
+<strong>O que muda se:</strong> Com <code>CanalEmail()</code> fixo aqui, todo avisador viraria e-mail; com <code>if</code> por canal, cada canal novo reabriria o método.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 35.</strong> Quando NÃO vale a pena usar Factory Method?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta">Um tipo só de produto, ou escolha resolvida por um dicionário <code>{nome: Classe}</code> — em Python dá para passar a própria classe como parâmetro.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 36.</strong> Que alternativa foi descartada e qual a consequência da escolha feita?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><strong>Alternativa descartada:</strong> <code>if/elif</code> (ou dicionário) na criação — simples, mas a escolha fica longe de quem sabe o que precisa.<br>
+<strong>Consequência:</strong> Canal novo = produto + criador novos; <code>Avisador</code> intacto. Custo: uma subclasse de criador por produto.</div>
+</details>
+</article>
+</section>
+<section class="padrao">
+<h2>8. Abstract Factory</h2>
+<p class="familia">Padrão de criação (GoF) — além das aulas; referência: lista GoF da Wikipédia</p>
+<article class="pergunta">
+<p><strong>Pergunta 37.</strong> Que problema (smell) leva a usar Abstract Factory neste sistema?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><code>montar_relatorio_antigo(itens, formato)</code> decide o formato em CADA peça (cabeçalho, linha, rodapé); esquecer um <code>if</code> mistura texto com HTML no mesmo relatório.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 38.</strong> Como Abstract Factory aparece no código deste sistema?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><code>KitRelatorio</code> (fábrica abstrata) declara <code>criar_cabecalho</code>, <code>criar_linha</code> e <code>criar_rodape</code>; cada kit concreto (<code>KitTexto</code>, <code>KitHtml</code>) cria TODAS as peças da mesma família. <code>montar_relatorio(kit, itens)</code> só conhece a interface.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 39.</strong> Sobre <code>montar_relatorio(kit, itens)</code>: o que faz, por que foi feito assim e o que muda se for diferente?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><strong>O que faz:</strong> Monta cabeçalho, uma linha por Viagcert e o rodapé com o total, pedindo cada peça ao kit.<br>
+<strong>Por que assim:</strong> Abstract Factory: o cliente recebe a família inteira e não sabe qual é — impossível misturar.<br>
+<strong>O que muda se:</strong> Criando uma peça direto (ex.: <code>&lt;li&gt;</code> fixo), um relatório em texto ganharia HTML; trocar o kit troca todas as peças de uma vez.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 40.</strong> Quando NÃO vale a pena usar Abstract Factory?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta">Uma família só, ou uma peça só — Factory Method (ou a classe direta) resolve. Um TIPO de peça novo obriga a mexer em todos os kits.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 41.</strong> Que alternativa foi descartada e qual a consequência da escolha feita?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><strong>Alternativa descartada:</strong> Um <code>if formato</code> por peça — funciona, mas nada garante que as peças combinem.<br>
+<strong>Consequência:</strong> Família nova = kit novo, e as peças sempre combinam. Custo: peça nova = método novo em todos os kits.</div>
+</details>
+</article>
+</section>
+<section class="padrao">
+<h2>9. Adapter</h2>
+<p class="familia">Padrão estrutural (GoF) — Aula 08</p>
+<article class="pergunta">
+<p><strong>Pergunta 42.</strong> Que problema (smell) leva a usar Adapter neste sistema?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta">O gateway <code>PagaTur</code> (de terceiro) fala <code>charge({... amount_cents ...})</code>, mas o sistema espera <code>processar(valor, token)</code>; o checkout antigo tem um <code>if usa_gateway</code>.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 43.</strong> Como Adapter aparece no código deste sistema?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><code>PagaTurAdapter</code> É-UM <code>ProcessadorPagamento</code>: por fora fala <code>processar</code>, por dentro traduz a chamada, reais → centavos e a resposta (aprovado → id; negado → <code>PagamentoRecusado</code>).</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 44.</strong> Sobre <code>PagaTurAdapter.processar(valor, token)</code>: o que faz, por que foi feito assim e o que muda se for diferente?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><strong>O que faz:</strong> Converte o pedido de pagamento do sistema numa chamada <code>charge</code> e devolve o id ou levanta <code>PagamentoRecusado</code>.<br>
+<strong>Por que assim:</strong> Adapter: o gateway é de terceiro (não controlamos a assinatura); o adapter faz a peça caber e o <code>CheckoutService</code> perde o <code>if</code>.<br>
+<strong>O que muda se:</strong> Devolvendo o dict cru, o formato do terceiro vaza e a recusa passaria como sucesso; sem <code>round</code>, 19.99 viraria 1998 centavos.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 45.</strong> Quando NÃO vale a pena usar Adapter?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta">Se você controla as duas pontas e as interfaces já batem, duck typing basta — Adapter só para peça de terceiro. Adapter ≠ Facade (uma peça × vários subsistemas).</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 46.</strong> Que alternativa foi descartada e qual a consequência da escolha feita?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><strong>Alternativa descartada:</strong> <code>if usa_gateway</code> dentro do serviço — o detalhe do terceiro vaza para a regra e se repete em cada método.<br>
+<strong>Consequência:</strong> Trocar de gateway = injetar outro processador. Custo: uma classe de tradução.</div>
+</details>
+</article>
+</section>
+<section class="padrao">
+<h2>10. Composite</h2>
+<p class="familia">Padrão estrutural (GoF) — além das aulas; referência: lista GoF da Wikipédia</p>
+<article class="pergunta">
+<p><strong>Pergunta 47.</strong> Que problema (smell) leva a usar Composite neste sistema?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><code>total_antigo(coisa)</code> pergunta com <code>isinstance</code> se é lista ou Viagcert e se chama de novo — cada operação nova (descrição, contagem) repete essa checagem.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 48.</strong> Como Composite aparece no código deste sistema?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><code>Componente</code> define a interface comum (<code>preco</code>, <code>descricao</code>); <code>Unitario</code> (folha) embrulha uma Viagcert; <code>Pacote</code> (composto) guarda filhos — folhas ou pacotes — e repassa a pergunta a eles.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 49.</strong> Sobre <code>Pacote.preco()</code>: o que faz, por que foi feito assim e o que muda se for diferente?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><strong>O que faz:</strong> Soma o preço de cada filho (que pode ser outro pacote) e aplica o desconto do pacote.<br>
+<strong>Por que assim:</strong> Composite: folha e composto respondem <code>preco()</code>, então a soma não pergunta o tipo e a recursão acontece sozinha.<br>
+<strong>O que muda se:</strong> Com <code>isinstance</code> aqui o pacote voltaria a conhecer os tipos; sem <code>round</code>, centavos se acumulariam.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 50.</strong> Quando NÃO vale a pena usar Composite?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta">Lista plana, sem pacotes dentro de pacotes — <code>sum()</code> resolve.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 51.</strong> Que alternativa foi descartada e qual a consequência da escolha feita?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><strong>Alternativa descartada:</strong> Listas aninhadas + <code>isinstance</code> — cada operação repete a recursão.<br>
+<strong>Consequência:</strong> Árvores de qualquer profundidade com uma interface só. Custo: a interface comum pode ficar genérica.</div>
+</details>
+</article>
+</section>
+<section class="padrao">
+<h2>11. Decorator</h2>
+<p class="familia">Padrão estrutural (GoF) — Aula 10</p>
+<article class="pergunta">
+<p><strong>Pergunta 52.</strong> Que problema (smell) leva a usar Decorator neste sistema?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><code>preco_com_flags(item, ...=False, ...)</code> soma extras com uma pilha de flags e <code>if</code>; não dá para repetir extra nem combinar dinamicamente.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 53.</strong> Como Decorator aparece no código deste sistema?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta">Cada extra EMBRULHA o componente, MANTÉM a interface (<code>preco</code>/<code>descricao</code>) e soma a sua parte; por isso empilha: <code>ComTranslado(ComSeguroViagem(ViagcertBase(item)))</code>.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 54.</strong> Sobre <code>ComSeguroViagem.preco()</code>: o que faz, por que foi feito assim e o que muda se for diferente?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><strong>O que faz:</strong> Pergunta o preço ao componente de dentro e soma R$ 90.00.<br>
+<strong>Por que assim:</strong> Decorator: o extra é opcional e combinável; mantendo a interface, empilha.<br>
+<strong>O que muda se:</strong> Sem chamar o de dentro o extra some (ou vira recursão); com o percentual por fora × por dentro o total muda.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 55.</strong> Quando NÃO vale a pena usar Decorator?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta">Se todos os extras somam valor fixo, uma lista + <code>sum()</code> basta. O <code>@decorator</code> do Python decora funções; o padrão decora objetos. Camada que multiplica torna a ORDEM relevante.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 56.</strong> Que alternativa foi descartada e qual a consequência da escolha feita?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><strong>Alternativa descartada:</strong> Flags booleanas — cada extra novo vira parâmetro + <code>if</code> + mudança em quem chama; subclasse por combinação explodiria.<br>
+<strong>Consequência:</strong> Extra novo = classe nova, combinável em tempo de execução. Custo: cadeias longas são difíceis de depurar.</div>
+</details>
+</article>
+</section>
+<section class="padrao">
+<h2>12. Facade</h2>
+<p class="familia">Padrão estrutural (GoF) — Aula 09</p>
+<article class="pergunta">
+<p><strong>Pergunta 57.</strong> Que problema (smell) leva a usar Facade neste sistema?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><code>atender_na_mao</code> conhece 5 subsistemas, a ordem e as regras de aborto; cada tela que conclui um atendimento repetiria tudo isso.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 58.</strong> Como Facade aparece no código deste sistema?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><code>AtendimentoFacade.concluir(recurso, item)</code> é o balcão único: disponibilidade → cálculo → cobrança → registro → notificação, DELEGANDO a cada subsistema.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 59.</strong> Sobre <code>AtendimentoFacade.concluir(recurso, item)</code>: o que faz, por que foi feito assim e o que muda se for diferente?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><strong>O que faz:</strong> Orquestra os 5 subsistemas na ordem e aborta se indisponível ou se o pagamento for recusado.<br>
+<strong>Por que assim:</strong> Facade: esconde a orquestração; o cliente conhece um objeto em vez de cinco; a fachada delega, não reimplementa.<br>
+<strong>O que muda se:</strong> Um passo novo entra só aqui; mover o cálculo para dentro dela a transforma em God object.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 60.</strong> Quando NÃO vale a pena usar Facade?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta">1–2 passos num lugar só → uma função basta. Se a fachada passar a executar regra (em vez de delegar) vira God object. Ela não proíbe usar os subsistemas direto.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 61.</strong> Que alternativa foi descartada e qual a consequência da escolha feita?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><strong>Alternativa descartada:</strong> Cada tela orquestrar os subsistemas — duplicação e acoplamento a cinco objetos.<br>
+<strong>Consequência:</strong> Passo novo entra só na fachada; clientes conhecem um objeto. Custo: mais uma classe.</div>
+</details>
+</article>
+</section>
+<section class="padrao">
+<h2>13. State</h2>
+<p class="familia">Padrão comportamental (GoF) — além das aulas; referência: lista GoF da Wikipédia</p>
+<article class="pergunta">
+<p><strong>Pergunta 62.</strong> Que problema (smell) leva a usar State neste sistema?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><code>SituacaoAntiga</code> repete a mesma escada de <code>if/elif</code> sobre <code>self.status</code> em <code>confirmar</code>, <code>concluir</code> e <code>cancelar</code>.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 63.</strong> Como State aparece no código deste sistema?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta">Cada estado é uma classe (<code>Aberto</code>, <code>Confirmado</code>, <code>Concluido</code>, <code>Cancelado</code>) que sabe as SUAS transições; <code>SituacaoViagcert</code> (contexto) guarda o estado atual e delega. Transição proibida levanta <code>TransicaoInvalida</code>.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 64.</strong> Sobre <code>Aberto.confirmar(contexto)</code>: o que faz, por que foi feito assim e o que muda se for diferente?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><strong>O que faz:</strong> Troca o estado do contexto para <code>Confirmado</code>.<br>
+<strong>Por que assim:</strong> State: a transição pertence ao estado de origem; o contexto só delega.<br>
+<strong>O que muda se:</strong> Sem sobrescrever, valeria o padrão da base (TransicaoInvalida); trocando para <code>Concluido</code>, pularia a confirmação.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 65.</strong> Quando NÃO vale a pena usar State?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta">Dois estados e uma regra (um booleano basta). State × Strategy: no State o próprio estado troca o objeto do contexto; no Strategy quem escolhe é o cliente.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 66.</strong> Que alternativa foi descartada e qual a consequência da escolha feita?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><strong>Alternativa descartada:</strong> <code>if/elif</code> por status em cada método — repetido e fácil de esquecer uma transição.<br>
+<strong>Consequência:</strong> Cada estado num lugar; estado novo = classe nova. Custo: uma classe por estado.</div>
+</details>
+</article>
+</section>
+<section class="padrao">
+<h2>14. Strategy</h2>
+<p class="familia">Padrão comportamental (GoF) — Aula 05</p>
+<article class="pergunta">
+<p><strong>Pergunta 67.</strong> Que problema (smell) leva a usar Strategy neste sistema?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><code>CobrancaAntiga.valor()</code> tem um <code>if/elif</code> por tipo de cliente que cresce a cada regra nova — cada uma obriga a reabrir a classe.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 68.</strong> Como Strategy aparece no código deste sistema?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta">Cada regra vira uma classe com o MESMO método <code>aplicar(base)</code>; <code>Cobranca</code> (o contexto) RECEBE a política e DELEGA: <code>self.politica.aplicar(self.item.total)</code> — sem <code>if</code>.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 69.</strong> Sobre <code>Cobranca.valor()</code>: o que faz, por que foi feito assim e o que muda se for diferente?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><strong>O que faz:</strong> Pega o <code>total</code> da Viagcert e devolve o valor depois da política aplicada.<br>
+<strong>Por que assim:</strong> Strategy: a família de regras de tipo de cliente varia; cada uma é uma classe e o contexto delega, sem <code>if</code>.<br>
+<strong>O que muda se:</strong> Voltando ao <code>if/elif</code> os números seguem iguais, mas toda política nova reabre a classe (perde OCP). Trocar <code>cobranca.politica</code> muda o valor sem criar outra cobrança.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 70.</strong> Quando NÃO vale a pena usar Strategy?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta">Uma regra só, que nunca varia → uma função ou constante basta (Strategy seria cerimônia). Em Python a estratégia pode ser uma função.</div>
+</details>
+</article>
+<article class="pergunta">
+<p><strong>Pergunta 71.</strong> Que alternativa foi descartada e qual a consequência da escolha feita?</p>
+<details><summary>Ver resposta</summary>
+<div class="resposta"><strong>Alternativa descartada:</strong> Dicionário <code>{tipo: percentual}</code> — resolve percentuais, mas não comporta uma regra com comportamento próprio (prazo, limite, cálculo diferente).<br>
+<strong>Consequência:</strong> Regra nova = classe nova; <code>Cobranca</code> intacta (OCP). Custo: uma classe por regra.</div>
+</details>
+</article>
+</section>
+</body>
+</html>
