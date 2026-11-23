@@ -44,8 +44,15 @@ O prompt tem **duas linhas**: em cima `sgs@ilp037:~/caminho` (quebra se o caminh
 | `sgs …` | configura, lista, roda e explica (digite só `sgs`) |
 
 **Intellisense:** enquanto você digita, uma caixa acima do prompt mostra até **5 sugestões**, que mudam a cada
-tecla. A primeira, se começar com o que já foi digitado, aparece também **na própria linha**, em cinza, depois do
-cursor: **TAB completa** com ela. **Clique** numa sugestão da caixa para escolhê-la, e Esc fecha a caixa.
+tecla. Com a caixa aberta:
+
+- **↑/↓ andam entre as opções**, e a lista dá a volta;
+- **TAB** ou **→**, com o cursor no fim da linha, escolhem a marcada. Ela tem a etiqueta "TAB · →" e, se começar
+  com o que já foi digitado, aparece também na própria linha, em cinza;
+- **clique** numa opção também escolhe;
+- Esc fecha a caixa.
+
+Com a caixa fechada, ↑/↓ voltam a ser o histórico.
 
 As sugestões vêm de `/sugestoes`:
 - o histórico, do mais recente para o mais antigo;

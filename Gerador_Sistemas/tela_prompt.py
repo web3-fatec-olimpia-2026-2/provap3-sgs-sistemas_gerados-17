@@ -1198,9 +1198,10 @@ def sgs_ajuda(ctx, _args, _opcoes=None):
         bloco("titulo", texto="Configuração atual"),
         tabela_config(ctx.config),
         bloco("link", texto="Referência dos padrões GoF: cópia da Wikipédia (abre em outra aba)", href="/referencia"),
-        texto("Atalhos: Enter executa · Shift+Enter quebra linha · TAB completa com a sugestão (o trecho em cinza "
-              "na linha) · clique numa das sugestões da caixa para escolher · Esc fecha a caixa · ↑/↓ histórico "
-              "(guardado em arquivo: sobrevive ao F5) · Ctrl+L limpa · history · history -c", "suave"),
+        texto("Atalhos: Enter executa · Shift+Enter quebra linha · com a caixa de sugestões aberta: ↑/↓ andam entre as "
+              "opções e TAB (ou →, com o cursor no fim da linha) escolhe a marcada — o trecho em cinza na linha é ela · "
+              "clique também escolhe · Esc fecha a caixa · com a caixa fechada, ↑/↓ são o histórico (guardado em "
+              "arquivo: sobrevive ao F5) · Ctrl+L limpa · history · history -c", "suave"),
     )
 
 
@@ -2482,7 +2483,8 @@ function trocarHistorico(linhas) {
    (com e sem sgs). Ordem: começa com o que foi digitado → palavra que começa com ele → contém → letras na ordem. */
 const MAX_SUG = 5;
 let catalogoSug = [];             // [{cmd, desc, tipo}]
-let sugAtuais = [];               // as mostradas agora; a 1ª é a que o TAB completa
+let sugAtuais = [];               // as mostradas agora
+let sugSel = 0;                   // a MARCADA: ↑/↓ andam entre elas; TAB ou → (no fim da linha) escolhem
 let sugFechadas = false;          // Esc fecha até a próxima tecla
 let viaHistorico = false;         // ↑/↓ escreveu o comando: a caixa fica fechada
 function carregarSugestoes() {
@@ -2512,19 +2514,26 @@ function cmdDestacado(cmd, t) {               // o trecho já digitado aparece e
   const i = t ? cmd.toLowerCase().indexOf(t.toLowerCase()) : -1;
   return i < 0 ? [cmd] : [cmd.slice(0, i), el("b", {}, cmd.slice(i, i + t.length)), cmd.slice(i + t.length)];
 }
-function atualizarSugestoes() {
+function atualizarSugestoes() {             // recalcula (a cada tecla): a marcada volta a ser a 1ª
   const v = ta.value;
   sugAtuais = (pergunta || sugFechadas || viaHistorico || document.activeElement !== ta) ? [] : buscarSugestoes(v);
+  sugSel = 0;
+  desenharSugestoes();
+}
+function desenharSugestoes() {
+  const v = ta.value;
   $("sugestoes").replaceChildren(...sugAtuais.map((s, i) => {
-    const item = el("div", { class: "sug" + (i === 0 ? " ativa" : ""), role: "option", title: "clique para escolher" },
+    const item = el("div", { class: "sug" + (i === sugSel ? " ativa" : ""), role: "option",
+                             "aria-selected": i === sugSel ? "true" : "false", title: "clique para escolher" },
                     el("span", { class: "sug-cmd" }, ...cmdDestacado(s.cmd, v)), el("span", { class: "sug-desc" }, s.desc),
-                    i === 0 && fantasmaDe(s, v) ? el("span", { class: "sug-tab" }, "TAB") : null);
+                    i === sugSel ? el("span", { class: "sug-tab" }, "TAB · →") : null);
     item.addEventListener("mousedown", (ev) => { ev.preventDefault(); escolherSugestao(s.cmd); });  // sem perder o foco
     return item;
   }));
   $("sugestoes").hidden = sugAtuais.length === 0;
   atualizarEco();
 }
+function caixaAberta() { return sugAtuais.length > 0 && !$("sugestoes").hidden; }
 function fantasmaDe(s, v) {
   return s && s.cmd.toLowerCase().startsWith(v.toLowerCase()) ? s.cmd.slice(v.length) : "";
 }
@@ -2536,8 +2545,8 @@ function escolherSugestao(cmd) {
 function atualizarEco() {
   const v = ta.value, pos = Math.min(ta.selectionStart ?? v.length, v.length), ch = v[pos];
   const fim = ch === undefined || ch === "\n";
-  // Fantasma: o resto da 1ª sugestão, em outra cor, logo depois do que foi digitado (só com o cursor no fim).
-  const resto = pos === v.length && document.activeElement === ta ? fantasmaDe(sugAtuais[0], v) : "";
+  // Fantasma: o resto da sugestão MARCADA, em outra cor, logo depois do que foi digitado (só com o cursor no fim).
+  const resto = pos === v.length && document.activeElement === ta ? fantasmaDe(sugAtuais[sugSel], v) : "";
   $("antes").textContent = v.slice(0, pos);
   $("cursor").textContent = fim ? (resto ? resto[0] : " ") : ch;
   $("fantasma").textContent = resto.slice(1);
@@ -2559,9 +2568,21 @@ function escrever(comando) {
 }
 ta.addEventListener("keydown", (ev) => {
   if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); executar(); return; }
-  if (ev.key === "Tab" && !ev.shiftKey) {                    // TAB completa com a 1ª sugestão
-    if (sugAtuais.length) { ev.preventDefault(); escolherSugestao(sugAtuais[0].cmd); return; }
+  if (ev.key === "Tab" && !ev.shiftKey) {                    // TAB completa com a sugestão marcada
+    if (sugAtuais.length) { ev.preventDefault(); escolherSugestao(sugAtuais[sugSel].cmd); return; }
     if (ta.value) ev.preventDefault();                       // sem sugestão: o foco não sai do prompt
+  }
+  const noFim = ta.selectionStart === ta.value.length && ta.selectionEnd === ta.value.length;
+  if (ev.key === "ArrowRight" && caixaAberta() && noFim && !ev.shiftKey) {   // → no fim da linha = igual ao TAB
+    ev.preventDefault();
+    escolherSugestao(sugAtuais[sugSel].cmd);
+    return;
+  }
+  if ((ev.key === "ArrowUp" || ev.key === "ArrowDown") && caixaAberta()) {   // caixa aberta: ↑/↓ andam nas opções
+    ev.preventDefault();
+    sugSel = (sugSel + (ev.key === "ArrowDown" ? 1 : -1) + sugAtuais.length) % sugAtuais.length;
+    desenharSugestoes();
+    return;
   }
   if (ev.key === "Escape" && sugAtuais.length) { ev.preventDefault(); sugFechadas = true; atualizarSugestoes(); return; }
   if ((ev.key === "ArrowUp" || ev.key === "ArrowDown") && !ta.value.includes("\n") && historico.length) {

@@ -423,6 +423,8 @@ def test_pagina_tem_o_intellisense(servidor):
     html = pedir(servidor, "GET", "/")[2].decode("utf-8")
     assert 'id="sugestoes"' in html and 'id="fantasma"' in html and "MAX_SUG = 5" in html
     assert 'ev.key === "Tab"' in html and "escolherSugestao" in html and '"mousedown"' in html
+    assert 'ev.key === "ArrowRight" && caixaAberta()' in html                  # → no fim da linha = TAB
+    assert '(ev.key === "ArrowUp" || ev.key === "ArrowDown") && caixaAberta()' in html   # ↑/↓ andam na caixa
     status, tipo, corpo = pedir(servidor, "GET", "/sugestoes")
     assert status == 200 and any(i["cmd"] == "sgs listar" for i in json.loads(corpo)["itens"])
 
