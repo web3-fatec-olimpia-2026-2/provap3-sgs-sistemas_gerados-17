@@ -752,6 +752,23 @@ def test_sgs_api_config_escolhe_os_campos_de_cada_endpoint(ctx):
     assert app not in gs.ler_api_campos(pasta)
 
 
+def test_sgs_api_config_sem_endpoint_vale_para_todos_e_reinicia_o_site(ctx):
+    pytest.importorskip("django")
+    rodar(ctx, "sgs gerar loja com extras opcionais", django=True, testar=False)
+    pasta = ctx.pasta_do_numero(1)
+    porta = porta_qualquer()
+    assert rodar(ctx, f"sgs rodar 01 {porta}")["ok"]
+    r = rodar(ctx, "sgs api config 01 todos=sim")                                  # sem endpoint: todos
+    assert r["ok"] and "/api/v1/: expostos" in textos(r) and "/api/: expostos" in textos(r), textos(r)
+    assert "foi reiniciado" in textos(r)                                           # o site volta com a escolha
+    with urllib.request.urlopen(f"http://127.0.0.1:{porta}/api/v1/campos/", timeout=10) as resposta:
+        campos = json.loads(resposta.read())
+    assert campos["expostos"]["resumo"] == campos["disponiveis"]                   # o site no ar já mostra tudo
+    assert rodar(ctx, "sgs api config 01 padrao")["ok"] and gs.ler_api_campos(pasta) == {}
+    assert "não é campo" in textos(rodar(ctx, "sgs api config 01 voar=sim"))
+    rodar(ctx, "sgs parar todos")
+
+
 def test_sgs_api_config_atualiza_uma_app_de_antes(ctx):
     """App gerada antes dos campos configuráveis (sem API_CAMPOS): a 1ª mudança refaz a classe e tudo passa."""
     pytest.importorskip("django")

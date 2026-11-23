@@ -198,7 +198,13 @@ sgs api config 16 /api/v1/ observacao=nao titulo=sim
 sgs api config 16 /api/ noites=sim codigo=nao
 sgs api config 16 /destinos/api/v1/ todos=nao id=sim cidade=sim
 sgs api config 16 /api/v1/ padrao                     ← volta ao padrão
+sgs api config 16 todos=sim                           ← sem endpoint: vale para TODOS os endpoints do sistema
 ```
+
+**O site no ar acompanha.** Se o site do sistema está no ar pela tela, o SGS o reinicia sozinho na mesma porta
+depois de um `sgs api config` ou de uma edição sem versão (`app`, `ligar`, `incrementar` com `-sv`), já com as
+migrations, porque o servidor não recarrega sozinho. Depois é só dar F5 no navegador. Se o site estiver no ar por
+fora da tela, o SGS só avisa.
 
 A escolha vai para o `config/settings.py` do sistema (`VIAGCERTS_API_CAMPOS = {…}`, só o que mudou do padrão).
 Campo que entrar depois, por `incrementar` ou `ligar`, segue o padrão do endpoint.

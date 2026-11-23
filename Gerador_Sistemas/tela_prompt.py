@@ -944,6 +944,33 @@ class Contexto:
                   texto(f"Forçar o encerramento e subir {rotulo_novo} no lugar? (s/N)", "destaque"),
                   bloco("botoes", itens=[cmd("s — encerrar e subir", "s"), cmd("n — deixar como está", "n")]))
 
+    def reiniciar_site(self, destino, n):
+        """Depois de MUDAR o sistema (api config, incrementar, ligar, app sem versão): se o site dele está no ar pela
+        tela, derruba e sobe de novo na MESMA porta (preparando: migrations) — o servidor não recarrega sozinho.
+        No ar por FORA da tela: só avisa. Fora do ar: nada."""
+        destino = Path(destino)
+        ativo = self.servidores.ativos().get(destino.name)
+        if ativo:
+            porta = ativo["porta"]
+            self.servidores.parar(destino.name)
+            sucesso, linhas = self.servidores.iniciar(destino, porta, self.config.valores, preparar=True)
+            if sucesso:
+                url = f"http://127.0.0.1:{porta}/"
+                return [texto(f"↻ o site do {n} estava no ar: foi reiniciado na porta {porta} para a mudança valer "
+                              "(migrations aplicadas) — recarregue a página no navegador (F5)", "ok"),
+                        bloco("link", texto=url, href=url)]
+            return [texto(f"o site do {n} foi derrubado mas não voltou: {linhas[0]}", "erro"),
+                    *[texto(linha, "suave") for linha in linhas[1:]]]
+        try:
+            porta = self.porta_do(numero_de(destino, self.saida))
+        except (ValueError, TypeError):
+            return []
+        dono = processo_na_porta(porta)
+        if dono and dono["pid"] and "runserver" in dono["cmd"]:
+            return [texto(f"um site está no ar na porta {porta} FORA da tela (processo {dono['pid']}), ainda com o código "
+                          f"antigo — reinicie-o, ou rode sgs rodar {n} e responda s para a tela assumir", "aviso")]
+        return []
+
     def ja_no_ar(self, chave, porta):
         """O mesmo sistema já está no ar: na porta pedida → só reabre a janela; em outra → explica."""
         ativo = self.servidores.ativos().get(chave)
@@ -1709,9 +1736,9 @@ def _resposta_da_edicao(ctx, alvo_dir, numero, n, sem_versao, testar, info, linh
     else:
         titulo = f"✓ versão {numero} criada com {o_que} — cópia do {n}; o {n} não mudou"
     blocos = [texto(titulo, "ok"), bloco("tabela", colunas=["", ""], linhas=linhas)]
-    if ctx.servidores.ativos().get(alvo_dir.name):
-        blocos.append(texto(f"o site do {numero} está no ar com o código ANTIGO — derrube e suba de novo (o rodar "
-                            f"aplica as migrations): sgs parar {numero} · sgs rodar {numero}", "aviso"))
+    reinicio = ctx.reiniciar_site(alvo_dir, numero) if info["django"] else []   # no ar: volta com o código novo
+    if reinicio:
+        blocos += reinicio
     elif info["django"]:
         blocos.append(texto(f"suba com: sgs rodar {numero} (porta {resposta['porta']}) · o rodar aplica as migrations",
                             "suave"))
@@ -1884,58 +1911,65 @@ def sgs_api(ctx, args, opcoes=None):
     endpoints = gs.endpoints_do_projeto(destino)
     if len(args) < 2:
         return ok(*_tabela_api(ctx, destino, n, endpoints))
-    ep = _achar_endpoint(endpoints, args[1])
-    if ep is None:
-        return falha(f"endpoint {args[1]!r} não existe no sistema {n} — use um destes: "
-                     + ", ".join(e["rota"] for e in endpoints), *_tabela_api(ctx, destino, n, endpoints))
-    if len(args) < 3:
-        return ok(*_tabela_api(ctx, destino, n, endpoints, so=ep))
-    nomes = [campo for campo, _, _ in ep["campos"]]
-    mudancas, erros = {}, []
-    for par in args[2:]:
+    if "=" in args[1] or args[1].lower() == "padrao":          # sem endpoint: vale para TODOS os do sistema
+        alvos, pares = endpoints, args[1:]
+    else:
+        ep = _achar_endpoint(endpoints, args[1])
+        if ep is None:
+            return falha(f"endpoint {args[1]!r} não existe no sistema {n} — use um destes: "
+                         + ", ".join(e["rota"] for e in endpoints) + f" (ou nenhum: sgs api config {n} todos=sim vale "
+                         "para todos)", *_tabela_api(ctx, destino, n, endpoints))
+        if len(args) < 3:
+            return ok(*_tabela_api(ctx, destino, n, endpoints, so=ep))
+        alvos, pares = [ep], args[2:]
+    todos_os_campos = {campo for ep in alvos for campo, _, _ in ep["campos"]}
+    ordens, erros = [], []
+    for par in pares:
         chave, sinal, valor = par.partition("=")
         chave = chave.strip().lower()
         if chave == "padrao" and not sinal:
-            mudancas = {nome: None for nome in nomes}           # volta tudo ao padrão
-            continue
-        if not sinal or valor.strip().lower() not in SIM | NAO:
+            ordens.append(("padrao", None))                     # volta ao padrão
+        elif not sinal or valor.strip().lower() not in SIM | NAO:
             erros.append(f"{par}: use campo=sim ou campo=nao")
-            continue
-        exposto = valor.strip().lower() in SIM
-        if chave == "todos":
-            mudancas.update({nome: exposto for nome in nomes})
-        elif chave in nomes:
-            mudancas[chave] = exposto
+        elif chave != "todos" and chave not in todos_os_campos:
+            erros.append(f"{chave}: não é campo de {', '.join(ep['rota'] for ep in alvos)} "
+                         f"(campos: {', '.join(sorted(todos_os_campos))})")
         else:
-            erros.append(f"{chave}: não é campo do {ep['rota']} (campos: {', '.join(nomes)})")
+            ordens.append((chave, valor.strip().lower() in SIM))
     if erros:
-        return falha(" · ".join(erros), *_tabela_api(ctx, destino, n, endpoints, so=ep))
-    refeita = []
-    if not ep["suporta"]:                                       # app de antes: ganha os campos configuráveis
-        refeita = gs.refazer_classe(destino, ep["classe"], comentarios=info["comentarios"])
+        return falha(" · ".join(erros), *_tabela_api(ctx, destino, n, endpoints, so=alvos[0] if len(alvos) == 1 else None))
+    refeitas = {}
+    for ep in alvos:                                            # app de antes: ganha os campos configuráveis
+        if not ep["suporta"] and ep["classe"] not in refeitas:
+            refeitas[ep["classe"]] = gs.refazer_classe(destino, ep["classe"], comentarios=info["comentarios"])
     escolhas = gs.ler_api_campos(destino)
-    do_endpoint = escolhas.setdefault(ep["app"], {}).setdefault(ep["endpoint"], {})
-    for campo, exposto in mudancas.items():
-        if exposto is None or exposto == gs.exposto_por_padrao(ep["endpoint"], campo):
-            do_endpoint.pop(campo, None)                        # igual ao padrão: não precisa anotar
-        else:
-            do_endpoint[campo] = exposto
+    for ep in alvos:
+        nomes = [campo for campo, _, _ in ep["campos"]]
+        do_endpoint = escolhas.setdefault(ep["app"], {}).setdefault(ep["endpoint"], {})
+        for chave, exposto in ordens:
+            if chave == "padrao":
+                do_endpoint.clear()
+                continue
+            for campo in (nomes if chave == "todos" else [chave] if chave in nomes else []):
+                if exposto == gs.exposto_por_padrao(ep["endpoint"], campo):
+                    do_endpoint.pop(campo, None)                # igual ao padrão: não precisa anotar
+                else:
+                    do_endpoint[campo] = exposto
     gs.gravar_api_campos(destino, escolhas)
     endpoints = gs.endpoints_do_projeto(destino)
-    ep = _achar_endpoint(endpoints, ep["rota"])
-    blocos = [texto(f"✓ {ep['rota']}: expostos agora — {', '.join(c for c, e, _ in ep['campos'] if e) or 'nenhum'}", "ok")]
-    if refeita:
-        blocos.append(texto(f"a classe {ep['classe']} foi refeita pelo gerador de hoje para ter os campos configuráveis "
-                            f"({len(refeita)} arquivo(s) atualizado(s); as regras e as ligações são as mesmas)", "aviso"))
-    blocos += _tabela_api(ctx, destino, n, endpoints, so=ep)
-    if ctx.servidores.ativos().get(destino.name):
-        blocos.append(texto(f"o site do {n} está no ar com a configuração antiga — sgs parar {n} · sgs rodar {n}", "aviso"))
-    resposta = ok(*blocos)
-    if refeita and c["testar"]:
+    rotas = {ep["rota"] for ep in alvos}
+    blocos = [texto(f"✓ {ep['rota']}: expostos agora — {', '.join(c for c, e, _ in ep['campos'] if e) or 'nenhum'}", "ok")
+              for ep in endpoints if ep["rota"] in rotas]
+    for classe, mudaram in refeitas.items():
+        blocos.append(texto(f"a classe {classe} foi refeita pelo gerador de hoje para ter os campos configuráveis "
+                            f"({len(mudaram)} arquivo(s) atualizado(s); as regras e as ligações são as mesmas)", "aviso"))
+    if refeitas and c["testar"]:
         testes = gs.executar_testes(destino, SimpleNamespace(exercicio=info["exercicio"], django=True))
-        resposta["blocos"].append(bloco("tabela", colunas=["testes", "resultado"],
-                                        linhas=[[t["rotulo"], t["resumo"]] for t in testes]))
-    return resposta
+        blocos.append(bloco("tabela", colunas=["testes", "resultado"], linhas=[[t["rotulo"], t["resumo"]] for t in testes]))
+    blocos += ctx.reiniciar_site(destino, n)                    # no ar: reinicia para a escolha valer já
+    blocos += _tabela_api(ctx, destino, n, endpoints, so=_achar_endpoint(endpoints, alvos[0]["rota"]) if len(alvos) == 1
+                          else None)
+    return ok(*blocos)
 
 
 def _como_ligar(n, entidades):
