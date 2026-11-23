@@ -10,6 +10,10 @@ from django.conf import settings
 PADROES = {
     "API_LIMITE": 100,    # máximo de registros que a lista da API REST devolve por vez (?limite=N)
     "API_ESCRITA": True,  # False = API só de leitura (POST, PUT, PATCH e DELETE respondem 405)
+    # Campos de cada endpoint — só o que MUDOU do padrão: {"v1": {"campo": False}, "resumo": {"campo": True}}.
+    # Padrão: o v1 (REST) mostra id, os campos do model, total e valor_final; o resumo (api/) mostra id,
+    # codigo, titulo e valor. O `sgs api config` grava a escolha no config/settings.py do projeto.
+    "API_CAMPOS": {},
 }
 
 

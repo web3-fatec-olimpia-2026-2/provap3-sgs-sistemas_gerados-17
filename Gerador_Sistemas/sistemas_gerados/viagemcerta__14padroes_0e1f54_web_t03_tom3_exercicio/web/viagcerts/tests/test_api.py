@@ -11,6 +11,12 @@ pytestmark = pytest.mark.django_db
 VALIDO = {"viajante": "Elisa", "voo": 101, "noites": 2, "valor_noite": "350.00", "observacao": "", "tipo": "comum"}
 
 
+@pytest.fixture(autouse=True)
+def api_no_padrao(settings):
+    """Estes testes conferem o PADRÃO: o que o projeto escolheu no sgs api config não muda o resultado deles."""
+    settings.VIAGCERTS_API_CAMPOS = {}
+
+
 def enviar(client, metodo, url, dados):
     return getattr(client, metodo)(url, data=json.dumps(dados), content_type="application/json")
 
@@ -71,3 +77,30 @@ def test_limite_da_lista_vem_do_settings_da_app(client):
 def test_csrf_continua_valendo_na_api():
     """Sem o token CSRF, escrever é recusado (403): a API não abre uma porta nos fundos."""
     assert enviar(Client(enforce_csrf_checks=True), "post", colecao(), VALIDO).status_code == 403
+
+
+# ---------------------------------------------------------------- campos de cada endpoint (sgs api config)
+def test_campos_de_cada_endpoint_vem_do_settings(client):
+    enviar(client, "post", colecao(), VALIDO)
+    padrao = client.get(colecao()).json()["itens"][0]
+    assert "viajante" in padrao and "valor_final" in padrao and "titulo" not in padrao
+    resumo = client.get(reverse("viagcerts:api")).json()["itens"][0]
+    assert set(resumo) == {"id", "codigo", "titulo", "valor"}           # o resumo do painel (link "API")
+    escolha = {"v1": {"viajante": False, "titulo": True}, "resumo": {"noites": True, "codigo": False}}
+    with override_settings(VIAGCERTS_API_CAMPOS=escolha):
+        item = client.get(colecao()).json()["itens"][0]
+        assert "viajante" not in item and "titulo" in item
+        resumo = client.get(reverse("viagcerts:api")).json()["itens"][0]
+        assert resumo["noites"] == VALIDO["noites"] and "codigo" not in resumo
+        campos = client.get(reverse("viagcerts:api_campos")).json()
+        assert "viajante" in campos["disponiveis"] and "viajante" not in campos["expostos"]["v1"]
+
+
+def test_quem_chama_escolhe_entre_os_campos_expostos(client):
+    criado = enviar(client, "post", colecao(), VALIDO).json()
+    item = client.get(colecao(), {"campos": "viajante,total"}).json()["itens"][0]
+    assert set(item) == {"viajante", "total"}
+    um = client.get(reverse("viagcerts:api_item", args=[criado["id"]]), {"campos": "id"}).json()
+    assert um == {"id": criado["id"]}
+    with override_settings(VIAGCERTS_API_CAMPOS={"v1": {"total": False}}):   # oculto não volta nem pedindo
+        assert set(client.get(colecao(), {"campos": "viajante,total"}).json()["itens"][0]) == {"viajante"}

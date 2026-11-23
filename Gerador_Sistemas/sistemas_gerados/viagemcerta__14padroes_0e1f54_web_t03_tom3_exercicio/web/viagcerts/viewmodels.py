@@ -38,4 +38,4 @@ class DetalheVM(ItemVM):
             valor = getattr(obj, f"get_{campo.name}_display")() if campo.choices else getattr(obj, campo.name)
             if isinstance(valor, bool):
                 valor = "Sim" if valor else "Não"
-            self.campos.append((str(campo.verbose_name).capitalize(), valor if valor != "" else "—"))
+            self.campos.append((str(campo.verbose_name).capitalize(), valor if valor not in ("", None) else "—"))

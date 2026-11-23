@@ -10,9 +10,11 @@ urlpatterns = [
     path("<uuid:pk>/", views.detalhe, name="detalhe"),
     path("<uuid:pk>/editar/", views.editar, name="editar"),
     path("<uuid:pk>/excluir/", views.excluir, name="excluir"),
-    # API REST (JSON): a coleção (GET lista, POST cria) e um registro (GET, PUT, PATCH, DELETE)
+    # API REST (JSON): a coleção (GET lista, POST cria) e um registro (GET, PUT, PATCH, DELETE);
+    # os campos de cada endpoint são configuráveis (sgs api config) e quem chama escolhe com ?campos=
     path("api/v1/", api.colecao, name="api_colecao"),
+    path("api/v1/campos/", api.campos, name="api_campos"),
     path("api/v1/<uuid:pk>/", api.item, name="api_item"),
-    path("api/", views.api_lista, name="api"),  # resumo do painel (itens + total)
+    path("api/", api.resumo, name="api"),  # resumo do painel (itens + total) — o link "API"
     path("exercicios/", views.exercicios, name="exercicios"),  # questionário (modo exercício)
 ]

@@ -2,7 +2,6 @@
 VIEWS (o "V" do MVT = a lógica/orquestração; o "Controller" do MVC). FINAS:
 buscam os dados, delegam a regra ao Service e a exibição ao ViewModel, e renderizam.
 """
-from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import ViagcertForm
@@ -48,13 +47,6 @@ def excluir(request, pk):
         obj.delete()
         return redirect("viagcerts:lista")
     return render(request, "viagcerts/confirmar_exclusao.html", {"obj": obj})
-
-
-def api_lista(request):
-    painel = PainelVM(Viagcert.objects.order_by("pk"), ViagcertService())
-    itens = [{"id": str(i.id), "codigo": i.codigo, "titulo": i.titulo, "valor": i.valor_formatado}
-             for i in painel.itens]
-    return JsonResponse({"itens": itens, "total": painel.total_formatado})
 
 
 def exercicios(request):
