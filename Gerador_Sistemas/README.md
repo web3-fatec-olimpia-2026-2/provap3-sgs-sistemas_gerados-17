@@ -7,7 +7,7 @@ temas, `.env`, migrations, superusuário, PWA). **A mesma entrada gera sempre a 
 
 | Peça | Para quê |
 |---|---|
-| [`tela_prompt.py`](tela_prompt.py) | o **SGS**: tela estilo terminal no navegador (porta 8100) |
+| [`tela_prompt.py`](tela_prompt.py) | o **SGS**: tela estilo terminal no navegador (porta 6100) |
 | [`gerar_sistema.py`](gerar_sistema.py) | o gerador (também roda sozinho, pela linha de comando) |
 | [`sgs_terminal.py`](sgs_terminal.py) · [`sgs_comand.py`](sgs_comand.py) · [`sgs_perguntas.py`](sgs_perguntas.py) | terminal da tela · help numerado · perguntas antes de gerar |
 | [`temas_web.py`](temas_web.py) | cores dos 10 temas × 6 tons (pasta `temas/`) e das 20 paletas, com contraste WCAG |
@@ -30,23 +30,32 @@ source .venv/bin/activate
 python Gerador_Sistemas/tela_prompt.py
 ```
 
-Abre em **http://127.0.0.1:8100**, numa janela de app (PWA). Ctrl+C no terminal para parar;
+Abre em **http://127.0.0.1:6100**, numa janela de app (PWA). Ctrl+C no terminal para parar;
 `--sem-abrir` só sobe o servidor. A tela começa com duas linhas: o nome e os comandos principais.
+O prompt tem **duas linhas**: em cima `sgs@ilp037:~/caminho` (quebra se o caminho for comprido), embaixo
+`$>` e o comando.
 
 | O que você digita | O que acontece |
 |---|---|
 | `sgs gerar <pedido>` | **gera** (ou começa as perguntas, se “Perguntar antes de gerar” estiver marcado) |
 | `sgs gerar -sp <pedido>` | gera **sem perguntar**; sozinho, no meio das perguntas, encerra e gera |
 | texto solto | só é **anotado** na tela (nada é gerado por engano) |
-| `cd`, `ls`, `pwd`, `tree`, `cat`, `source .venv/bin/activate`, `python manage.py migrate/runserver…`, `pytest`, `bash iniciar.sh` | terminal (com ou sem `sgs` na frente) — `sgs comand` explica cada um |
+| `cd`, `ls`, `pwd`, `tree`, `cat`, `date`, `uname`, `history`, `clear`, `source .venv/bin/activate`, `python manage.py migrate/runserver…`, `pytest`, `bash iniciar.sh` | terminal — **todo comando padrão funciona com ou sem `sgs` na frente** (`sgs ls`, `sgs history -c`) — `sgs comand` explica cada um |
 | `sgs …` | configura, lista, roda e explica (digite só `sgs`) |
+
+**Histórico:** cada comando vai para o arquivo `Gerador_Sistemas/.sgs_historico` (como o `~/.bash_history`):
+↑/↓ continuam funcionando depois do F5 e ao reabrir a tela. `history` (ou `sgs history`) mostra numerado,
+`history N` os últimos N, `history -c` limpa e `history -d N` apaga uma linha. Respostas de pergunta não
+entram, e senha digitada num comando (`admin_senha=…`) entra mascarada.
 
 Principais comandos `sgs`:
 
 | Comando | O que faz |
 |---|---|
-| `sgs listar` · `sgs info NN` · `sgs testar NN` | sistemas pelo **número fixo** (01, 02…, dado na geração) |
-| `sgs rodar NN [porta]` · `sgs parar NN` · `sgs servidores` | sobe/derruba o site; o SGS é o 00 (porta 8100), o 01 roda na 8101… |
+| `sgs listar` · `sgs info NN` · `sgs testar NN` | sistemas pelo **número fixo** (01, 02…, dado na geração) e as **versões** (01.1, 01.2…) |
+| `sgs rodar NN [porta]` · `sgs parar NN` · `sgs servidores` | sobe/derruba o site; o SGS é o 00 (porta 6100), o 01 roda na 6101, a versão 01.3 na 61013 |
+| `sgs editar NN` | **editar = copiar**: cria a versão NN.k (01.1 … 01.99); o original não muda |
+| `sgs app NN <pedido> [entidade=Nome]` | **módulo**: nova versão de NN com mais uma app Django (form, CRUD, API REST, padrões, settings, models, views, testes) |
 | `sgs comandos NN` | comandos de terminal para rodar o sistema fora da tela |
 | `sgs comand [n]` · `sgs exit` | help numerado da esteira de desenvolvimento · volta à tela principal |
 | `sgs estilo [simples\|cmd\|bootstrap\|web]` · `sgs tema [T01…T10] [tom] [P01…P20]` | formatação das páginas geradas |
@@ -139,6 +148,52 @@ muda se), quando não usar e a alternativa descartada. Cada resposta fica **ocul
 
 - `exercicios.html` na pasta do sistema, para abrir direto no navegador;
 - com Django, a mesma página em `/exercicios/`, com link no topo (ou na lista), view, rota e teste próprios.
+
+### API REST e settings de cada app
+
+Toda app Django gerada (a principal e os módulos) traz, além das telas do CRUD:
+
+| Arquivo | O que tem |
+|---|---|
+| `api.py` | API REST em JSON, só com Django: `api/v1/` (GET lista com `?limite=N`, POST cria) e `api/v1/<id>/` (GET, PUT, PATCH, DELETE). Valida com o **mesmo** ModelForm das telas, devolve `total` e `valor_final` (Strategy do núcleo), responde 400 com os erros por campo, 404 em JSON e 405 nos outros métodos. O CSRF continua ligado (sem `csrf_exempt`). |
+| `settings.py` | as configurações da app: `API_LIMITE` (100) e `API_ESCRITA` (True), trocáveis no `config/settings.py` do projeto com o prefixo da app (ex.: `RESERVAS_API_ESCRITA = False` deixa a API só de leitura). |
+| `tests/test_api.py` | criar, listar, ler, PUT, PATCH, DELETE, 400, 404, 405, os dois settings e o CSRF (403 sem o token). |
+
+### Módulos (`sgs app`) e versões (`sgs editar`)
+
+**Editar um sistema gera uma cópia**: `sgs editar 01` cria a versão **01.1** (depois 01.2 … até 01.99) na pasta
+`<pasta do 01>_v1`, com o banco e o `web/.env` (a `PORTA` já ajustada) e sem `.venv`, caches e log. O original não
+muda. Editar uma versão cria a próxima do mesmo sistema (editar a 01.1 gera a 01.2). As versões ficam em
+`sistemas_gerados/.sgs_registro.json` (`versoes`) e nunca ganham número de sistema novo.
+
+`sgs app 01 <pedido> [entidade=Nome]` cria a próxima versão do 01 **com mais uma app Django**: o módulo é gerado
+pelo mesmo gerador, com o estilo, o tema e as opções do sistema, e o pedido escolhe o domínio, os campos e os
+padrões, como no `sgs gerar`. Cada módulo tem:
+
+- **form** (ModelForm), **CRUD** completo (`/<app>/`, `novo/`, `<id>/`, `editar/`, `excluir/`) e **API REST** (`/<app>/api/v1/`);
+- `settings.py`, `models.py`, `views.py`, `services.py`, `viewmodels.py`, `urls.py`, templates e estáticos;
+- os **padrões** do pedido, com o núcleo **dentro da app** (`<app>/nucleo/`) e os testes dele em `<app>/tests/nucleo/`;
+- `README.md` próprio.
+
+O módulo entra no `INSTALLED_APPS`, ganha a rota `/<app>/` (antes da raiz), entra no `makemigrations` do
+`iniciar.sh` e fica anotado em `modulos.json` e numa seção do README. Se o nome da app já existir (ou for
+reservado), nada é copiado e a tela pede `entidade=Nome`. Pela linha de comando do Python:
+`gerar_sistema.gerar_modulo(pasta, "pedido", entidade="Nome")` faz o mesmo direto na pasta.
+
+### Portas: 6100, versões e porta presa
+
+O SGS é o 00 na **6100**, o sistema NN roda na **6100 + NN**, e a versão usa a porta do sistema **seguida do último
+dígito da versão**: 01.1 → 61011, 01.3 → 61013. Com a 6100 tudo cabe nas 65.535 portas, e por isso a 01.9, a 01.19 …
+a 01.99 dividem a 61019. Um `sgs_config.json` salvo com a base antiga (8100) passa sozinho para a 6100.
+
+- **Porta ocupada** (outra versão no ar, ou um site esquecido): o `sgs rodar` e o `python manage.py runserver` da
+  tela dizem quem está na porta e perguntam **“forçar? s/N”**. Com `s`, a tela encerra o dono da porta e sobe o
+  atual; com `n` (ou Enter), nada muda. A tela nunca encerra a si mesma.
+- **Já no ar**: rodar de novo o mesmo sistema só reabre a janela.
+- **Portas liberadas**: o `sgs parar` encerra o grupo de processos do site. Fechar o terminal (SIGHUP) ou um
+  `kill` (SIGTERM) derruba os sites como o Ctrl+C. Se a tela cair sem limpar, a próxima tela encerra os órfãos
+  anotados em `sistemas_gerados/.sgs_servidores.json`. As conexões em TIME_WAIT (os ~60 s depois de derrubar um
+  site) não contam mais como porta ocupada.
 
 ### Pronto para subir
 
@@ -247,7 +302,9 @@ Para os testes do gerador e do SGS, rode `cd Gerador_Sistemas && python -m pytes
 - UUID, LNNL, `apps/` e baseline;
 - os campos a mais de cada tipo (texto, inteiro, decimal, sim/não, data) e o identificador de tipos;
 - o modo exercício (questionário, código completo);
+- a API REST (CRUD, 400/404/405, os settings da app e o CSRF) e os módulos (`sgs app`, nas estruturas plana e `apps/`);
+- as versões (`sgs editar`), as portas 6100/61011… e a pergunta de forçar a porta ocupada;
 - o determinismo, inclusive dos binários;
 - as perguntas e o `-sp`;
-- o terminal e o `sgs comand`;
-- subir e derrubar um site de verdade.
+- o terminal, o histórico em arquivo (`history`, `history -c`) e o `sgs comand`;
+- subir e derrubar um site de verdade, liberar porta em TIME_WAIT e encerrar os sites órfãos.

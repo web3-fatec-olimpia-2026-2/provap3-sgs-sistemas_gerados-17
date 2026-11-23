@@ -56,7 +56,7 @@ bash rodar_testes.sh Treino_Prova
 
 > **Quer mais perguntas, em qualquer assunto?** Use o gerador determinístico:
 > `python Gerador_Sistemas/gerar_sistema.py --assunto "..." --exercicio --testar`,
-> ou pelo SGS: `python Gerador_Sistemas/tela_prompt.py` (abre em http://127.0.0.1:8100) e digite
+> ou pelo SGS: `python Gerador_Sistemas/tela_prompt.py` (abre em http://127.0.0.1:6100) e digite
 > `sgs gerar <pedido>` com a caixa "Modo exercício" marcada. O sistema sai completo e correto (nada para
 > corrigir) e vem com um **questionário** no formato da P3 (`exercicios.html` e, com Django, `/exercicios/`),
 > cada resposta oculta atrás do botão **Ver resposta**

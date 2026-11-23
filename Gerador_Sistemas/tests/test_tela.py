@@ -7,9 +7,13 @@ Tudo acontece em pastas temporárias (tmp_path): nada vai para sistemas_gerados/
 """
 import http.client
 import json
+import os
 import re
 import socket
+import subprocess
+import sys
 import threading
+import time
 import urllib.request
 
 import pytest
@@ -333,6 +337,234 @@ def test_botao_executar_so_em_comandos_de_leitura():
 def test_exit_clear_e_history(ctx):
     assert rodar(ctx, "sgs exit")["tela"] == "principal" and rodar(ctx, "exit")["tela"] == "principal"
     assert rodar(ctx, "sgs clear")["limpar"] and rodar(ctx, "clear")["limpar"]
+    assert rodar(ctx, "sgs cls")["limpar"] and rodar(ctx, "cls")["limpar"]
+    assert "sgs clear" in textos(rodar(ctx, "sgs history")) and "sgs clear" in textos(rodar(ctx, "history"))
+
+
+# ---------------------------------------------------------------- histórico global (arquivo: sobrevive ao F5)
+def test_historico_vai_para_o_arquivo_e_volta_numa_tela_nova(ctx, tmp_path):
+    rodar(ctx, "pwd")
+    rodar(ctx, "pwd")                                                       # repetido seguido: entra uma vez
+    r = rodar(ctx, "sgs config admin_senha=segredo99")
+    assert r["gravado"] == "sgs config admin_senha=********"               # a página recebe o que foi gravado
+    linhas = (tmp_path / ".sgs_historico").read_text(encoding="utf-8").splitlines()
+    assert linhas == ["pwd", "sgs config admin_senha=********"]             # a senha NÃO vai para o arquivo
+    nova = tela.Contexto(saida=tmp_path / "saida", config=tmp_path / "cfg.json", raiz=tmp_path)   # F5 / tela nova
+    assert nova.historico.linhas() == linhas
+    assert "    1  pwd" in textos(rodar(nova, "history"))
+
+
+def test_history_n_c_e_d_com_ou_sem_sgs(ctx):
+    for comando in ("pwd", "ls", "whoami"):
+        rodar(ctx, comando)
+    assert rodar(ctx, "history 2")["blocos"][0]["texto"].splitlines() == ["    3  whoami", "    4  history 2"]
+    r = rodar(ctx, "sgs history -d 1")
+    assert r["historico"][0] == "ls"                                        # a página troca a lista dela
+    r = rodar(ctx, "sgs history -c")
+    assert r["historico"] == [] and ctx.historico.linhas() == []
+    assert "out of range" in textos(rodar(ctx, "history -d 99"))
+    assert "numeric argument" in textos(rodar(ctx, "history abc"))
+
+
+def test_resposta_de_pergunta_nao_entra_no_historico(ctx):
+    ctx.config.alterar("perguntar", True)
+    rodar(ctx, "sgs gerar loja com extras opcionais", testar=False)
+    rodar(ctx, "")                                                          # Enter = padrão
+    rodar(ctx, "2")
+    assert ctx.historico.linhas() == ["sgs gerar loja com extras opcionais"]
+
+
+def test_comandos_padrao_tambem_com_sgs(ctx, tmp_path):
+    assert rodar(ctx, "sgs pwd")["blocos"][0]["texto"] == str(tmp_path.resolve())
+    assert "Linux" in textos(rodar(ctx, "sgs uname")) and rodar(ctx, "sgs date")["blocos"][0]["cor"] is None
+    assert rodar(ctx, "sgs whoami")["blocos"][0]["texto"] and rodar(ctx, "sgs hostname")["blocos"][0]["cor"] is None
+    assert "aviso" in textos(rodar(ctx, "hostname outro-nome")) and "aviso" in textos(rodar(ctx, "date -s 10:00"))
+
+
+# ---------------------------------------------------------------- portas: 6100, versões e portas presas
+def test_porta_padrao_6100_e_config_salva_com_8100_migra(tmp_path):
+    assert tela.PORTA_PADRAO == 6100 and tela.CONFIG_INICIAL["porta_base"] == 6100
+    (tmp_path / "antiga.json").write_text('{"porta_base": 8100}', encoding="utf-8")
+    assert tela.Config(tmp_path / "antiga.json").valores["porta_base"] == 6100
+    (tmp_path / "minha.json").write_text('{"porta_base": 7000}', encoding="utf-8")
+    assert tela.Config(tmp_path / "minha.json").valores["porta_base"] == 7000     # escolha do usuário fica
+
+
+@pytest.mark.parametrize("numero, porta", [("01", 6101), ("01.1", 61011), ("01.3", 61013), ("01.9", 61019),
+                                           ("01.19", 61019), ("01.99", 61019), ("01.10", 61010), ("99.9", 61999)])
+def test_porta_da_versao_usa_o_ultimo_digito(numero, porta):
+    assert tela.porta_de(tela.Num.ler(numero), 6100) == porta
+
+
+def test_porta_da_versao_nao_passa_de_65535():
+    with pytest.raises(ValueError, match="65535"):
+        tela.porta_de(tela.Num(1, 3), 8100)                                 # 81013 não existe
+
+
+def test_num_le_mostra_e_ordena():
+    assert tela.Num.ler("1.3") == tela.Num(1, 3) and str(tela.Num(1, 3)) == "01.3" and str(tela.Num(7)) == "07"
+    assert tela.Num(2) == 2 and tela.Num(2, 1) != 2 and tela.Num.ler("abc") is None and tela.Num.ler("1.100") is None
+    assert sorted([tela.Num(2), tela.Num(1, 2), tela.Num(1)]) == [tela.Num(1), tela.Num(1, 2), tela.Num(2)]
+
+
+def test_sgs_editar_cria_versoes_e_o_original_nao_muda(ctx):
+    rodar(ctx, "sgs gerar hotel strategy", testar=False)
+    original = ctx.pasta_do_numero(1)
+    (original / ".venv").mkdir()
+    (original / ".venv" / "pesado.txt").write_text("não vai na cópia", encoding="utf-8")
+    antes = (original / "README.md").read_text(encoding="utf-8")
+    r = rodar(ctx, "sgs editar 01")
+    assert r["ok"] and r["cartao"]["numero"] == "01.1" and r["cartao"]["porta"] == 61011
+    assert (original / "README.md").read_text(encoding="utf-8") == antes             # o original não mudou
+    v1 = ctx.pasta_do_numero("01.1")
+    assert v1.name == original.name + "_v1" and not (v1 / ".venv").exists()
+    assert "## Versão 01.1" in (v1 / "README.md").read_text(encoding="utf-8")
+    assert rodar(ctx, "sgs editar 01.1")["cartao"]["numero"] == "01.2"               # versão da versão: próxima do 01
+    tabela = next(b for b in rodar(ctx, "sgs listar")["blocos"] if b["t"] == "tabela")
+    assert [linha[0]["texto"] for linha in tabela["linhas"]] == ["00", "01", "01.1", "01.2"]
+    assert [linha[5] for linha in tabela["linhas"]][1:] == ["6101", "61011", "61012"]
+    assert rodar(ctx, "cd 01.2")["prompt"]["cwd"].endswith("_v2")
+    assert rodar(ctx, "sgs info 1.1")["cartao"]["numero"] == "01.1"
+    assert sorted(tela.numerar(ctx.saida).values()) == [1]                          # versão não vira sistema novo
+    rodar(ctx, "sgs gerar cinema strategy", testar=False)
+    assert rodar(ctx, "sgs info 02")["ok"] and rodar(ctx, "sgs editar 9")["ok"] is False
+
+
+def test_porta_em_time_wait_conta_como_livre():
+    """Depois de derrubar um site, as conexões ficam ~60 s em TIME_WAIT: isso NÃO pode travar a porta."""
+    servidor = socket.socket()
+    servidor.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    servidor.bind(("127.0.0.1", 0))
+    servidor.listen()
+    porta = servidor.getsockname()[1]
+    cliente = socket.create_connection(("127.0.0.1", porta))
+    conexao, _ = servidor.accept()
+    conexao.close()                                                          # o servidor fecha primeiro → TIME_WAIT
+    time.sleep(0.2)
+    cliente.close()
+    servidor.close()
+    assert tela.porta_livre(porta)
+
+
+def test_quem_escuta_na_porta_e_a_tela_nunca_se_encerra(ctx):
+    with socket.socket() as escuta:
+        escuta.bind(("127.0.0.1", 0))
+        escuta.listen()
+        porta = escuta.getsockname()[1]
+        assert tela.processo_na_porta(porta)["pid"] == os.getpid()
+        dono = ctx.dono_da_porta(porta)
+        assert dono["encerrar"] is None                                     # é o próprio processo: não se mata
+        assert tela.encerrar_pid(os.getpid()) is False
+    assert tela.processo_na_porta(porta) is None
+
+
+def segurar_porta(porta, *marcas):
+    """Um processo à parte escutando na porta (como um site esquecido no ar)."""
+    codigo = ("import socket, time\ns = socket.socket()\ns.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)\n"
+              f"s.bind(('127.0.0.1', {porta}))\ns.listen()\ntime.sleep(120)\n")
+    processo = subprocess.Popen([sys.executable, "-c", codigo, *marcas], start_new_session=True,
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    limite = time.monotonic() + 10
+    while tela.porta_livre(porta) and time.monotonic() < limite:
+        time.sleep(0.1)
+    return processo
+
+
+def test_tela_nova_encerra_os_sites_orfaos_da_anterior(ctx, tmp_path):
+    porta = porta_qualquer()
+    orfao = segurar_porta(porta, "manage.py", "runserver", f"127.0.0.1:{porta}")
+    try:
+        ctx.saida.mkdir(parents=True, exist_ok=True)
+        (ctx.saida / tela.SERVIDORES).write_text(json.dumps({
+            "loja": {"pid": orfao.pid, "porta": porta, "pasta": "x"},
+            "outro": {"pid": os.getpid(), "porta": porta, "pasta": "y"}}), encoding="utf-8")   # não é runserver
+        nova = tela.Contexto(saida=ctx.saida, config=tmp_path / "cfg.json", raiz=tmp_path)
+        assert nova.servidores.encerrar_orfaos() == [("loja", porta)]
+        assert orfao.wait(timeout=10) is not None and tela.porta_livre(porta)
+        assert not (ctx.saida / tela.SERVIDORES).exists()
+    finally:
+        if orfao.poll() is None:
+            orfao.kill()
+
+
+def test_porta_ocupada_pergunta_s_encerra_o_dono_n_deixa(ctx):
+    pytest.importorskip("django")
+    rodar(ctx, "sgs gerar loja com extras opcionais", django=True, testar=False)
+    porta = porta_qualquer()
+    dono = segurar_porta(porta)
+    try:
+        r = rodar(ctx, f"sgs rodar 01 {porta}")
+        assert r["pergunta"] == "forçar? s/N" and f"processo {dono.pid}" in textos(r) and r["dica"]
+        r = rodar(ctx, "n")
+        assert r["pergunta"] is None and dono.poll() is None                # n: nada foi encerrado
+        rodar(ctx, f"sgs rodar 01 {porta}")
+        r = rodar(ctx, "s")
+        assert r["ok"] and "liberada" in textos(r), textos(r)
+        assert dono.wait(timeout=10) is not None
+        with urllib.request.urlopen(f"http://127.0.0.1:{porta}/", timeout=10) as resposta:
+            assert resposta.status == 200
+        assert "já estava no ar" in textos(rodar(ctx, f"sgs rodar 01 {porta}"))   # de novo: só reabre
+        assert ctx.historico.linhas()[-1] == f"sgs rodar 01 {porta}"            # "s" e "n" não entram no histórico
+        assert json.loads((ctx.saida / tela.SERVIDORES).read_text(encoding="utf-8"))   # anotado para a próxima tela
+        assert rodar(ctx, "sgs parar 01")["ok"] and tela.porta_livre(porta)
+        assert not (ctx.saida / tela.SERVIDORES).exists()
+    finally:
+        if dono.poll() is None:
+            dono.kill()
+
+
+def test_versao_na_porta_de_outra_pergunta_e_troca(ctx):
+    """Como a 01.9 e a 01.19 (mesma porta): subir uma com a outra no ar pergunta e, com s, troca."""
+    pytest.importorskip("django")
+    rodar(ctx, "sgs gerar loja com extras opcionais", django=True, testar=False)
+    rodar(ctx, "sgs editar 01")
+    porta = porta_qualquer()
+    assert rodar(ctx, f"sgs rodar 01 {porta}")["ok"]
+    rodar(ctx, "cd 01.1")
+    r = rodar(ctx, f"python manage.py runserver {porta}")                   # o runserver da tela também pergunta
+    assert r["pergunta"] == "forçar? s/N" and "o sistema 01 (site que a tela subiu)" in textos(r)
+    r = rodar(ctx, "sim")
+    assert r["ok"] and "Starting development server" in textos(r), textos(r)
+    ativos = ctx.servidores.ativos()
+    assert list(ativos) == [ctx.pasta_do_numero("01.1").name] and ativos[list(ativos)[0]]["porta"] == porta
+    rodar(ctx, "sgs parar todos")
+    assert tela.porta_livre(porta)
+
+
+# ---------------------------------------------------------------- módulos (sgs app)
+def test_sgs_app_cria_versao_com_o_modulo_e_tudo_passa(ctx):
+    pytest.importorskip("django")
+    rodar(ctx, "sgs gerar loja com extras opcionais", django=True, testar=False)
+    original = ctx.pasta_do_numero(1)
+    principal = tela.app_django(original)
+    (original / "web" / ".env").write_text("SECRET_KEY=x\nPORTA=6101\n", encoding="utf-8")
+    r = rodar(ctx, "sgs app 01 clinica veterinaria com desconto por convenio entidade=Consulta")
+    assert r["ok"], textos(r)
+    c = r["cartao"]
+    assert c["numero"] == "01.1" and c["modulos"] == ["consultas"] and "/consultas/api/v1/" in textos(r)
+    assert c["testes"] and all(t["codigo"] == 0 for t in c["testes"]), c["testes"]
+    v1 = ctx.pasta_do_numero("01.1")
+    assert not (original / "web" / "consultas").exists()                          # o original não mudou
+    for arquivo in ("settings.py", "models.py", "forms.py", "views.py", "api.py", "urls.py", "nucleo/politicas.py",
+                    "tests/test_api.py", "tests/nucleo/test_politicas.py", "README.md"):
+        assert (v1 / "web" / "consultas" / arquivo).exists(), arquivo
+    assert '"consultas",' in (v1 / "web" / "config" / "settings.py").read_text(encoding="utf-8")
+    assert 'path("consultas/", include("consultas.urls"))' in (v1 / "web" / "config" / "urls.py").read_text(encoding="utf-8")
+    assert f"makemigrations {principal} consultas" in (v1 / "iniciar.sh").read_text(encoding="utf-8")
+    assert "PORTA=61011" in (v1 / "web" / ".env").read_text(encoding="utf-8")
+    assert tela.apps_django(v1) == [principal, "consultas"]
+    assert f"makemigrations {principal} consultas" in textos(rodar(ctx, "sgs comandos 01.1"))
+
+
+def test_sgs_app_explica_nome_repetido_e_sistema_sem_django(ctx):
+    rodar(ctx, "sgs gerar hotel strategy", testar=False)
+    assert "Django" in textos(rodar(ctx, "sgs app 01 estoque com extras"))
+    pytest.importorskip("django")
+    rodar(ctx, "sgs gerar loja com extras opcionais", django=True, testar=False)
+    r = rodar(ctx, "sgs app 02 loja com desconto")                              # a entidade Pedido já existe
+    assert r["ok"] is False and "entidade=" in textos(r)
+    assert [str(n) for n, _ in tela.sistemas(ctx.saida)] == ["01", "02"]           # nada foi copiado
+    assert rodar(ctx, "sgs app 02")["ok"] is False
 
 
 def test_sgs_pwa(ctx):
@@ -447,7 +679,7 @@ def test_django_pelo_terminal_ajusta_o_manage_py_e_roda_o_site(ctx):
     assert "DJANGO_SUPERUSER_USERNAME=admin" in (ctx.pasta_do_numero(1) / "web" / ".env").read_text(encoding="utf-8")
     assert "OK" in textos(rodar(ctx, "python manage.py migrate"))
     r = rodar(ctx, "python manage.py runserver")
-    assert f"http://127.0.0.1:{porta}/" in textos(r)                       # porta 8100+NN (aqui: a livre)
+    assert f"http://127.0.0.1:{porta}/" in textos(r)                       # porta 6100+NN (aqui: a livre)
     with urllib.request.urlopen(f"http://127.0.0.1:{porta}/manifest.webmanifest", timeout=10) as resposta:
         assert json.loads(resposta.read())["display"] == "standalone"      # o site gerado é PWA
     assert str(porta) in textos(rodar(ctx, "sgs servidores"))
@@ -524,6 +756,8 @@ def test_pagina_tem_as_duas_linhas_do_topo_e_o_terminal(servidor):
     assert '"sgs comand"' in principais and "pwa" not in principais       # pwa só na lista completa
     assert "exemplos" not in html.lower()                                 # sem exemplos na tela inicial
     assert 'id="cursor"' in html and 'rel="manifest"' in html and "serviceWorker" in html
+    assert 'class="ps1-linha"' in html and 'id="seta">$&gt;</span>' in html   # prompt em 2 linhas: "$>" embaixo
+    assert "trocarHistorico(d.historico)" in html                          # o histórico volta depois do F5
     for opcao in ("django", "exercicio", "testar", "estudo", "comentarios", "comentarios_web", "perguntar"):
         assert f'data-opcao="{opcao}"' in html                           # as caixas da geração
     assert "innerHTML" not in html

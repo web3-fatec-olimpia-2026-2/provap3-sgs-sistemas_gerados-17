@@ -75,7 +75,7 @@ Gerar um sistema de estudo novo para um assunto qualquer (ver `Gerador_Sistemas/
 ```
 
 Ou pela **tela estilo terminal** no navegador (escreva o pedido e tecle Enter; `sgs` mostra os comandos
-de configuração, listagem, testes e para subir o site Django; gerar é `sgs gerar <pedido>`) — abre em http://127.0.0.1:8100:
+de configuração, listagem, testes e para subir o site Django; gerar é `sgs gerar <pedido>`) — abre em http://127.0.0.1:6100:
 
 ```bash
 .venv/bin/python Gerador_Sistemas/tela_prompt.py
@@ -108,7 +108,7 @@ cd "Treino_Prova/exercicios/ex01_strategy_frete" && ALVO=exercicio ../../../.ven
 - [x] Analisar o django-study-hub e criar o gerador determinístico `Gerador_Sistemas/gerar_sistema.py`
 - [x] Tela estilo terminal com comandos `sgs`; os 23 padrões GoF por categoria (referência: cópia da Wikipédia de 22/11/2026);
       modos "só gerar" e "apenas o código"; Django pronto para subir (`iniciar.sh`, `.env`, migrations, superusuário)
-- [x] SGS: numeração fixa e portas 8100+NN, terminal (cd, source, manage.py…), `sgs comand`, PWA
+- [x] SGS: numeração fixa e portas 8100+NN (hoje 6100+NN), terminal (cd, source, manage.py…), `sgs comand`, PWA
 - [x] Estilos (simples · cmd · bootstrap · web com os temas de `temas/`), Bootstrap local, notas de apresentação,
       opções das Instruções Django (UUID, apps/, baseline de segurança) e do `motor-id-interno` (LNNL),
       perguntas antes de gerar (rodadas de 10, `sgs gerar -sp`)
@@ -119,3 +119,7 @@ cd "Treino_Prova/exercicios/ex01_strategy_frete" && ALVO=exercicio ../../../.ven
       por pontos (+3 pelo nome), `sgs dominios <termo>` e `--listar <termo>`
 - [x] `.gitignore` para subir a pasta inteira no GitHub (raiz, `Gerador_Sistemas/`, `sistemas_gerados/` e o de cada
       sistema gerado): mínimo das Instruções Django §4.7 + `db.sqlite3` + `Zone.Identifier` + estado local do SGS
+- [x] SGS: portas na base 6100 e liberadas ao parar/fechar/reabrir (porta ocupada → pergunta "forçar? s/N"); prompt
+      em duas linhas (`$>` embaixo); histórico global em arquivo (`history`, `history -c`, sobrevive ao F5); todo
+      comando padrão também com `sgs` na frente; versões (`sgs editar NN` → 01.1 … 01.99, porta 61011…) e módulos
+      (`sgs app NN <pedido>`: mais uma app Django com form, CRUD, API REST, padrões, settings e testes)

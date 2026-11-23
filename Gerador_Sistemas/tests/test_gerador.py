@@ -301,6 +301,60 @@ def test_estrutura_apps_e_lnnl(tmp_path):
     assert not (destino / "web" / s.app).exists()
 
 
+# ---------------------------------------------------------------- API REST e módulos (apps a mais: sgs app)
+def test_toda_app_django_tem_api_rest_e_settings_da_app(tmp_path):
+    destino, s = g.gerar(dominio="hotel", padroes=["strategy"], django=True, saida=tmp_path)
+    app = destino / "web" / s.app
+    urls = (app / "urls.py").read_text(encoding="utf-8")
+    assert 'path("api/v1/", api.colecao' in urls and 'path("api/v1/<int:pk>/", api.item' in urls
+    assert '"API_LIMITE"' in (app / "settings.py").read_text(encoding="utf-8")
+    api = (app / "api.py").read_text(encoding="utf-8")
+    assert "csrf_exempt" not in api and "ReservaForm(para_form(dados)" in api     # o MESMO form valida a API
+    assert "enforce_csrf_checks=True" in (app / "tests" / "test_api.py").read_text(encoding="utf-8")
+    assert "RESERVAS_API_ESCRITA=False" in (app / "tests" / "test_api.py").read_text(encoding="utf-8")
+
+
+def test_modulo_entra_no_projeto_e_tudo_passa(tmp_path):
+    pytest.importorskip("django")
+    destino, s = g.gerar(dominio="hotel", padroes=["strategy"], django=True, saida=tmp_path)
+    pasta, plano = g.gerar_modulo(destino, "estacionamento com estados da vaga e relatorio")
+    m = plano["modulo"]
+    assert pasta == destino / "web" / m["app"] and m["pacote"] == m["app"] and "strategy" in m["padroes"]
+    assert (pasta / "nucleo" / "politicas.py").exists() and (pasta / "tests" / "nucleo" / "fabrica.py").exists()
+    assert not any(re.search(r"^\s*(from|import) (nucleo|tests\.fabrica)\b", p.read_text(encoding="utf-8"), re.M)
+                   for p in pasta.rglob("*.py"))                       # o núcleo do módulo mora DENTRO da app
+    assert [x["app"] for x in g.ler_modulos(destino)] == [m["app"]]
+    rotas = (destino / "web" / "config" / "urls.py").read_text(encoding="utf-8")
+    assert rotas.index(f'path("{m["app"]}/"') < rotas.index('path("", include(')   # antes da raiz
+    assert f"makemigrations {s.app} {m['app']}" in (destino / "iniciar.sh").read_text(encoding="utf-8")
+    assert rodar_pytest(destino)[0] == 0                              # o núcleo do projeto continua passando
+    codigo, saida = rodar_pytest(destino / "web")                      # telas + API + núcleo dos DOIS
+    assert codigo == 0, saida
+
+
+def test_modulo_em_estrutura_apps_uuid_e_sem_comentarios(tmp_path):
+    pytest.importorskip("django")
+    destino, s = g.gerar(dominio="cinema", padroes=["prova"], django=True, saida=tmp_path, comentarios=False,
+                         web={"estrutura": "apps", "id_publico": "uuid"})
+    pasta, plano = g.gerar_modulo(destino, "biblioteca com multa por tipo de leitor", entidade="Emprestimo")
+    assert plano["modulo"]["pacote"] == "apps.emprestimos" and pasta == destino / "web" / "apps" / "emprestimos"
+    assert '"apps.emprestimos",' in (destino / "web" / "config" / "settings.py").read_text(encoding="utf-8")
+    codigo, saida = rodar_pytest(destino / "web")
+    assert codigo == 0, saida
+
+
+def test_modulo_com_nome_repetido_reservado_ou_sem_django_explica(tmp_path):
+    destino, _ = g.gerar(dominio="hotel", padroes=["strategy"], django=True, saida=tmp_path)
+    with pytest.raises(g.ErroGerador, match="entidade=Nome"):
+        g.preparar_modulo(destino, "hotel com reserva")                # Reserva já é a app principal
+    with pytest.raises(g.ErroGerador, match="reservado"):
+        g.preparar_modulo(destino, "estoque", entidade="App")         # app "apps" (a pasta das apps)
+    sem_django, _ = g.gerar(dominio="cinema", padroes=["strategy"], saida=tmp_path)
+    with pytest.raises(g.ErroGerador, match="Django"):
+        g.preparar_modulo(sem_django, "estoque")
+    assert g.ler_modulos(destino) == []                                # planejar não escreve nada
+
+
 def test_bootstrap_vem_de_dentro_do_projeto(tmp_path):
     destino, s = g.gerar(dominio="hotel", padroes=["strategy"], django=True, saida=tmp_path, web={"estilo": "web"})
     vendor = destino / "web" / s.app / "static" / s.app / "vendor" / "bootstrap"

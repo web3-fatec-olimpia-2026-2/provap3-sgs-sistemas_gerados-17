@@ -38,6 +38,13 @@ CATALOGO = [
      "tail -n 5 web/servidor.log", "(as últimas 5 linhas do log)", "Bom para ler logs.", "de verdade"),
     ("clear", "1 · Navegar", "Limpa a tela (ficam só as duas linhas do topo).", "clear   ou   sgs clear", "clear",
      "(tela limpa)", "Atalho: Ctrl+L.", "de verdade"),
+    ("history", "1 · Navegar",
+     "Histórico de comandos, numerado como no bash. Fica no ARQUIVO .sgs_historico: sobrevive ao F5 e ao reiniciar.",
+     "history [N]   ou   sgs history [N]", "history 20", "   41  sgs listar\n   42  cd 01",
+     "↑/↓ no prompt percorrem o mesmo histórico. Senhas digitadas entram mascaradas.", "de verdade"),
+    ("history -c", "1 · Navegar", "Limpa o histórico (como no bash); history -d N apaga só a linha N.",
+     "history -c   ou   sgs history -c", "history -c", "(histórico vazio)",
+     "Todo comando padrão funciona também com sgs na frente.", "de verdade"),
     # ---------------------------------------------------------------- 2. ambiente python
     ("source .venv/bin/activate", "2 · Ambiente Python",
      "Ativa o ambiente virtual: python e pip passam a ser os do .venv (com Django e pytest).",
@@ -90,9 +97,10 @@ CATALOGO = [
     # ---------------------------------------------------------------- 6. rodar
     ("python manage.py runserver", "6 · Rodar", "Sobe o servidor de desenvolvimento do Django.",
      "python manage.py runserver [porta]", "python manage.py runserver",
-     "Starting development server at http://127.0.0.1:8101/\nQuit the server with CONTROL-C.",
-     "Na tela roda em segundo plano, na porta 8100 + NN do sistema, e abre em PWA (sgs pwa=false: aba).",
-     "de verdade (em segundo plano)"),
+     "Starting development server at http://127.0.0.1:6101/\nQuit the server with CONTROL-C.",
+     "Na tela roda em segundo plano, na porta 6100 + NN do sistema (versão 01.3 → 61013), e abre em PWA "
+     "(sgs pwa=false: aba). Porta ocupada por outro site (ex.: a 01.9 na porta da 01.19) → a tela pergunta "
+     "se encerra o anterior (s/N).", "de verdade (em segundo plano)"),
     ("bash iniciar.sh", "6 · Rodar", "Tudo de uma vez: venv → dependências → .env → migrations → admin → servidor.",
      "bash iniciar.sh [tudo [porta]]", "bash iniciar.sh",
      "==> migrations … ==> superusuário … ==> site em http://127.0.0.1:8000/",
@@ -100,13 +108,15 @@ CATALOGO = [
     ("bash iniciar.sh <passo>", "6 · Rodar", "Um passo só: venv, deps, env, migrar, admin, testar ou rodar.",
      "bash iniciar.sh <passo>", "bash iniciar.sh migrar", "==> migrations\nNo changes detected …",
      "Cada passo pode ser repetido sem estragar nada.", "de verdade"),
-    ("sgs rodar NN", "6 · Rodar", "Prepara (.env, migrations, admin) e sobe o site do sistema NN na porta 8100 + NN.",
-     "sgs rodar NN [porta]", "sgs rodar 01", "✓ site do sistema 01 no ar: http://127.0.0.1:8101/",
-     "O SGS (esta tela) é o 00, na porta 8100.", "comando sgs"),
-    ("sgs parar NN", "6 · Rodar", "Derruba o site do sistema NN (ou pela porta, ou todos).",
-     "sgs parar NN | porta | todos", "sgs parar 01", "site do sistema 01 derrubado", "", "comando sgs"),
+    ("sgs rodar NN", "6 · Rodar", "Prepara (.env, migrations, admin) e sobe o site do sistema NN na porta 6100 + NN.",
+     "sgs rodar NN [porta]", "sgs rodar 01", "✓ no ar: o sistema 01 — http://127.0.0.1:6101/",
+     "O SGS (esta tela) é o 00, na porta 6100. Versão: sgs rodar 01.3 → porta 61013. Já no ar → só reabre.",
+     "comando sgs"),
+    ("sgs parar NN", "6 · Rodar", "Derruba o site do sistema NN (ou pela porta, ou todos) e libera a porta.",
+     "sgs parar NN | porta | todos", "sgs parar 01", "site do sistema 01 derrubado — porta liberada",
+     "Se a tela cair sem derrubar os sites, a próxima tela libera as portas ao abrir.", "comando sgs"),
     ("sgs servidores", "6 · Rodar", "Mostra os sites que a tela subiu e estão no ar.", "sgs servidores",
-     "sgs servidores", "01  hotel_resort__prova_web  http://127.0.0.1:8101/", "", "comando sgs"),
+     "sgs servidores", "01  hotel_resort__prova_web  http://127.0.0.1:6101/", "", "comando sgs"),
     # ---------------------------------------------------------------- 7. testar
     ("python -m pytest -q", "7 · Testar", "Roda os testes da pasta atual.", "python -m pytest [-q] [-v]",
      "python -m pytest -q", "125 passed in 1.2s", "Dentro de web/ roda os testes do Django.", "de verdade"),
@@ -127,7 +137,7 @@ CATALOGO = [
     ("sgs gerar <pedido>", "8 · SGS",
      "GERA um sistema a partir do pedido em linguagem natural (texto sem sgs gerar só é anotado).",
      "sgs gerar <pedido>", "sgs gerar biblioteca onde a multa varia conforme o tipo de leitor",
-     "✔ Biblioteca Municipal · 01 · porta 8101", "As caixas (+ Django, exercício…) valem para a geração.",
+     "✔ Biblioteca Municipal · 01 · porta 6101", "As caixas (+ Django, exercício…) valem para a geração.",
      "comando sgs"),
     ("sgs gerar -sp", "8 · SGS",
      "Com “Perguntar antes de gerar” ligado, sgs gerar faz rodadas de 10 perguntas; -sp (sem perguntar) gera "
@@ -152,8 +162,17 @@ CATALOGO = [
      "sgs gerar <domínio> <padrões ou grupos>", "sgs gerar hotel criacao observer", "✔ Hotel Resort · 02",
      "Grupos: todos, gof, prova, criacao, estrutural, comportamental.", "comando sgs"),
     ("sgs listar", "8 · SGS", "Lista os sistemas pelo NÚMERO fixo (dado na geração), com a porta de cada um.",
-     "sgs listar [recentes]", "sgs listar", "00  SGS (esta tela)  porta 8100\n01  biblioteca_municipal__strategy  8101",
-     "O número não muda quando aparece outro sistema — por isso a porta também não.", "comando sgs"),
+     "sgs listar [recentes]", "sgs listar",
+     "00  SGS (esta tela)  porta 6100\n01  biblioteca_municipal__strategy  6101\n01.1  biblioteca_municipal__strategy_v1  61011",
+     "O número não muda quando aparece outro sistema — por isso a porta também não. 01.1, 01.2… são versões.",
+     "comando sgs"),
+    ("sgs editar NN", "8 · SGS", "EDITAR = COPIAR: cria a versão NN.k do sistema (01.1 … 01.99); o original não muda.",
+     "sgs editar NN", "sgs editar 01", "✓ versão 01.1 criada: cópia do 01 — porta 61011",
+     "A porta da versão é a do sistema + o último dígito da versão (01.9, 01.19 … 01.99 → 61019).", "comando sgs"),
+    ("sgs app NN <pedido>", "8 · SGS",
+     "MÓDULO: nova versão de NN com mais uma app Django — form, CRUD, API REST, padrões, settings, models, views e "
+     "testes.", "sgs app NN <pedido> [entidade=Nome]", "sgs app 01 vacinas com desconto por convênio entidade=Vacina",
+     "✓ versão 01.2 criada com o módulo vacinas", "Telas em /vacinas/ e API REST em /vacinas/api/v1/.", "comando sgs"),
     ("sgs info NN", "8 · SGS", "Detalhes e arquivos do sistema NN.", "sgs info NN", "sgs info 01", "(o cartão do sistema)",
      "", "comando sgs"),
     ("sgs comandos NN", "8 · SGS", "Os comandos de terminal para rodar o sistema NN fora da tela.", "sgs comandos NN",
@@ -190,8 +209,9 @@ SO_LEITURA = ("pwd", "ls", "cd", "tree", "cat ", "head ", "tail ", "python --ver
 
 
 def _comando_executavel(exemplo):
-    """O exemplo vira um botão "executar" se não tem nada para preencher e só lê."""
-    return "<" not in exemplo and " NN" not in exemplo and (exemplo == "sgs" or exemplo.startswith(SO_LEITURA))
+    """O exemplo vira um botão "executar" se não tem nada para preencher e só lê (history -c/-d apagam: não)."""
+    return ("<" not in exemplo and " NN" not in exemplo and not exemplo.startswith(("history -c", "history -d"))
+            and (exemplo == "sgs" or exemplo.startswith(SO_LEITURA)))
 
 
 def listar():

@@ -529,10 +529,9 @@ def porta_livre(porta):
 
 def linha_de_comando(pid):
     try:
-        texto = Path(f"/proc/{pid}/cmdline").read_bytes().replace(b"\0", b" ").decode("utf-8", "replace").strip()
+        return Path(f"/proc/{pid}/cmdline").read_bytes().replace(b"\0", b" ").decode("utf-8", "replace").strip()
     except OSError:
         return ""
-    return texto[:200]
 
 
 def vivo(pid):
@@ -862,7 +861,8 @@ class Contexto:
             return {"descricao": "um processo que a tela não enxerga (outro usuário ou o Windows)", "encerrar": None}
         if dono["pid"] == os.getpid():
             return {"descricao": "o próprio SGS", "encerrar": None}
-        return {"descricao": f"o processo {dono['pid']} ({dono['cmd'] or 'sem linha de comando'})",
+        comando = dono["cmd"] if len(dono["cmd"]) <= 160 else dono["cmd"][:157] + "…"
+        return {"descricao": f"o processo {dono['pid']} ({comando or 'sem linha de comando'})",
                 "encerrar": lambda pid=dono["pid"]: encerrar_pid(pid, porta)}
 
     def perguntar_forcar(self, porta, dono, rotulo_novo, subir):
@@ -919,11 +919,13 @@ class Contexto:
         """python manage.py runserver [porta] → em segundo plano, na porta do sistema (6100 + NN; versão 01.3 → 61013).
         Porta ocupada por outro site (ex.: a versão 01.9 na porta do 01.19) → pergunta se força."""
         n, pasta = self.sistema_de(web)
-        porta = self.porta_do(n) if n else 8000
+        porta = None
         for a in args:
             m = re.fullmatch(r"(?:[\w.]+:)?(\d{2,5})", a)
             if m:
                 porta = int(m.group(1))
+        if porta is None:                                  # sem porta no comando: a do sistema (ou a 8000 do Django)
+            porta = self.porta_do(n) if n else 8000
         chave = pasta.name if pasta else caminho_exibido(web)
         rotulo = f"o sistema {nn(n)}" if n else chave
 
@@ -1303,11 +1305,12 @@ def sgs_testar(ctx, args, _opcoes=None):
 def sgs_rodar(ctx, args, _opcoes=None):
     """sgs rodar NN [porta]: prepara e sobe. Já no ar → reabre. Porta ocupada (ex.: 01.9 na porta do 01.19) → pergunta."""
     destino, n = escolher(ctx, args[0] if args else None)
-    porta = ctx.porta_do(n)
     if len(args) > 1:
         if not args[1].isdigit() or not 1024 <= int(args[1]) <= 65535:
             return falha("porta inválida: use um número entre 1024 e 65535")
         porta = int(args[1])
+    else:
+        porta = ctx.porta_do(n)
     return ctx.subir_sistema(destino, porta)
 
 

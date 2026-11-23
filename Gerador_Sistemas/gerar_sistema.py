@@ -8289,6 +8289,19 @@ def gerar(dominio=None, assunto=None, spec=None, padroes=None, sistema=None, ent
              o identificador de tipos (tipos_campos.py) deduz pelo nome. Sem `campos`, valem os que o
              assunto listar ("… com os campos nome, raça e idade").
     """
+    s = montar_spec(dominio=dominio, assunto=assunto, spec=spec, padroes=padroes, sistema=sistema, entidade=entidade,
+                    django=django, exercicio=exercicio, estudo=estudo, comentarios=comentarios, web=web, campos=campos)
+    pasta_saida = Path(saida) if saida else PASTA_PADRAO
+    destino = pasta_saida / (nome or nome_saida(s))
+    arquivos = montar_arquivos(s, destino.name)
+    preparar_destino(destino, forcar)
+    escrever(destino, arquivos)
+    return destino, s
+
+
+def montar_spec(dominio=None, assunto=None, spec=None, padroes=None, sistema=None, entidade=None,
+                django=False, exercicio=False, estudo=True, comentarios=True, web=None, campos=None):
+    """A Spec (a entrada já decidida e validada) SEM escrever nada — o que gerar() e preparar_modulo() usam."""
     origem = {"notas": []}
     web_spec = {}
     if spec:
@@ -8350,14 +8363,161 @@ def gerar(dominio=None, assunto=None, spec=None, padroes=None, sistema=None, ent
     if django and "strategy" not in lista:
         lista = normalizar_padroes(lista + ["strategy"])
         origem["notas"].append("--django incluiu o Strategy: o Service da camada web reaproveita as políticas do núcleo.")
-    s = Spec(dados, lista, django=django, exercicio=exercicio, origem=origem,
-             estudo=estudo, comentarios=comentarios, web={**web_spec, **(web or {})})
-    pasta_saida = Path(saida) if saida else PASTA_PADRAO
-    destino = pasta_saida / (nome or nome_saida(s))
-    arquivos = montar_arquivos(s, destino.name)
-    preparar_destino(destino, forcar)
-    escrever(destino, arquivos)
-    return destino, s
+    return Spec(dados, lista, django=django, exercicio=exercicio, origem=origem,
+                estudo=estudo, comentarios=comentarios, web={**web_spec, **(web or {})})
+
+
+# =============================================================================
+# 7b. MÓDULOS: mais uma app Django num sistema que já existe (sgs app NN <pedido>)
+# =============================================================================
+MODULOS = "modulos.json"   # na raiz do sistema: os módulos acrescentados (na ordem)
+APPS_RESERVADAS = {"admin", "auth", "contenttypes", "sessions", "messages", "staticfiles", "config", "apps",
+                   "nucleo", "tests", "web", "api", "novo", "exercicios", "static", "media", "templates",
+                   "manifest", "sw", "docs", "gestao", "django", "management", "migrations"}
+
+
+def ler_modulos(projeto):
+    """[{"app", "pacote", "entidade", …}] dos módulos do sistema (vazio se não houver)."""
+    try:
+        dados = json.loads((Path(projeto) / MODULOS).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    if not isinstance(dados, list):
+        return []
+    return [m for m in dados if isinstance(m, dict) and isinstance(m.get("app"), str)]
+
+
+def apps_do_projeto(projeto):
+    """Rótulos das apps Django que o sistema já tem (web/<app> ou web/apps/<app>)."""
+    web = Path(projeto) / "web"
+    return sorted({p.parent.name for p in list(web.glob("*/apps.py")) + list(web.glob("apps/*/apps.py"))})
+
+
+def _nucleo_dentro_da_app(texto, pacote):
+    """O núcleo do módulo mora DENTRO da app: nucleo.x → <pacote>.nucleo.x; tests.fabrica → <pacote>.tests.nucleo…"""
+    texto = re.sub(r"\b(from|import) nucleo(?=[.\s])", rf"\1 {pacote}.nucleo", texto)
+    return re.sub(r"\b(from|import) tests\.fabrica\b", rf"\1 {pacote}.tests.nucleo.fabrica", texto)
+
+
+def preparar_modulo(projeto, assunto, entidade=None, campos=None, padroes=None):
+    """PLANEJA um módulo (mais uma app Django) para o sistema da pasta `projeto`, sem escrever nada.
+
+    O módulo é gerado pelo MESMO gerador, com as opções web/estudo/comentários do sistema: sai com o form
+    (ModelForm), o CRUD completo, a API REST, o settings da app, models, views, testes e os padrões do pedido —
+    o núcleo dele vai para DENTRO da app (<app>/nucleo/, testes em <app>/tests/nucleo/). Nome de app que já
+    existe (ou reservado) → ErroGerador com a dica entidade=Nome. Devolve o plano para aplicar_modulo().
+    """
+    projeto = Path(projeto)
+    if not (projeto / "web" / "manage.py").exists():
+        raise ErroGerador(f"{projeto.name} não tem o site Django (web/manage.py) — um módulo é uma app Django")
+    try:
+        espec = json.loads((projeto / "especificacao.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        espec = {}
+    espec = espec if isinstance(espec, dict) else {}
+    web = dict(espec.get("web")) if isinstance(espec.get("web"), dict) else {}
+    web["estrutura"] = "apps" if (projeto / "web" / "apps").is_dir() else "plana"     # vale o que está no disco
+    s = montar_spec(assunto=assunto, entidade=entidade, campos=campos, padroes=padroes, django=True,
+                    sistema=espec.get("sistema") or None, estudo=bool(espec.get("estudo", True)),
+                    comentarios=bool(espec.get("comentarios", True)), web=web)
+    app = s.app
+    existentes = apps_do_projeto(projeto)
+    dica = "escolha outro nome para a entidade do módulo: entidade=Nome (ex.: entidade=Vacina)"
+    if app in existentes:
+        raise ErroGerador(f"o sistema já tem uma app {app!r} (a entidade {s.ent} vira a app {app}) — {dica}")
+    if app in APPS_RESERVADAS or not re.fullmatch(r"[a-z][a-z0-9_]*", app):
+        raise ErroGerador(f"{app!r} é um nome reservado (Django, rotas ou pastas do sistema) — {dica}")
+    pacote = f"apps.{app}" if web["estrutura"] == "apps" else app
+    base_app = f"web/{pacote.replace('.', '/')}"
+    tem_admin = any((projeto / "web").glob("**/management/commands/garantir_admin.py"))
+    arquivos = {}
+    for caminho, conteudo in montar_arquivos(s, projeto.name).items():
+        if caminho.startswith(base_app + "/"):
+            if "/management/" in caminho and tem_admin:
+                continue                               # o garantir_admin já vem da app principal
+            arquivos[caminho] = conteudo
+        elif caminho.startswith(("nucleo/", "docs/")):
+            arquivos[f"{base_app}/{caminho}"] = conteudo
+        elif caminho.startswith("tests/") and caminho != "tests/test_exercicios.py":
+            arquivos[f"{base_app}/tests/nucleo/{caminho[len('tests/'):]}"] = conteudo
+    for caminho in [c for c in arquivos if c.endswith(".py")]:
+        arquivos[caminho] = _nucleo_dentro_da_app(arquivos[caminho], pacote)
+    modulo = {"app": app, "pacote": pacote, "caminho": base_app[len("web/"):], "entidade": s.ent,
+              "assunto": assunto, "dominio": s.origem.get("dominio_rotulo", ""), "padroes": s.padroes,
+              "campos": [a["nome"] for a in s.atributos]}
+    arquivos[f"{base_app}/README.md"] = render(r'''
+        # Módulo `@@APP@@` — @@ENT@@ (acrescentado por `sgs app`)
+
+        Pedido: _"@@ASSUNTO@@"_ · domínio: `@@DOMINIO@@`
+
+        | Item | Conteúdo |
+        |---|---|
+        | Pacote | `@@PACOTE@@` (registrado em `INSTALLED_APPS` de `web/config/settings.py`) |
+        | Entidade | `@@ENT@@` — campos: @@CAMPOS@@, `tipo` |
+        | Padrões | @@PADROES@@ — o núcleo deste módulo fica em `nucleo/` (dentro da app) |
+        | Form | `@@ENT@@Form` (`forms.py`): o MESMO ModelForm valida as telas e a API |
+        | CRUD (telas) | `/@@APP@@/` · `/@@APP@@/novo/` · `/@@APP@@/<id>/` · `/@@APP@@/<id>/editar/` · `/@@APP@@/<id>/excluir/` |
+        | API REST | `/@@APP@@/api/v1/` (GET, POST) · `/@@APP@@/api/v1/<id>/` (GET, PUT, PATCH, DELETE) |
+        | Settings | `settings.py` desta app: `API_LIMITE`, `API_ESCRITA` (no projeto: `@@PREFIXO@@_API_LIMITE`…) |
+        | Arquivos | `settings.py` · `models.py` · `forms.py` · `services.py` · `viewmodels.py` · `views.py` · `api.py` · `urls.py` · `templates/` · `static/` · `nucleo/` · `tests/` |
+        | Testes | `cd web && python -m pytest @@CAMINHO@@` (telas, API e o núcleo em `tests/nucleo/`) |
+        | Banco | `bash iniciar.sh migrar` (o `makemigrations` já inclui `@@APP@@`) |
+        ''', APP=app, ENT=s.ent, ASSUNTO=assunto, DOMINIO=modulo["dominio"], PACOTE=pacote,
+        CAMPOS=", ".join(f"`{n}`" for n in modulo["campos"]), PADROES=", ".join(PADROES[p]["titulo"] for p in s.padroes),
+        PREFIXO=app.upper(), CAMINHO=modulo["caminho"])
+    for caminho, conteudo in arquivos.items():
+        if caminho.endswith(".py"):
+            try:
+                ast.parse(conteudo)
+            except SyntaxError as erro:  # pragma: no cover - indica bug do gerador
+                raise RuntimeError(f"código gerado inválido em {caminho}: {erro}") from erro
+    return {"arquivos": arquivos, "modulo": modulo, "spec": s}
+
+
+def aplicar_modulo(projeto, plano):
+    """Escreve o módulo planejado e o REGISTRA no projeto: INSTALLED_APPS, a rota /<app>/ (antes da raiz),
+    o makemigrations do iniciar.sh, modulos.json e uma seção no README."""
+    projeto = Path(projeto)
+    m = plano["modulo"]
+    app, pacote = m["app"], m["pacote"]
+    if (projeto / "web" / m["caminho"]).exists():
+        raise ErroGerador(f"web/{m['caminho']} já existe neste sistema")
+    settings_py = projeto / "web" / "config" / "settings.py"
+    urls_py = projeto / "web" / "config" / "urls.py"
+    texto_settings = settings_py.read_text(encoding="utf-8")
+    lista = re.search(r"INSTALLED_APPS = \[\n(.*?)\n\]", texto_settings, re.S)
+    texto_urls = urls_py.read_text(encoding="utf-8")
+    raiz = re.search(r'^(\s*)path\("", include\(', texto_urls, re.M)
+    if lista is None or raiz is None:
+        raise ErroGerador("não achei INSTALLED_APPS em web/config/settings.py ou o include da raiz em "
+                          "web/config/urls.py — o projeto foi editado à mão?")
+    escrever(projeto, plano["arquivos"])
+    if f'"{pacote}"' not in lista.group(1):
+        texto_settings = (texto_settings[:lista.end(1)] + f'\n    "{pacote}",  # módulo (sgs app)'
+                          + texto_settings[lista.end(1):])
+        settings_py.write_text(texto_settings, encoding="utf-8")
+    rota = f'{raiz.group(1)}path("{app}/", include("{pacote}.urls")),  # módulo (sgs app): antes da raiz\n'
+    urls_py.write_text(texto_urls[:raiz.start()] + rota + texto_urls[raiz.start():], encoding="utf-8")
+    iniciar = projeto / "iniciar.sh"
+    if iniciar.exists():
+        texto_iniciar = iniciar.read_text(encoding="utf-8")
+        iniciar.write_text(re.sub(r"(makemigrations(?: \w+)+)", lambda r: f"{r.group(1)} {app}", texto_iniciar),
+                           encoding="utf-8")
+    modulos = ler_modulos(projeto) + [m]
+    (projeto / MODULOS).write_text(json.dumps(modulos, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    readme = projeto / "README.md"
+    if readme.exists():
+        with open(readme, "a", encoding="utf-8", newline="\n") as arquivo:
+            arquivo.write(f"\n\n## Módulo `{app}` ({m['entidade']})\n\nApp Django acrescentada por `sgs app` "
+                          f"(pedido: _\"{m['assunto']}\"_). Telas em `/{app}/`, API REST em `/{app}/api/v1/`, "
+                          f"padrões: {', '.join(m['padroes'])}. Detalhes: `web/{m['caminho']}/README.md`.\n")
+    return projeto / "web" / m["caminho"]
+
+
+def gerar_modulo(projeto, assunto, entidade=None, campos=None, padroes=None):
+    """Planeja e aplica (no próprio projeto). A tela usa as duas etapas separadas para copiar antes (versão)."""
+    plano = preparar_modulo(projeto, assunto, entidade=entidade, campos=campos, padroes=padroes)
+    return aplicar_modulo(projeto, plano), plano
 
 
 # =============================================================================
