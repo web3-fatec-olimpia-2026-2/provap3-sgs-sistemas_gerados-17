@@ -18,6 +18,7 @@ class Atendimento(models.Model):
         ("vip", "Vip")
     ]
 
+
     cliente = models.CharField("cliente", max_length=120)  # obrigatório: blank=False é o padrão
     codigo = models.IntegerField("codigo", validators=[MinValueValidator(1)])
     quantidade = models.IntegerField("quantidade", validators=[MinValueValidator(1), MaxValueValidator(100)])
@@ -29,6 +30,8 @@ class Atendimento(models.Model):
     def total(self):
         """Dado CALCULADO (quantidade × valor_unitario): nunca guardado, nunca desatualizado."""
         return self.quantidade * self.valor_unitario
+
+
 
     def __str__(self):
         return f"{self.cliente} - {self.quantidade} unidade(s)"

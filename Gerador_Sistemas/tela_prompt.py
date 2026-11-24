@@ -871,6 +871,7 @@ class Servidores:
         """Usa o Python da tela se ele já tem Django (rápido, sem internet); senão o iniciar.sh cria um .venv.
         ABRIR=0: quem abre o navegador é a tela (conforme sgs pwa), não o script."""
         env = dict(os.environ, RUNSERVER_OPCOES="--noreload", ABRIR="0")
+        env.pop("DJANGO_SETTINGS_MODULE", None)
         if importlib.util.find_spec("django") and importlib.util.find_spec("pytest_django"):
             env["PY"] = sys.executable
         return env

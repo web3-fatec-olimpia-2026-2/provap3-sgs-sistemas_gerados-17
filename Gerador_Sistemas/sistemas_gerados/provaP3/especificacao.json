@@ -1,0 +1,194 @@
+{
+  "atributos": [
+    {
+      "max": null,
+      "min": null,
+      "nome": "cooperado",
+      "regra": "obrigatorio",
+      "tipo": "str"
+    },
+    {
+      "max": null,
+      "min": 1,
+      "nome": "talhao",
+      "regra": "minimo",
+      "tipo": "int"
+    },
+    {
+      "max": 5000,
+      "min": 1,
+      "nome": "caixas",
+      "regra": "faixa",
+      "tipo": "int"
+    },
+    {
+      "max": null,
+      "min": 0,
+      "nome": "preco_caixa",
+      "regra": "minimo",
+      "tipo": "float"
+    },
+    {
+      "max": null,
+      "min": null,
+      "nome": "cidade",
+      "padrao": "",
+      "regra": "obrigatorio",
+      "tipo": "str"
+    },
+    {
+      "max": null,
+      "min": null,
+      "nome": "cpf_cnpj_provap3",
+      "padrao": "",
+      "regra": "obrigatorio",
+      "tipo": "str"
+    },
+    {
+      "max": null,
+      "min": null,
+      "nome": "observacao",
+      "regra": "livre",
+      "tipo": "str"
+    }
+  ],
+  "categorias": {
+    "base": [
+      "LaranjaPera",
+      "Laranja Pera",
+      38.0
+    ],
+    "nova": [
+      "TangerinaPonkan",
+      "Tangerina Ponkan",
+      52.0
+    ],
+    "subtipos": [
+      [
+        "LaranjaValencia",
+        "Laranja Valência",
+        40.0
+      ],
+      [
+        "LimaoTahiti",
+        "Limão Tahiti",
+        45.0
+      ]
+    ],
+    "unidade": "caixa"
+  },
+  "comentarios": true,
+  "django": true,
+  "entidade": "LoteCitros",
+  "estudo": true,
+  "extras": {
+    "fixos": [
+      [
+        "Frete",
+        120.0,
+        "frete até a indústria"
+      ],
+      [
+        "Classificacao",
+        60.0,
+        "classificação por calibre"
+      ],
+      [
+        "CamaraFria",
+        90.0,
+        "câmara fria"
+      ]
+    ],
+    "percentual": [
+      "BonusQualidade",
+      1.1,
+      "+10% bônus de qualidade (brix)"
+    ]
+  },
+  "gateway": "PagaCoop",
+  "ident": "cooperado",
+  "nomes": [
+    "Isabela",
+    "João",
+    "Karina",
+    "Lucas"
+  ],
+  "padroes": [
+    "encapsulamento",
+    "polimorfismo",
+    "srp",
+    "service",
+    "mvvm",
+    "adapter",
+    "decorator",
+    "facade",
+    "strategy"
+  ],
+  "painel": {
+    "acao_livre": "Colher",
+    "acao_ocupado": "(em colheita)",
+    "contagem": "talhão(ões) pronto(s)",
+    "livre": "pronto para colher",
+    "ocupado": "EM COLHEITA",
+    "titulo": "Talhão",
+    "zero": "ENTRESSAFRA - nenhum talhão pronto"
+  },
+  "perfil": {
+    "app": "citricultura",
+    "drf": true,
+    "nome": "Prova Prática P3 — ISW-030 Desenvolvimento Web III",
+    "pasta": "provaP3",
+    "projeto": "cooperativa",
+    "pytest_arquivos": "tests.py test_*.py",
+    "rota": "citricultura/"
+  },
+  "preco": "preco_caixa",
+  "precos_exemplo": [
+    38.0,
+    32.0,
+    52.0,
+    0.0
+  ],
+  "quantidade": "caixas",
+  "recurso": "talhão",
+  "recursos": [
+    1,
+    2,
+    3
+  ],
+  "sistema": "Cooperativa Citrícola",
+  "unidade": "caixa(s)",
+  "variantes": {
+    "conceito": "destino da fruta",
+    "itens": [
+      [
+        "Indústria",
+        1.0
+      ],
+      [
+        "Mesa",
+        1.25
+      ],
+      [
+        "Exportação",
+        1.4
+      ]
+    ],
+    "nova": [
+      "Refugo",
+      0.3
+    ]
+  },
+  "web": {
+    "comentarios_web": true,
+    "estilo": "web",
+    "estrutura": "plana",
+    "id_interno": false,
+    "id_publico": "inteiro",
+    "lnnl_tipo": "21",
+    "paleta": "P02",
+    "seguranca": "basica",
+    "tema": "T01",
+    "tom": "tom3"
+  }
+}

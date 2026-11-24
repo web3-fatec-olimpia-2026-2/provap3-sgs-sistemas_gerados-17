@@ -1,0 +1,24 @@
+# Conjunto mínimo das Instruções de desenvolvimento DJANGO (§4.7) + SQLite local.
+.venv/
+.env
+*.pyc
+__pycache__/
+*.log
+.DS_Store
+media/
+staticfiles/
+db.sqlite3
+.env.*
+!.env.example
+.pytest_cache/
+# Marcas do Windows ao baixar/copiar arquivos.
+*Zone.Identifier
+*.identifier
+*.Identifier
+# Site Django: segredos (o modelo web/.env.example sobe), banco local, log do servidor,
+# estáticos coletados e uploads.
+web/.env
+web/db.sqlite3
+web/servidor.log
+web/staticfiles/
+web/media/

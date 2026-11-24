@@ -61,8 +61,10 @@
     ],
     "unidade": "unidade"
   },
+  "comentarios": true,
   "django": true,
   "entidade": "Atendimento",
+  "estudo": true,
   "extras": {
     "fixos": [
       [
@@ -144,5 +146,17 @@
       "Vip",
       0.5
     ]
+  },
+  "web": {
+    "comentarios_web": false,
+    "estilo": "simples",
+    "estrutura": "plana",
+    "id_interno": false,
+    "id_publico": "inteiro",
+    "lnnl_tipo": "21",
+    "paleta": "P02",
+    "seguranca": "basica",
+    "tema": "T01",
+    "tom": "tom3"
   }
 }

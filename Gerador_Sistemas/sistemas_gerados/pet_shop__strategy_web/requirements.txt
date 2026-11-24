@@ -1,3 +1,22 @@
-pytest
-django
-pytest-django
+# =============================================================================
+# requirements.txt — sistema "Pet Shop" (gerado pelo SGS)
+#
+# Python: 3.12 ou mais novo (o Django 6 exige; o núcleo conta com o sum() exato do 3.12+).
+#         Confira: python3 --version  ·  o iniciar.sh confere sozinho antes de criar o .venv
+#
+# Instalar: python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
+#           (ou: bash iniciar.sh deps)
+# =============================================================================
+
+# --- Django e o que ele usa ---
+Django>=6.0,<7.0                 # o framework web: MVT, ORM, admin, formulários
+asgiref>=3.9.1                   # o Django usa (views síncronas e assíncronas)
+sqlparse>=0.5.0                  # o Django usa (formata o SQL das migrations)
+tzdata; sys_platform == "win32"  # o Django usa só no Windows (fusos horários)
+
+# --- testes ---
+pytest>=8.0         # os testes do núcleo
+pytest-django>=4.9  # os testes da camada web (Django)
+
+# --- deste sistema ---
+# (nenhuma a mais: além do Django e dos testes, só a biblioteca padrão do Python)

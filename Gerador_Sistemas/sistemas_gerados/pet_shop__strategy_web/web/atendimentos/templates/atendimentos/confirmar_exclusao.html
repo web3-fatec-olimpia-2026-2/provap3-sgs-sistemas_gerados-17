@@ -1,0 +1,12 @@
+{% extends "atendimentos/base.html" %}
+{% block title %}Excluir Atendimento — Pet Shop{% endblock %}
+{% block page_title %}Excluir Atendimento{% endblock %}
+{% block content %}
+
+<p>Excluir “{{ obj }}”? Esta ação não pode ser desfeita.</p>
+<form method="post">
+  {% csrf_token %}
+  <button type="submit">Excluir</button>
+</form>
+<p><a href="{% url 'atendimentos:detalhe' obj.pk %}">Cancelar</a></p>
+{% endblock %}

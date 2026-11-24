@@ -49,3 +49,7 @@ USE_I18N = True
 USE_TZ = True
 STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# --- API: campos de cada endpoint (sgs api config) — só o que mudou do padrão ---
+ATENDIMENTOS_API_CAMPOS = {'resumo': {'valor_final': True}, 'v1': {'codigo': True}}
+# --- fim da API (sgs api config) ---

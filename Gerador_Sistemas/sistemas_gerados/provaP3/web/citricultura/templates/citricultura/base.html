@@ -1,0 +1,36 @@
+{% load static %}<!doctype html>
+<html lang="pt-br" data-bs-theme="light" data-raio="suave" data-sombra="suave" data-movimento="discreto" data-tipografia="sans" data-acessivel="nao">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1B4D3E">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="{% static 'citricultura/icone-192.png' %}">
+  <link rel="stylesheet" href="{% static 'citricultura/vendor/bootstrap/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'citricultura/css/base.css' %}">
+  <link rel="stylesheet" href="{% static 'citricultura/css/tema.css' %}">
+  <title>{% block title %}Cooperativa Citrícola{% endblock %}</title>
+</head>
+<body>
+  <nav class="navbar navbar-expand navbar-sgs">
+    <div class="container">
+      <a class="navbar-brand" href="{% url 'citricultura:lista' %}">Cooperativa Citrícola</a>
+      <div class="navbar-nav">
+        <a class="nav-link" href="{% url 'citricultura:lista' %}">Lista</a>
+        <a class="nav-link" href="{% url 'citricultura:criar' %}">Cadastrar</a>
+        <a class="nav-link" href="{% url 'citricultura:api' %}">API</a>
+      </div>
+    </div>
+  </nav>
+  <main class="container py-4">
+    <h1 class="h3 mb-1">{% block page_title %}Cooperativa Citrícola{% endblock %}</h1>
+    {% block page_subtitle %}{% endblock %}
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-alternar-apresentacao>ocultar notas de apresentação</button>
+    {% block toolbar_actions %}{% endblock %}
+    {% block content %}{% endblock %}
+  </main>
+  <script src="{% static 'citricultura/vendor/bootstrap/bootstrap.bundle.min.js' %}" defer></script>
+  <script src="{% static 'citricultura/js/app.js' %}" defer></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

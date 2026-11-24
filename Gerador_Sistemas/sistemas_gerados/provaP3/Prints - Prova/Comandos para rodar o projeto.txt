@@ -1,0 +1,53 @@
+cd "/home/oscar/projetos/django/Tecnicas de Programacao II" && source .venv/bin/activate && python Gerador_Sistemas/tela_prompt.py
+
+
+cd "/home/oscar/projetos/django/Tecnicas de Programacao II" && python3 -m venv .venv && source .venv/bin/activate && python -m pip install --upgrade pip && pip install -r requirements.txt && ([ -f .env ] || cp .env.example .env) && python manage.py makemigrations && python manage.py migrate && python manage.py runserver
+
+
+# 1. Entrar na pasta do projeto
+cd "/home/oscar/projetos/django/Tecnicas de Programacao II"
+
+# 2. Criar o ambiente virtual
+python3 -m venv .venv
+
+# 3. Ativar o ambiente virtual
+source .venv/bin/activate
+
+# 4. Atualizar o pip e instalar as dependências
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+
+# 5. Criar o .env a partir do .env.example (se ainda não existir)
+[ -f .env ] || cp .env.example .env
+
+# 6. Gerar e aplicar as migrations
+python manage.py makemigrations
+python manage.py migrate
+
+# 7. Subir o servidor de desenvolvimento
+python manage.py runserver
+
+
+
+...
+
+
+cd "/home/oscar/projetos/django/Tecnicas de Programacao II/Gerador_Sistemas" && python3 --version && python3 -m venv .venv && source .venv/bin/activate && python -m pip install --upgrade pip && pip install -r requirements.txt && python manage.py runserver
+
+
+# 1. Ir para a pasta do SGS
+cd "/home/oscar/projetos/django/Tecnicas de Programacao II/Gerador_Sistemas"
+
+# 2. Conferir se o Python é >= 3.12 (obrigatório para o Django 6)
+python3 --version
+
+# 3. Criar e ativar o ambiente virtual único do projeto
+python3 -m venv .venv
+source .venv/bin/activate
+
+# 4. Atualizar pip e instalar todas as dependências (Django 6, DRF, pytest, Argon2id)
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+
+# 5. Subir o SGS
+python manage.py runserver

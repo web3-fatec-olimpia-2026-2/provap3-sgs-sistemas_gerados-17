@@ -1,0 +1,8 @@
+[
+  {
+    "classe": "LoteCitros",
+    "campo": "cidade",
+    "acao": "novo",
+    "regra": "texto"
+  }
+]

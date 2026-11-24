@@ -1,0 +1,14 @@
+{% extends "citricultura/base.html" %}
+{% block title %}Excluir LoteCitros — Cooperativa Citrícola{% endblock %}
+{% block page_title %}Excluir LoteCitros{% endblock %}
+{% block content %}
+<aside class="apresentacao alert alert-info small" data-apresentacao><strong>Apresentação ·</strong> Excluir: o GET só mostra esta confirmação; apagar exige POST com o token CSRF — um link aberto por engano (ou por um robô) nunca apaga nada.</aside>
+<div class="card"><div class="card-body">
+  <p>Excluir “{{ obj }}”? Esta ação não pode ser desfeita.</p>
+  <form method="post" class="d-flex gap-2">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Excluir</button>
+    <a class="btn btn-outline-primary" href="{% url 'citricultura:detalhe' obj.pk %}">Cancelar</a>
+  </form>
+</div></div>
+{% endblock %}

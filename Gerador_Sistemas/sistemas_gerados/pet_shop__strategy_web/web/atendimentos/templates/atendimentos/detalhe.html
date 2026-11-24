@@ -1,0 +1,14 @@
+{% extends "atendimentos/base.html" %}
+{% block title %}{{ item.titulo }} — Pet Shop{% endblock %}
+{% block page_title %}{{ item.titulo }}{% endblock %}
+{% block content %}
+
+<dl>
+{% for rotulo, valor in item.campos %}
+  <dt>{{ rotulo }}</dt><dd>{{ valor }}</dd>
+{% endfor %}
+  <dt>Valor final</dt><dd>{{ item.valor_formatado }} ({{ item.selo }})</dd>
+</dl>
+<p class="acoes"><a href="{% url 'atendimentos:editar' item.id %}">Editar</a>
+  <a href="{% url 'atendimentos:excluir' item.id %}">Excluir</a> <a href="{% url 'atendimentos:lista' %}">Voltar</a></p>
+{% endblock %}

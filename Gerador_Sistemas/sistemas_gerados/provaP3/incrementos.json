@@ -1,0 +1,14 @@
+[
+  {
+    "classe": "LoteCitros",
+    "campo": "cidade",
+    "acao": "novo",
+    "regra": "texto"
+  },
+  {
+    "classe": "LoteCitros",
+    "campo": "cpf_cnpj_provap3",
+    "acao": "novo",
+    "regra": "texto"
+  }
+]

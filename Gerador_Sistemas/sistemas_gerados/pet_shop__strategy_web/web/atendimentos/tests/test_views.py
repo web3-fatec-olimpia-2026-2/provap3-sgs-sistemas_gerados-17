@@ -44,3 +44,53 @@ def test_api_devolve_json(client):
     client.post(reverse("atendimentos:criar"), form_data())
     dados = client.get(reverse("atendimentos:api")).json()
     assert len(dados["itens"]) == 1 and dados["total"] == "R$ 200.00"
+
+
+# ---------------------------------------------------------------- CRUD: detalhe, editar e excluir
+def criado(client):
+    client.post(reverse("atendimentos:criar"), form_data())
+    return Atendimento.objects.get()
+
+
+@pytest.mark.django_db
+def test_detalhe_mostra_o_registro(client):
+    obj = criado(client)
+    html = client.get(reverse("atendimentos:detalhe", args=[obj.pk])).content.decode()
+    assert str(obj.cliente) in html and "Valor final" in html
+
+
+@pytest.mark.django_db
+def test_editar_altera_o_registro(client):
+    obj = criado(client)
+    resposta = client.post(reverse("atendimentos:editar", args=[obj.pk]), form_data(quantidade="3"))
+    assert resposta.status_code == 302
+    obj.refresh_from_db()
+    assert obj.quantidade == 3
+
+
+@pytest.mark.django_db
+def test_editar_invalido_nao_altera(client):
+    obj = criado(client)
+    antes = obj.quantidade
+    resposta = client.post(reverse("atendimentos:editar", args=[obj.pk]), form_data(quantidade="0"))
+    assert resposta.status_code == 200
+    obj.refresh_from_db()
+    assert obj.quantidade == antes
+
+
+@pytest.mark.django_db
+def test_excluir_so_com_post(client):
+    obj = criado(client)
+    assert client.get(reverse("atendimentos:excluir", args=[obj.pk])).status_code == 200   # GET só confirma
+    assert Atendimento.objects.count() == 1
+    assert client.post(reverse("atendimentos:excluir", args=[obj.pk])).status_code == 302
+    assert Atendimento.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_registro_inexistente_da_404(client):
+    obj = criado(client)
+    pk = obj.pk
+    obj.delete()
+    for rota in ("atendimentos:detalhe", "atendimentos:editar", "atendimentos:excluir"):
+        assert client.get(reverse(rota, args=[pk])).status_code == 404

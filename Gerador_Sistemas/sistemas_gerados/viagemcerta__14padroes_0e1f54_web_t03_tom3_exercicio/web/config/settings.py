@@ -102,5 +102,6 @@ except ImportError:  # sem o pacote: fica o PBKDF2 do Django — rode: pip insta
     pass
 
 # --- API: campos de cada endpoint (sgs api config) — só o que mudou do padrão ---
-VIAGCERTS_API_CAMPOS = {'resumo': {'id_interno': True, 'noites': True, 'observacao': True, 'tipo': True, 'total': True, 'valor': False, 'valor_final': True, 'viajante': True, 'voo': True}, 'v1': {'codigo': True, 'titulo': True, 'valor': True}}
+DESTINOS_API_CAMPOS = {'resumo': {'cidade': True, 'cliente': True, 'id_interno': True, 'observacao': True, 'pais': True, 'quantidade': True, 'tipo': True, 'total': True, 'valor_final': True, 'valor_unitario': True}, 'v1': {'codigo': True, 'titulo': True, 'valor': True}}
+VIAGCERTS_API_CAMPOS = {'resumo': {'destino': True, 'id_interno': True, 'noites': True, 'observacao': True, 'tipo': True, 'total': True, 'valor_final': True, 'valor_noite': True, 'viajante': True, 'voo': True}, 'v1': {'codigo': True, 'titulo': True, 'valor': True}}
 # --- fim da API (sgs api config) ---

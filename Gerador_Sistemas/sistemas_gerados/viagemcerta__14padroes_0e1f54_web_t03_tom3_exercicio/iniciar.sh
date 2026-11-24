@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+unset DJANGO_SETTINGS_MODULE
 # =============================================================================
 # iniciar.sh — prepara e sobe o site Django do sistema "ViagemCerta" (gerado).
 #
