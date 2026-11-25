@@ -392,3 +392,13 @@ python -m pytest
 ## Versão 17.1
 
 Cópia do sistema 17 feita pelo SGS (`sgs editar`): o original não mudou. Esta versão roda na porta 61171 (a do 17 é 6117).
+
+
+## Módulo `cooperados` (Cooperado)
+
+App Django acrescentada por `sgs app` (pedido: _"Criar uma classe"_). Telas em `/cooperados/`, API REST em `/cooperados/api/v1/`, padrões: encapsulamento, service, strategy. Detalhes: `web/cooperados/README.md`.
+
+
+## Ligação `Cooperado.cooperado` → `LoteCitros`
+
+Campo de referência (ForeignKey) opcional, acrescentado por `sgs ligar`: aparece no formulário e na API REST de `cooperados` (o id do LoteCitros); apagar o LoteCitros só limpa o campo (SET_NULL). Teste: `web/cooperados/tests/test_ligacao_cooperado.py`.

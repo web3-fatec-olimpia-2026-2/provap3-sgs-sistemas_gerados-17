@@ -4,7 +4,7 @@ Prova Prática P3 (citricultura), que tem PERFIL próprio (PERFIS, no fim: pasta
 
 Duas fontes, juntadas em gerar_sistema.DOMINIOS:
   1. catalogo_100_dominios.txt — a lista enviada pelo usuário (ID | DOMINIO | SISTEMA | ENTIDADE | PALAVRAS):
-     nome do sistema, entidade e as 30 palavras que ativam cada domínio. É lida aqui, sem alteração.
+     nome do sistema, entidade e as 100 palavras que ativam cada domínio (001–100) + as 101 palavras do 101.
   2. DADOS (abaixo) — o resto que cada sistema precisa, coerente com o setor: atributos com os papéis
      ident/quantidade/preço, variantes (Strategy), categorias (polimorfismo), extras (Decorator), gateway
      (Adapter), recursos e textos do painel, nomes de exemplo. Os 8 domínios originais (hotel, cinema,
@@ -839,12 +839,14 @@ for _chave, _perfil in PERFIS.items():
     DADOS[_chave]["perfil"] = _perfil
 
 
-def montar(dominios_base):
-    """DOMINIOS completos (101), na ordem do catálogo, + INFO {chave: {"id", "setor"}}.
+def montar(dominios_base, caminho_extras=None):
+    """DOMINIOS completos (101 nativos + extras personalizados de dominios_extras.json), + INFO {chave: {"id", "setor"}}.
 
     dominios_base: os 8 domínios originais (dados completos no gerar_sistema.py). As palavras deles passam a
     ser as do catálogo; sistema e entidade precisam bater com o catálogo (senão é erro de cadastro).
     """
+    import sgs_dominios
+
     dominios, info, k = {}, {}, 0
     for numero, chave, sistema, entidade, palavras in ler_catalogo():
         if chave in dominios:
@@ -867,4 +869,10 @@ def montar(dominios_base):
     sobra = set(DADOS) - set(dominios)
     if sobra:
         raise ValueError(f"dominios.py tem dados de domínios fora do catálogo: {sorted(sobra)}")
+    for idx, item in enumerate(sgs_dominios.ler_extras(caminho_extras)):
+        chave = item["chave"]
+        if chave in dominios:
+            continue
+        dominios[chave] = sgs_dominios.construir_dados_dominio(item, k + idx)
+        info[chave] = {"id": f"{int(item['id']):03d}", "setor": item.get("setor") or sgs_dominios.SETOR_PADRAO}
     return dominios, info

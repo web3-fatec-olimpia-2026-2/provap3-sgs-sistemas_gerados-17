@@ -1,7 +1,7 @@
 """python manage.py runserver → a tela do SGS, como o `python tela_prompt.py`:
 
 * porta 6100 (o 00) quando nenhuma é dada — os sistemas gerados continuam em 6100+NN;
-* ao abrir: estilo cmd, janela de app (pwa), topo e caixas ocultos, sites de uma tela anterior encerrados;
+* ao abrir: estilo cmd, janela de app (pwa), topo e caixas à mostra, sites de uma tela anterior encerrados;
 * abre a janela de app (Chrome/Edge num perfil só do SGS) — `--sem-abrir` só sobe o servidor.
 
 Com o autoreload (o padrão do Django), quem prepara e abre a janela é o processo de cima, UMA vez; o processo que

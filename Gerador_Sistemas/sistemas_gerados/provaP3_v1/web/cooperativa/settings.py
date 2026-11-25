@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",  # DRF: Django REST Framework (API com Serializer/ViewSet)
     "citricultura",
+    "cooperados",  # módulo (sgs app)
 ]
 
 MIDDLEWARE = [

@@ -171,3 +171,5 @@ cd "Treino_Prova/exercicios/ex01_strategy_frete" && ALVO=exercicio ../../../.ven
       multiplataforma; remoção de `DJANGO_SETTINGS_MODULE` em `Servidores.runserver()`, `sgs_terminal.rodar()`,
       `rodar_testes.sh`, `iniciar.sh` e `web/manage.py` gerados (e aplicados a `provaP3` e aos demais sistemas gerados);
       guia "Como usar em um PC novo" em `Gerador_Sistemas/README.md`
+- [x] Edição direta por padrão e comando `sgs duplicar NN`: `sgs editar NN` (painel guiado), `sgs app`, `sgs ligar` (com `QuestionarioLigar`) e `sgs incrementar` editam diretamente o sistema `NN` indicado; apenas `sgs duplicar NN` cria cópias `NN.k`; fluxo pós-geração conduz para Editar, Incrementar Campos, Ligar Classes e Duplicar
+- [x] Expansão dos domínios `001`–`100` para **100 palavras-chave cada** (mantendo o `101` intacto) + módulo `sgs_dominios.py` (`sgs dominios novo` guiado ou direto, `sgs dominios remover`, persistência em `dominios_extras.json`) + início do SGS com `sgs topo` e `sgs foot` à mostra + blindagem contra exclusão de pastas com o SGS aberto

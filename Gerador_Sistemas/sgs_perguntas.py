@@ -341,16 +341,17 @@ NOVA = "*"          # nas opções de ligação, "*" é a classe NOVA (o nome de
 
 
 class QuestionarioModulo(Questionario):
-    """Perguntas do INCREMENTO (sgs app NN <pedido>): o que é a funcionalidade nova, conforme o contexto (Destino,
-    Voo, Horario…), se vira uma VERSÃO ou edita o próprio sistema, se ganha um campo de referência para uma classe
-    que já existe (ex.: Viagcert.destino → Destino), os campos e os padrões. Termina com sgs app -sp.
+    """Perguntas do sgs app NN <pedido> (nova classe/funcionalidade no próprio sistema NN): o que é a funcionalidade
+    nova, conforme o contexto (Destino, Voo, Horario…), se ganha um campo de referência para uma classe que já existe
+    (ex.: Viagcert.destino → Destino), os campos e os padrões. Termina com sgs app -sp.
 
+    Por padrão edita diretamente o sistema NN indicado (para criar cópia antes, use sgs duplicar NN).
     As opções do sistema (estilo, tema, estudo, comentários…) vêm do próprio sistema: não são perguntadas.
     """
 
     comando = "sgs app"
 
-    def __init__(self, pedido, config, projeto, numero, marcadas=(), sem_versao=False, entidade=None, padroes=None,
+    def __init__(self, pedido, config, projeto, numero, marcadas=(), sem_versao=True, entidade=None, padroes=None,
                  ligar=None):
         self.pedido = pedido
         self.projeto = projeto
@@ -363,7 +364,7 @@ class QuestionarioModulo(Questionario):
         self.campos_do_pedido = bool(analise["campos"])
         nome = gs.camel(entidade) if entidade else (gs.nome_do_pedido(pedido) or gs.DOMINIOS[dominio]["entidade"])
         self.decisoes = {
-            "entidade": nome, "versao": "editar" if sem_versao else "versao", "ligar": "nao", "campo_ligacao": "",
+            "entidade": nome, "ligar": "nao", "campo_ligacao": "",
             "dominio": dominio, "sistema": gs.DOMINIOS[dominio]["sistema"], "padroes": "manter", "estado": False,
             "testar": config["testar"], "campos": tipos_campos.analisar(analise["campos"]),
         }
@@ -395,14 +396,11 @@ class QuestionarioModulo(Questionario):
                            "Que funcionalidade é esta (o nome da classe nova)? Depende do contexto: Destino, Voo, "
                            f"Horario… Pelo pedido: {d['entidade']}. Classes que o sistema {n} já tem: "
                            f"{', '.join(sorted(self.existentes)) or 'nenhuma'}.", d["entidade"]),
-            lambda: _opcao("versao", "Versão ou edição", f"Criar uma VERSÃO nova (cópia {n}.k — o {n} não muda) ou "
-                           f"EDITAR o próprio {n}, sem versionar?",
-                           [("versao", f"versão nova (cópia {n}.k)"), ("editar", f"editar o próprio {n} (sem versão)")],
-                           d["versao"]),
-            lambda: _opcao("ligar", "Ligação", f"Ligar a {d['entidade']} a uma classe que já existe? (um campo de "
-                           "referência: aparece no formulário e na API REST; opcional)", self._opcoes_ligar(), d["ligar"]),
+            lambda: _opcao("ligar", "Ligar Classes", f"Ligar a {d['entidade']} a uma classe que já existe no sistema "
+                           f"{n}? (cria um campo de referência/ForeignKey no formulário e na API REST; opcional)",
+                           self._opcoes_ligar(), d["ligar"]),
             lambda: None if d["ligar"] == "nao" else _livre(
-                "campo_ligacao", "Nome do campo", f"Nome do campo de referência em {self._classe_origem()}? "
+                "campo_ligacao", "Nome do campo de ligação", f"Nome do campo de referência em {self._classe_origem()}? "
                 f"(aponta para {self._classe_alvo()})", d["campo_ligacao"] or self._campo_padrao()),
             lambda: None if self.campos_do_pedido else _livre(
                 "campos", "Campos", f"Campos a mais na {d['entidade']}, além dos do domínio "
@@ -482,15 +480,14 @@ class QuestionarioModulo(Questionario):
             ligar = (self._classe_origem(), d["campo_ligacao"] or self._campo_padrao(), self._classe_alvo())
         return dict(pedido=self.pedido, entidade=d["entidade"], dominio=d["dominio"], padroes=self.padroes_finais(),
                     campos=[{"nome": c["nome"], "tipo": c["tipo"]} for c in d["campos"]] or None,
-                    sem_versao=d["versao"] == "editar", ligar=ligar, testar=d["testar"])
+                    ligar=ligar, testar=d["testar"])
 
     def resumo(self):
         d = self.decisoes
         ligar = self.argumentos()["ligar"]
         return [["pedido", self.pedido],
                 ["funcionalidade nova", f"{d['entidade']} (app {gs.plural(gs.camel_para_snake(d['entidade']))})"],
-                ["onde", f"editar o próprio {self.numero} (sem versão)" if d["versao"] == "editar"
-                 else f"versão nova do {self.numero} (cópia)"],
+                ["onde", f"no próprio sistema {self.numero} (para cópia antes, use sgs duplicar {self.numero})"],
                 ["ligação", f"{ligar[0]}.{ligar[1]} → {ligar[2]}" if ligar else "nenhuma"],
                 ["campos a mais", ", ".join(f"{c['nome']} ({tipos_campos.rotulo(c['tipo'])})" for c in d["campos"])
                  or "nenhum (só os do domínio)"],
@@ -526,13 +523,14 @@ def _chave_da_regra(texto):
 
 
 class QuestionarioIncremento(Questionario):
-    """Perguntas do sgs incrementar NN: a CLASSE, o CAMPO (um que existe ou um novo), o PADRÃO dele (a regra que o
-    @property do núcleo e o model do Django passam a exigir: mínimo, faixa, lista fechada…), o valor da regra e se
-    vira versão ou edita o próprio sistema. Termina com sgs incrementar -sp."""
+    """Perguntas guiadas de Incrementar Campos (sgs incrementar NN): a CLASSE, o CAMPO (modificar um existente ou
+    criar um NOVO), o PADRÃO dele (a regra que o @property do núcleo e o model do Django passam a exigir: mínimo,
+    faixa, lista fechada…) e o valor da regra. Edita diretamente o próprio sistema NN (para criar cópia antes, use
+    sgs duplicar NN). Termina com sgs incrementar -sp."""
 
     comando = "sgs incrementar"
 
-    def __init__(self, projeto, numero, classes, classe=None, campo=None, regra=None, sem_versao=False):
+    def __init__(self, projeto, numero, classes, classe=None, campo=None, regra=None, sem_versao=True):
         self.pedido = f"sgs incrementar {numero}"
         self.projeto, self.numero, self.classes = projeto, numero, classes
         self.marcadas, self.extras = set(), []
@@ -543,7 +541,7 @@ class QuestionarioIncremento(Questionario):
         if regra and chave == "lista:":
             parametro = regra.split(":", 1)[1]                # a lista com as maiúsculas e acentos digitados
         self.decisoes = {"classe": nome_classe, "campo": campo if existe else NOVO, "nome_novo": "" if existe else campo,
-                         "regra": chave, "parametro": parametro, "versao": "editar" if sem_versao else "versao"}
+                         "regra": chave, "parametro": parametro}
         self.fila = self._fila()
         self.pos = self.rodada = self.na_rodada = self.respostas = 0
         self.atual, self.refinar, self.esgotado = None, False, False
@@ -557,25 +555,21 @@ class QuestionarioIncremento(Questionario):
         d = self.decisoes
         n = self.numero
         return [
-            lambda: _opcao("classe", "Classe", f"Em qual classe do sistema {n}?",
+            lambda: _opcao("classe", "Classe", f"Em qual classe do sistema {n} você quer incrementar ou modificar um campo?",
                            [(c, f"{c}" + (" (a principal)" if i["principal"] else f" (módulo {i['app']})"))
                             for c, i in sorted(self.classes.items())], d["classe"]),
-            lambda: _opcao("campo", "Campo", f"Qual campo da {d['classe']}? Um que já existe (MODIFICAR a regra) ou um "
-                           "NOVO (incrementar a classe).",
+            lambda: _opcao("campo", "Campo", f"Qual campo da {d['classe']}? Escolha um existente (MODIFICAR a regra) ou "
+                           "um NOVO (INCREMENTAR a classe com um novo campo).",
                            [(a["nome"], f"{a['nome']} — hoje: {gs.regra_em_texto(a)}")
                             for a in self.classes[d["classe"]]["atributos"]] + [(NOVO, "um campo NOVO")],
                            d["campo"]),
             lambda: None if d["campo"] != NOVO else _livre(
-                "nome_novo", "Nome do campo novo", f"Nome do campo novo na {d['classe']} (ex.: assento, codigo_voo)?",
+                "nome_novo", "Nome do campo novo", f"Nome do campo novo na {d['classe']} (ex.: cidade, cpf_cnpj, assento)?",
                 d["nome_novo"]),
-            lambda: _opcao("regra", "Padrão do campo", "Que padrão o campo segue? Ele vale no @property do núcleo "
-                           "(a “fechadura” do setter) e no model/form do Django.",
+            lambda: _opcao("regra", "Padrão do campo", "Que padrão/validação o campo segue? Vale no @property do núcleo "
+                           "(a “fechadura” do setter) e no model/form/API do Django.",
                            [(c, r) for c, r, _ in REGRAS], d["regra"] or self._regra_atual()[0]),
             lambda: self._pergunta_parametro(),
-            lambda: _opcao("versao", "Versão ou edição", f"Criar uma VERSÃO nova (cópia {n}.k — o {n} não muda) ou "
-                           f"EDITAR o próprio {n}, sem versionar?",
-                           [("versao", f"versão nova (cópia {n}.k)"), ("editar", f"editar o próprio {n} (sem versão)")],
-                           d["versao"]),
         ]
 
     def _regra_atual(self):
@@ -621,16 +615,243 @@ class QuestionarioIncremento(Questionario):
         d = self.decisoes
         pede = next(p for c, _, p in REGRAS if c == (d["regra"] or self._regra_atual()[0]))
         regra = (d["regra"] or self._regra_atual()[0]) + (d["parametro"] or (self._regra_atual()[1] if pede else ""))
-        return dict(classe=d["classe"], campo=d["nome_novo"] if d["campo"] == NOVO else d["campo"], regra=regra,
-                    sem_versao=d["versao"] == "editar")
+        return dict(classe=d["classe"], campo=d["nome_novo"] if d["campo"] == NOVO else d["campo"], regra=regra)
 
     def resumo(self):
         a = self.argumentos()
         return [["classe", a["classe"]],
                 ["campo", f"{a['campo'] or '(falta o nome)'} — " + ("NOVO" if self.decisoes["campo"] == NOVO else "modificar")],
                 ["padrão (regra)", a["regra"]],
-                ["onde", f"editar o próprio {self.numero} (sem versão)" if a["sem_versao"]
-                 else f"versão nova do {self.numero} (cópia)"]]
+                ["onde", f"no próprio sistema {self.numero} (para cópia antes, use sgs duplicar {self.numero})"]]
+
+
+class QuestionarioLigar(Questionario):
+    """Perguntas guiadas de Ligar Classes (sgs ligar NN): qual classe GANHA o campo de referência (ForeignKey),
+    para qual classe existente ela APONTA e qual o nome do campo. Edita diretamente o próprio sistema NN (para criar
+    cópia antes, use sgs duplicar NN). Termina com sgs ligar -sp."""
+
+    comando = "sgs ligar"
+
+    def __init__(self, projeto, numero, entidades, origem=None, campo=None, alvo=None):
+        self.pedido = f"sgs ligar {numero}"
+        self.projeto, self.numero, self.entidades = projeto, numero, entidades
+        self.marcadas, self.extras = set(), []
+        nomes = sorted(entidades)
+        orig = gs.achar_classe(entidades, origem) or nomes[0]
+        outros = [c for c in nomes if c != orig]
+        dest = gs.achar_classe(entidades, alvo) if alvo else None
+        if dest not in outros:
+            dest = outros[0] if outros else orig
+        nome_campo = gs.camel_para_snake(gs.camel(campo)) if campo else gs.camel_para_snake(dest)
+        self.decisoes = {"origem": orig, "alvo": dest, "campo": nome_campo}
+        self.fila = self._fila()
+        self.pos = self.rodada = self.na_rodada = self.respostas = 0
+        self.atual, self.refinar, self.esgotado = None, False, False
+        self.proxima_rodada()
+
+    def _alvos_possiveis(self):
+        return [c for c in sorted(self.entidades) if c != self.decisoes["origem"]]
+
+    def _fila(self):
+        d = self.decisoes
+        n = self.numero
+        return [
+            lambda: _opcao("origem", "Classe de origem (quem ganha o campo)",
+                           f"Qual classe do sistema {n} vai GANHAR o campo de referência (ForeignKey opcional)?",
+                           [(c, f"{c}  (app {i['app']})") for c, i in sorted(self.entidades.items())], d["origem"]),
+            lambda: _opcao("alvo", "Classe alvo (para onde aponta)",
+                           f"Para qual classe do sistema {n} o campo em {d['origem']} vai apontar?",
+                           [(c, f"{c}  (app {self.entidades[c]['app']})") for c in self._alvos_possiveis()],
+                           d["alvo"] if d["alvo"] in self._alvos_possiveis() else self._alvos_possiveis()[0]),
+            lambda: _livre("campo", "Nome do campo de referência",
+                           f"Nome do campo em {d['origem']} apontando para {d['alvo']}? (entra no model, no form como "
+                           f"lista de escolha e na API REST; ex.: {gs.camel_para_snake(d['alvo'])})",
+                           d["campo"] or gs.camel_para_snake(d["alvo"])),
+        ]
+
+    def _validar(self, chave, bruto):
+        if chave == "campo":
+            nome = gs.camel_para_snake(gs.camel(bruto))
+            if not re.fullmatch(r"[a-z][a-z0-9_]*", nome) or nome in gs.RESERVADOS or nome in gs.RESERVADOS_DJANGO:
+                return None, "nome do campo: letras, números e _ (ex.: destino, produtor, categoria)"
+            return nome, None
+        return super()._validar(chave, bruto)
+
+    def _guardar(self, chave, valor):
+        if chave == "origem" and valor != self.decisoes["origem"]:
+            self.decisoes["origem"] = valor
+            outros = self._alvos_possiveis()
+            if self.decisoes["alvo"] not in outros and outros:
+                self.decisoes["alvo"] = outros[0]
+            self.decisoes["campo"] = gs.camel_para_snake(self.decisoes["alvo"])
+            return
+        if chave == "alvo" and valor != self.decisoes["alvo"]:
+            self.decisoes["alvo"] = valor
+            self.decisoes["campo"] = gs.camel_para_snake(valor)
+            return
+        self.decisoes[chave] = valor
+
+    def argumentos(self):
+        d = self.decisoes
+        return dict(origem=d["origem"], campo=d["campo"] or gs.camel_para_snake(d["alvo"]), alvo=d["alvo"])
+
+    def resumo(self):
+        a = self.argumentos()
+        return [["ligação", f"{a['origem']}.{a['campo']} → {a['alvo']} (ForeignKey opcional)"],
+                ["efeito", f"{a['origem']} ganha o campo {a['campo']} no model, form (select), API REST e teste"],
+                ["onde", f"no próprio sistema {self.numero} (para cópia antes, use sgs duplicar {self.numero})"]]
+
+
+class QuestionarioDominio(Questionario):
+    """Perguntas guiadas para adicionar um DOMÍNIO personalizado (sgs dominios novo): nome do sistema, chave,
+    entidade, setor, palavras-chave de ativação e campos básicos. Salva em dominios_extras.json (ID >= 102) e já
+    fica disponível em sgs gerar e sgs dominios. Termina com sgs dominios novo -sp."""
+
+    comando = "sgs dominios novo"
+
+    def __init__(self, chave="", sistema="", entidade="", palavras="", setor="Personalizados",
+                 caminho_extras=None):
+        import sgs_dominios
+        self.pedido = "sgs dominios novo"
+        self.caminho_extras = caminho_extras
+        self.marcadas, self.extras = set(), []
+        pal_lista = []
+        if palavras:
+            try:
+                pal_lista = sgs_dominios.limpar_palavras(palavras)
+            except ValueError:
+                pal_lista = [p.strip() for p in re.split(r"[,;\n]+", palavras) if p.strip()]
+        chave_norm = sgs_dominios._snake(chave) if chave else ""
+        self.decisoes = {
+            "sistema": sistema.strip(),
+            "chave": chave_norm,
+            "entidade": sgs_dominios._camel(entidade) if entidade else "",
+            "setor": (setor or sgs_dominios.SETOR_PADRAO).strip(),
+            "palavras": ", ".join(pal_lista),
+            "ident": "cliente",
+            "recurso": "codigo",
+            "quantidade": "quantidade",
+            "preco": "valor_unitario",
+            "unidade": "unidade(s)",
+        }
+        self.fila = self._fila()
+        self.pos = self.rodada = self.na_rodada = self.respostas = 0
+        self.atual, self.refinar, self.esgotado = None, False, False
+        self.proxima_rodada()
+
+    def _fila(self):
+        import sgs_dominios
+        d = self.decisoes
+        sug_chave = d["chave"] or (sgs_dominios._snake(d["sistema"]) if d["sistema"] else "meu_dominio")
+        return [
+            lambda: _livre("sistema", "Nome do sistema",
+                           "Qual o nome do sistema para este novo domínio? (ex.: Eólica Sul, Marcenaria Fina)",
+                           d["sistema"] or "Meu Sistema"),
+            lambda: _livre("chave", "Chave do domínio",
+                           "Identificador único do domínio (letras minúsculas, números e _ — usado em `sgs gerar <chave>`):",
+                           sug_chave),
+            lambda: _livre("entidade", "Entidade (classe principal)",
+                           "Nome da classe principal em CamelCase (ex.: Turbina, Movel, Projeto):",
+                           d["entidade"] or "Registro"),
+            lambda: _livre("setor", "Setor do catálogo",
+                           "Em qual setor este domínio aparece em `sgs dominios`? (Enter = Personalizados)",
+                           d["setor"] or sgs_dominios.SETOR_PADRAO),
+            lambda: _livre("palavras", "Palavras-chave de ativação",
+                           "Liste as palavras que ativam este domínio, separadas por vírgula (mínimo 3; quanto mais "
+                           "palavras, melhor o reconhecimento — ex.: eolica, turbina, vento, aerogerador, energia vento):",
+                           d["palavras"] or f"{sug_chave.replace('_', ' ')}, {d['entidade'].lower() or 'registro'}, servico"),
+            lambda: _livre("ident", "Campo identificador (pessoa/responsável)",
+                           "Nome do campo texto principal (quem solicita/possui — ex.: cliente, operador, produtor):",
+                           d["ident"]),
+            lambda: _livre("recurso", "Campo de recurso numérico",
+                           "Nome do campo inteiro de recurso/unidade (ex.: codigo, sala, maquina, talhao):",
+                           d["recurso"]),
+            lambda: _livre("quantidade", "Campo de quantidade",
+                           "Nome do campo inteiro de quantidade (ex.: quantidade, horas, unidades, caixas):",
+                           d["quantidade"]),
+            lambda: _livre("preco", "Campo de preço/valor",
+                           "Nome do campo decimal de preço/valor (ex.: valor_unitario, tarifa, preco_hora):",
+                           d["preco"]),
+            lambda: _livre("unidade", "Rótulo da unidade",
+                           "Como a quantidade é exibida nos resumos e recibos (ex.: unidade(s), hora(s), mwh)?",
+                           d["unidade"]),
+        ]
+
+    def _validar(self, chave, bruto):
+        import sgs_dominios
+        if chave == "sistema":
+            try:
+                return sgs_dominios._limpar_texto(bruto, "nome do sistema"), None
+            except ValueError as e:
+                return None, str(e)
+        if chave == "chave":
+            c = sgs_dominios._snake(bruto)
+            if not re.fullmatch(r"[a-z][a-z0-9_]*", c):
+                return None, "chave do domínio: use letras minúsculas, números e _ (ex.: energia_eolica)"
+            if c in gs.DOMINIOS:
+                return None, f"a chave '{c}' já existe no catálogo — escolha outro identificador"
+            return c, None
+        if chave == "entidade":
+            ent = sgs_dominios._camel(bruto)
+            if not ent or not ent.isidentifier() or not ent[0].isupper():
+                return None, "entidade: informe um nome de classe válido em CamelCase (ex.: Turbina, Projeto)"
+            return ent, None
+        if chave == "setor":
+            try:
+                return sgs_dominios._limpar_texto(bruto, "setor"), None
+            except ValueError as e:
+                return None, str(e)
+        if chave == "palavras":
+            try:
+                return ", ".join(sgs_dominios.limpar_palavras(bruto)), None
+            except ValueError as e:
+                return None, str(e)
+        if chave in ("ident", "recurso", "quantidade", "preco"):
+            try:
+                campo = sgs_dominios._limpar_campo(bruto, chave)
+            except ValueError as e:
+                return None, str(e)
+            outros = {self.decisoes[k] for k in ("ident", "recurso", "quantidade", "preco") if k != chave}
+            if campo in outros:
+                return None, f"o campo '{campo}' já foi usado em outro papel — escolha um nome diferente"
+            return campo, None
+        if chave == "unidade":
+            try:
+                return sgs_dominios._limpar_texto(bruto, "unidade", limite=30), None
+            except ValueError as e:
+                return None, str(e)
+        return super()._validar(chave, bruto)
+
+    def _guardar(self, chave, valor):
+        import sgs_dominios
+        self.decisoes[chave] = valor
+        if chave == "sistema" and not self.decisoes["chave"]:
+            self.decisoes["chave"] = sgs_dominios._snake(valor)
+
+    def argumentos(self):
+        import sgs_dominios
+        d = self.decisoes
+        chave = d["chave"] or sgs_dominios._snake(d["sistema"] or "meu_dominio")
+        sistema = d["sistema"] or "Meu Sistema"
+        entidade = d["entidade"] or "Registro"
+        palavras = d["palavras"] or f"{chave.replace('_', ' ')}, {entidade.lower()}, servico"
+        return dict(
+            chave=chave, sistema=sistema, entidade=entidade, palavras=palavras,
+            setor=d["setor"] or sgs_dominios.SETOR_PADRAO,
+            ident=d["ident"], recurso=d["recurso"], quantidade=d["quantidade"],
+            preco=d["preco"], unidade=d["unidade"],
+        )
+
+    def resumo(self):
+        a = self.argumentos()
+        return [
+            ["sistema", a["sistema"]],
+            ["chave", a["chave"]],
+            ["entidade", a["entidade"]],
+            ["setor", a["setor"]],
+            ["palavras", a["palavras"]],
+            ["campos básicos", f"{a['ident']} · {a['recurso']} · {a['quantidade']} ({a['unidade']}) · {a['preco']}"],
+        ]
 
 
 _NADA = object()

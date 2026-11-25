@@ -1,0 +1,26 @@
+{% extends "cooperados/base.html" %}
+{% block toolbar_actions %}<p class="d-flex gap-2 my-3"><a class="btn btn-primary" href="{% url 'cooperados:criar' %}">Cadastrar Cooperado</a> <a class="btn btn-outline-primary" href="{% url 'cooperados:api' %}">API (JSON)</a></p>{% endblock %}
+{% block content %}
+<aside class="apresentacao alert alert-info small" data-apresentacao><strong>Apresentação ·</strong> Esta página (view <code>lista</code>) é FINA: busca os registros, pede os valores ao <code>CooperadoService</code> e entrega tudo ao <code>PainelVM</code> (MVVM). O template só exibe.</aside>
+<aside class="apresentacao alert alert-info small" data-apresentacao><strong>Apresentação ·</strong> O valor de cada linha passa pela política de tipo de cliente do núcleo (Strategy, <code>nucleo/politicas.py</code>); o selo “com desconto / valor cheio” é decidido no <code>ItemVM</code>.</aside>
+<aside class="apresentacao alert alert-info small" data-apresentacao><strong>Apresentação ·</strong> Formatação: estilo <code>web</code> (Bootstrap + temas (cores da pasta temas/) — tema T01 Profissional, Tom 3). Trocar o estilo muda só <code>base.html</code> e os CSS — as páginas de domínio não mudam.</aside>
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr><th>Registro</th><th>Tipo de cliente</th><th class="text-end">Valor</th><th></th><th></th></tr></thead>
+      <tbody>
+      {% for item in painel.itens %}
+        <tr><td><a href="{% url 'cooperados:detalhe' item.id %}">{{ item.titulo }}</a></td><td>{{ item.tipo_label }}</td>
+          <td class="text-end">{{ item.valor_formatado }}</td>
+          <td><span class="badge badge-destaque">{{ item.selo }}</span></td>
+          <td class="text-end text-nowrap">
+            <a class="btn btn-sm btn-outline-primary" href="{% url 'cooperados:editar' item.id %}">Editar</a>
+            <a class="btn btn-sm btn-outline-danger" href="{% url 'cooperados:excluir' item.id %}">Excluir</a>
+          </td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-footer text-body-secondary small">{{ painel.rodape }}</div>
+</div>
+{% endblock %}

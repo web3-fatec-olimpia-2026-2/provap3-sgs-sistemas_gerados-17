@@ -461,11 +461,22 @@ DOMINIOS = {
     },
 }
 
-# Os 100 domínios: os 8 acima + 92 de dominios.py, na ordem do catalogo_100_dominios.txt (lista do usuário:
-# ID, sistema, entidade e as 30 palavras que ativam cada um). INFO_DOMINIOS[chave] = {"id": "001", "setor": …}.
+# Os 101 domínios nativos (8 acima + 93 de dominios.py, na ordem do catalogo_100_dominios.txt: 100 palavras cada
+# nos 001–100 e 101 palavras no 101) + domínios personalizados salvos em dominios_extras.json (sgs_dominios.py).
 import dominios as _dominios  # noqa: E402
 
-DOMINIOS, INFO_DOMINIOS = _dominios.montar(DOMINIOS)
+_DOMINIOS_BASE = dict(DOMINIOS)
+DOMINIOS, INFO_DOMINIOS = _dominios.montar(_DOMINIOS_BASE)
+
+
+def recarregar_dominios(caminho_extras=None):
+    """Recarrega DOMINIOS e INFO_DOMINIOS in-place (após cadastrar/remover um domínio personalizado)."""
+    novos, novas_infos = _dominios.montar(_DOMINIOS_BASE, caminho_extras=caminho_extras)
+    DOMINIOS.clear()
+    DOMINIOS.update(novos)
+    INFO_DOMINIOS.clear()
+    INFO_DOMINIOS.update(novas_infos)
+    return DOMINIOS, INFO_DOMINIOS
 
 
 # =============================================================================

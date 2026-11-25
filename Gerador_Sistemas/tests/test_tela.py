@@ -467,27 +467,34 @@ def test_num_le_mostra_e_ordena():
     assert sorted([tela.Num(2), tela.Num(1, 2), tela.Num(1)]) == [tela.Num(1), tela.Num(1, 2), tela.Num(2)]
 
 
-def test_sgs_editar_cria_versoes_e_o_original_nao_muda(ctx):
+def test_sgs_duplicar_cria_copias_e_sgs_editar_guia_no_proprio_sistema(ctx):
     rodar(ctx, "sgs gerar hotel strategy", testar=False)
     original = ctx.pasta_do_numero(1)
     (original / ".venv").mkdir()
     (original / ".venv" / "pesado.txt").write_text("não vai na cópia", encoding="utf-8")
     antes = (original / "README.md").read_text(encoding="utf-8")
-    r = rodar(ctx, "sgs editar 01")
+    # sgs editar NN abre o painel guiado e NUNCA duplica o sistema
+    ed = rodar(ctx, "sgs editar 01")
+    assert ed["ok"] and "Editar o sistema 01" in textos(ed)
+    assert "Incrementar Campos" in textos(ed) and "Ligar Classes" in textos(ed) and "sgs duplicar 01" in textos(ed)
+    assert [str(n) for n, _ in tela.sistemas(ctx.saida)] == ["01"]                   # nenhuma cópia criada
+    # sgs duplicar NN é o comando dedicado que cria cópias versionadas NN.k
+    r = rodar(ctx, "sgs duplicar 01")
     assert r["ok"] and r["cartao"]["numero"] == "01.1" and r["cartao"]["porta"] == 61011
     assert (original / "README.md").read_text(encoding="utf-8") == antes             # o original não mudou
     v1 = ctx.pasta_do_numero("01.1")
     assert v1.name == original.name + "_v1" and not (v1 / ".venv").exists()
     assert "## Versão 01.1" in (v1 / "README.md").read_text(encoding="utf-8")
-    assert rodar(ctx, "sgs editar 01.1")["cartao"]["numero"] == "01.2"               # versão da versão: próxima do 01
+    assert rodar(ctx, "sgs duplicar 01.1")["cartao"]["numero"] == "01.2"             # cópia da cópia: próxima do 01
     tabela = next(b for b in rodar(ctx, "sgs listar")["blocos"] if b["t"] == "tabela")
     assert [linha[0]["texto"] for linha in tabela["linhas"]] == ["00", "01", "01.1", "01.2"]
     assert [linha[5] for linha in tabela["linhas"]][1:] == ["6101", "61011", "61012"]
     assert rodar(ctx, "cd 01.2")["prompt"]["cwd"].endswith("_v2")
     assert rodar(ctx, "sgs info 1.1")["cartao"]["numero"] == "01.1"
-    assert sorted(tela.numerar(ctx.saida).values()) == [1]                          # versão não vira sistema novo
+    assert sorted(tela.numerar(ctx.saida).values()) == [1]                          # cópia não vira sistema novo
     rodar(ctx, "sgs gerar cinema strategy", testar=False)
-    assert rodar(ctx, "sgs info 02")["ok"] and rodar(ctx, "sgs editar 9")["ok"] is False
+    assert rodar(ctx, "sgs info 02")["ok"] and rodar(ctx, "sgs duplicar 9")["ok"] is False
+    assert rodar(ctx, "sgs editar 9")["ok"] is False
 
 
 def test_porta_em_time_wait_conta_como_livre():
@@ -577,7 +584,7 @@ def test_versao_na_porta_de_outra_pergunta_e_troca(ctx):
     """Como a 01.9 e a 01.19 (mesma porta): subir uma com a outra no ar pergunta e, com s, troca."""
     pytest.importorskip("django")
     rodar(ctx, "sgs gerar loja com extras opcionais", django=True, testar=False)
-    rodar(ctx, "sgs editar 01")
+    rodar(ctx, "sgs duplicar 01")
     porta = porta_qualquer()
     assert rodar(ctx, f"sgs rodar 01 {porta}")["ok"]
     rodar(ctx, "cd 01.1")
@@ -592,7 +599,7 @@ def test_versao_na_porta_de_outra_pergunta_e_troca(ctx):
 
 
 # ---------------------------------------------------------------- módulos (sgs app)
-def test_sgs_app_cria_versao_com_o_modulo_e_tudo_passa(ctx):
+def test_sgs_app_edita_no_proprio_sistema_e_tudo_passa(ctx):
     pytest.importorskip("django")
     rodar(ctx, "sgs gerar loja com extras opcionais", django=True, testar=False)
     original = ctx.pasta_do_numero(1)
@@ -601,19 +608,22 @@ def test_sgs_app_cria_versao_com_o_modulo_e_tudo_passa(ctx):
     r = rodar(ctx, "sgs app 01 clinica veterinaria com desconto por convenio entidade=Consulta")
     assert r["ok"], textos(r)
     c = r["cartao"]
-    assert c["numero"] == "01.1" and c["modulos"] == ["consultas"] and "/consultas/api/v1/" in textos(r)
+    assert c["numero"] == "01" and c["modulos"] == ["consultas"] and "/consultas/api/v1/" in textos(r)
     assert c["testes"] and all(t["codigo"] == 0 for t in c["testes"]), c["testes"]
-    v1 = ctx.pasta_do_numero("01.1")
-    assert not (original / "web" / "consultas").exists()                          # o original não mudou
+    assert [str(n) for n, _ in tela.sistemas(ctx.saida)] == ["01"]                   # editou o próprio 01 (não duplicou)
     for arquivo in ("settings.py", "models.py", "forms.py", "views.py", "api.py", "urls.py", "nucleo/politicas.py",
                     "tests/test_api.py", "tests/nucleo/test_politicas.py", "README.md"):
-        assert (v1 / "web" / "consultas" / arquivo).exists(), arquivo
-    assert '"consultas",' in (v1 / "web" / "config" / "settings.py").read_text(encoding="utf-8")
-    assert 'path("consultas/", include("consultas.urls"))' in (v1 / "web" / "config" / "urls.py").read_text(encoding="utf-8")
-    assert f"makemigrations {principal} consultas" in (v1 / "iniciar.sh").read_text(encoding="utf-8")
+        assert (original / "web" / "consultas" / arquivo).exists(), arquivo
+    assert '"consultas",' in (original / "web" / "config" / "settings.py").read_text(encoding="utf-8")
+    assert 'path("consultas/", include("consultas.urls"))' in (original / "web" / "config" / "urls.py").read_text(encoding="utf-8")
+    assert f"makemigrations {principal} consultas" in (original / "iniciar.sh").read_text(encoding="utf-8")
+    assert tela.apps_django(original) == [principal, "consultas"]
+    assert f"makemigrations {principal} consultas" in textos(rodar(ctx, "sgs comandos 01"))
+    # Quando o usuário quer cópia antes, usa sgs duplicar 01
+    dup = rodar(ctx, "sgs duplicar 01")
+    assert dup["ok"] and dup["cartao"]["numero"] == "01.1"
+    v1 = ctx.pasta_do_numero("01.1")
     assert "PORTA=61011" in (v1 / "web" / ".env").read_text(encoding="utf-8")
-    assert tela.apps_django(v1) == [principal, "consultas"]
-    assert f"makemigrations {principal} consultas" in textos(rodar(ctx, "sgs comandos 01.1"))
 
 
 def test_sgs_app_explica_nome_repetido_e_sistema_sem_django(ctx):
@@ -640,7 +650,7 @@ def responder_ate(ctx, r, titulo, resposta):
     raise AssertionError(f"a pergunta {titulo!r} não apareceu")
 
 
-def test_sgs_app_pergunta_o_nome_pelo_contexto_liga_e_edita_sem_versao(ctx):
+def test_sgs_app_pergunta_o_nome_pelo_contexto_liga_e_edita_no_proprio_sistema(ctx):
     pytest.importorskip("django")
     rodar(ctx, "sgs gerar loja com extras opcionais", django=True, testar=False)
     principal = next(iter(gs.entidades_do_projeto(ctx.pasta_do_numero(1))))
@@ -649,16 +659,14 @@ def test_sgs_app_pergunta_o_nome_pelo_contexto_liga_e_edita_sem_versao(ctx):
     assert r["pergunta"] and "Funcionalidade nova" in textos(r) and "Pelo pedido: Destino" in textos(r)
     assert r["dica"].endswith("sgs app -sp aplica agora")
     r = rodar(ctx, "")                                                          # Enter: fica o nome do contexto
-    assert "Versão ou edição" in textos(r)
-    r = rodar(ctx, "2")                                                         # editar o próprio 01 (sem versão)
-    assert f"{principal}.destino → Destino" in textos(r)                       # a ligação já usa o nome escolhido
+    assert f"{principal}.destino → Destino" in textos(r)                        # já vai direto para Ligar Classes
     r = rodar(ctx, "2")                                                         # a classe que existe ganha o campo
     assert "Nome do campo" in textos(r) and "destino" in textos(r)
     rodar(ctx, "")                                                              # Enter: o campo se chama destino
     r = rodar(ctx, "sgs app -sp", testar=False)
     assert r["ok"], textos(r)
-    assert "sem versão" in textos(r) and f"{principal}.destino → Destino" in textos(r)
-    assert [str(n) for n, _ in tela.sistemas(ctx.saida)] == ["01"]                 # nenhuma versão nova
+    assert "aplicado no sistema 01" in textos(r) and f"{principal}.destino → Destino" in textos(r)
+    assert [str(n) for n, _ in tela.sistemas(ctx.saida)] == ["01"]                 # nenhuma cópia involuntária
     pasta = ctx.pasta_do_numero(1)
     app_principal = gs.entidades_do_projeto(pasta)[principal]["caminho"]
     modelo = (pasta / "web" / app_principal / "models.py").read_text(encoding="utf-8")
@@ -670,18 +678,19 @@ def test_sgs_app_pergunta_o_nome_pelo_contexto_liga_e_edita_sem_versao(ctx):
     assert testes and all(t["codigo"] == 0 for t in testes), testes
 
 
-def test_sgs_incrementar_lista_os_campos_e_modifica_sem_versao(ctx):
+def test_sgs_incrementar_lista_os_campos_e_modifica_no_proprio_sistema(ctx):
     rodar(ctx, "sgs gerar hotel strategy", testar=False)                        # sem Django: rápido
     lista = rodar(ctx, "sgs incrementar 01")
     assert "Reserva.quarto" in textos(lista) and "lista:janela,meio,corredor" in textos(lista)
-    r = rodar(ctx, "sgs incrementar 01 Reserva.quarto inteiro>=0 -sv")
-    assert r["ok"] and "sem versão" in textos(r) and "modificado" in textos(r), textos(r)
+    r = rodar(ctx, "sgs incrementar 01 Reserva.quarto inteiro>=0")
+    assert r["ok"] and "aplicado no sistema 01" in textos(r) and "modificado" in textos(r), textos(r)
     assert r["cartao"]["testes"] and all(t["codigo"] == 0 for t in r["cartao"]["testes"])
     assert "if valor < 0:" in (ctx.pasta_do_numero(1) / "nucleo" / "entidades.py").read_text(encoding="utf-8")
     assert [str(n) for n, _ in tela.sistemas(ctx.saida)] == ["01"]
-    assert "não fecha" in textos(rodar(ctx, "sgs incrementar 01 Reserva.diarias decimal>=0 -sv"))
-    r = rodar(ctx, "sgs incrementar 01 Reserva.vista simnao", testar=False)     # sem -sv: versão nova
-    assert r["ok"] and r["cartao"]["numero"] == "01.1"
+    assert "não fecha" in textos(rodar(ctx, "sgs incrementar 01 Reserva.diarias decimal>=0"))
+    r = rodar(ctx, "sgs incrementar 01 Reserva.vista simnao", testar=False)     # edita o próprio 01 sem duplicar
+    assert r["ok"] and r["cartao"]["numero"] == "01"
+    assert [str(n) for n, _ in tela.sistemas(ctx.saida)] == ["01"]
 
 
 def test_sgs_incrementar_pergunta_classe_campo_e_padrao(ctx):
@@ -699,12 +708,12 @@ def test_sgs_incrementar_pergunta_classe_campo_e_padrao(ctx):
     assert "Valor da regra" in textos(r)
     assert "pelo menos 2" in textos(rodar(ctx, "janela"))                       # lista de um valor só: repete
     r = rodar(ctx, "janela, corredor")
-    assert "Versão ou edição" in textos(r)
-    rodar(ctx, "2")                                                             # editar o próprio 01
+    assert "no próprio sistema 01" in textos(r)
     r = rodar(ctx, "sgs incrementar -sp")
     assert r["ok"], textos(r)
     entidades = (ctx.pasta_do_numero(1) / "nucleo" / "entidades.py").read_text(encoding="utf-8")
     assert "if valor not in ('janela', 'corredor',):" in entidades and ctx.questionario is None
+    assert [str(n) for n, _ in tela.sistemas(ctx.saida)] == ["01"]              # nenhuma cópia criada
 
 
 def test_ligar_e_incrementar_explicam_o_que_fazer(ctx):
@@ -713,14 +722,14 @@ def test_ligar_e_incrementar_explicam_o_que_fazer(ctx):
     rodar(ctx, "sgs gerar loja com extras opcionais", django=True, testar=False)
     principal = next(iter(gs.entidades_do_projeto(ctx.pasta_do_numero(1))))
     como = textos(rodar(ctx, "sgs ligar 01"))
-    assert "Como usar" in como and "crie a outra classe primeiro" in como and f"ligar={principal}.destino" in como
+    assert "Como usar" in como and "crie a outra classe" in como and f"ligar={principal}.destino" in como
     r = rodar(ctx, f"sgs ligar 01 {principal}.destino Destino")
     assert r["ok"] is False and "ainda não existe" in textos(r)
     assert f"sgs app 01 destinos ligar={principal}.destino" in textos(r)                # o comando que resolve
     assert "Como usar" in textos(rodar(ctx, "sgs ligar 01 Nada.destino Destino"))
     campo = gs.classes_do_projeto(ctx.pasta_do_numero(1))[principal]["atributos"][0]["nome"]
     r = rodar(ctx, f"sgs incrementar 01 {principal}.{campo}")                          # sem o padrão
-    assert "hoje:" in textos(r) and f"sgs incrementar 01 {principal}.{campo} inteiro>=0 -sv" in textos(r)
+    assert "hoje:" in textos(r) and f"sgs incrementar 01 {principal}.{campo} inteiro>=0" in textos(r)
     assert "será CRIADO" in textos(rodar(ctx, f"sgs incrementar 01 {principal}.assento"))
     assert "Como usar" in textos(rodar(ctx, "sgs incrementar 01"))
     m = gs.preparar_modulo(ctx.pasta_do_numero(1), "destinos de viagem")["modulo"]
@@ -789,20 +798,41 @@ def test_sgs_api_config_atualiza_uma_app_de_antes(ctx):
     assert all(t["codigo"] == 0 for t in gs.executar_testes(pasta, type("S", (), {"exercicio": False, "django": True})()))
 
 
-def test_sgs_ligar_lista_as_classes_e_liga_numa_versao(ctx):
+def test_sgs_ligar_lista_as_classes_e_liga_no_proprio_sistema(ctx):
     pytest.importorskip("django")
     rodar(ctx, "sgs gerar loja com extras opcionais", django=True, testar=False)
-    assert rodar(ctx, "sgs app 01 -sp voos entidade=Voo -sv", testar=False)["ok"]        # direto, sem perguntas
+    assert rodar(ctx, "sgs app 01 -sp voos entidade=Voo", testar=False)["ok"]          # direto no próprio 01
     principal = next(c for c in gs.entidades_do_projeto(ctx.pasta_do_numero(1)) if c != "Voo")
     lista = rodar(ctx, "sgs ligar 01")
     assert "Voo" in textos(lista) and principal in textos(lista)
     r = rodar(ctx, f"sgs ligar 01 Voo.{principal.lower()} {principal}", testar=False)
     assert r["ok"], textos(r)
-    assert r["cartao"]["numero"] == "01.1"                                          # sem -sv: versão nova
-    v1 = ctx.pasta_do_numero("01.1")
-    assert f'models.ForeignKey("' in (v1 / "web" / "voos" / "models.py").read_text(encoding="utf-8")
-    assert "ForeignKey" not in (ctx.pasta_do_numero(1) / "web" / "voos" / "models.py").read_text(encoding="utf-8")
-    assert "já tem um campo" in textos(rodar(ctx, f"sgs ligar 01.1 Voo.{principal.lower()} {principal} -sv"))
+    assert r["cartao"]["numero"] == "01"                                               # edita o próprio 01
+    assert [str(n) for n, _ in tela.sistemas(ctx.saida)] == ["01"]                     # nenhuma cópia criada
+    pasta = ctx.pasta_do_numero(1)
+    assert 'models.ForeignKey("' in (pasta / "web" / "voos" / "models.py").read_text(encoding="utf-8")
+    assert "já tem um campo" in textos(rodar(ctx, f"sgs ligar 01 Voo.{principal.lower()} {principal}"))
+
+
+def test_sgs_ligar_guiado_com_questionario_e_atalhos_de_editar(ctx):
+    pytest.importorskip("django")
+    rodar(ctx, "sgs gerar loja com extras opcionais", django=True, testar=False)
+    assert rodar(ctx, "sgs editar 01 app -sp voos entidade=Voo", testar=False)["ok"]   # atalho sgs editar NN app
+    principal = next(c for c in gs.entidades_do_projeto(ctx.pasta_do_numero(1)) if c != "Voo")
+    ctx.config.alterar("perguntar", True)
+    r = rodar(ctx, "sgs editar 01 ligar")                                              # atalho sgs editar NN ligar
+    assert r["pergunta"] and "Classe de origem" in textos(r)
+    assert r["dica"].endswith("sgs ligar -sp aplica agora")
+    r = rodar(ctx, "Voo")                                                              # origem = Voo
+    assert "Classe alvo" in textos(r)
+    r = rodar(ctx, principal)                                                          # alvo = principal
+    assert "Nome do campo de referência" in textos(r)
+    r = rodar(ctx, "origem_ref")
+    assert "Voo.origem_ref" in textos(r) and "no próprio sistema 01" in textos(r)
+    r = rodar(ctx, "sgs ligar -sp", testar=False)
+    assert r["ok"] and "aplicado no sistema 01" in textos(r), textos(r)
+    assert ctx.questionario is None and [str(n) for n, _ in tela.sistemas(ctx.saida)] == ["01"]
+    assert 'origem_ref = models.ForeignKey(' in (ctx.pasta_do_numero(1) / "web" / "voos" / "models.py").read_text(encoding="utf-8")
 
 
 def test_sgs_pwa(ctx):
@@ -995,13 +1025,13 @@ def test_pagina_tem_os_comandos_do_topo_e_o_terminal(servidor):
     assert '"sgs comand"' in principais and "pwa" not in principais       # pwa só na lista completa
     comandos = {c.strip() for c, _ in json.loads(principais)}
     assert {"sgs", "sgs gerar", "sgs provap3", "sgs listar", "sgs rodar", "sgs estilo", "sgs config", "clear",
-            "sgs info", "sgs parar", "sgs app", "sgs ligar", "sgs incrementar", "sgs api config", "sgs dominios",
-            "sgs tipos", "sgs tutorial", "sgs wiki", "sgs hub", "sgs cmd"} <= comandos
+            "sgs info", "sgs parar", "sgs editar", "sgs duplicar", "sgs app", "sgs ligar", "sgs incrementar",
+            "sgs api config", "sgs dominios", "sgs tipos", "sgs tutorial", "sgs wiki", "sgs hub", "sgs cmd"} <= comandos
     assert 'c.trim().replace(/^sgs /, "")' in html                         # no topo, sem o "sgs" na frente
     assert '<p class="principais" id="principais"></p>' in html and '[i ? "|" : "", item]' in html   # "|" sem espaço
     assert "max-width: 1100px" not in html                                 # até o fim da tela
     assert "VISUAIS" not in html and "janela[" not in html                  # o estilo muda por comando (sgs cmd)
-    assert '<html lang="pt-br" data-visual="cmd" data-topo="0" data-rodape="0">' in html   # cmd, sem topo nem caixas
+    assert '<html lang="pt-br" data-visual="cmd" data-topo="1" data-rodape="1">' in html   # cmd, com topo e caixas à mostra
     assert 'fixa ? -1 : pontuar(s.cmd, t)' in html                        # sgs topo e sgs foot sempre primeiro
     assert ':root[data-topo="0"] #principais { display: none; }' in html                   # sgs topo
     assert ':root[data-rodape="0"] .opcoes { display: none; }' in html                     # sgs foot: o prompt fica
@@ -1122,12 +1152,13 @@ def test_sgs_cmd_troca_o_estilo_da_tela(ctx, tmp_path):
 
 
 def test_sgs_topo_e_sgs_foot_alternam(ctx):
-    assert ctx.config.valores["topo"] is False and ctx.config.valores["rodape"] is False  # abre sem os dois
-    assert rodar(ctx, "sgs topo")["config"]["topo"] is True                # mostra
-    assert rodar(ctx, "sgs topo")["config"]["topo"] is False               # de novo: oculta
-    assert rodar(ctx, "sgs foot")["config"]["rodape"] is True              # mostra as caixas
-    assert rodar(ctx, "sgs foot")["config"]["rodape"] is False             # de novo: oculta
-    assert rodar(ctx, "sgs topo sim")["config"]["topo"] is True            # sim/não fixa
+    assert ctx.config.valores["topo"] is True and ctx.config.valores["rodape"] is True    # abre com os dois à mostra
+    assert rodar(ctx, "sgs topo")["config"]["topo"] is False               # oculta
+    assert rodar(ctx, "sgs topo")["config"]["topo"] is True                # de novo: mostra
+    assert rodar(ctx, "sgs foot")["config"]["rodape"] is False             # oculta as caixas
+    assert rodar(ctx, "sgs foot")["config"]["rodape"] is True              # de novo: mostra
+    assert rodar(ctx, "sgs topo nao")["config"]["topo"] is False           # sim/não fixa
+    assert rodar(ctx, "sgs topo sim")["config"]["topo"] is True
     assert rodar(ctx, "sgs topo talvez")["ok"] is False
 
 
@@ -1159,8 +1190,8 @@ def test_a_tela_pelo_django_python_manage_py_runserver(tmp_path, pasta):
         status, r = postar(porta, "/comando", {"linha": "sgs listar"})
         assert status == 200 and r["ok"] and "sistema(s)" in textos(r)
         status, cfg = postar(porta, "/config", {})
-        assert cfg["config"]["visual"] == "cmd" and cfg["config"]["topo"] is False   # o início do SGS rodou
-        assert cfg["config"]["rodape"] is False and cfg["config"]["pwa"] is True
+        assert cfg["config"]["visual"] == "cmd" and cfg["config"]["topo"] is True    # o início do SGS rodou
+        assert cfg["config"]["rodape"] is True and cfg["config"]["pwa"] is True
         assert pedir(porta, "POST", "/comando", "linha=sgs",
                      {"Content-Type": "application/x-www-form-urlencoded"})[0] == 415   # só JSON
         assert pedir(porta, "GET", "/", None, {"Host": "site-malicioso.com"})[0] in (400, 403)   # só 127.0.0.1
@@ -1245,13 +1276,13 @@ def test_sgs_provap3_gera_prepara_e_nao_apaga_o_trabalho(ctx):
     assert list((pasta / "web" / "citricultura" / "migrations").glob("0001_*.py"))
 
 
-def test_ao_abrir_sem_topo_nem_caixas(ctx):
-    ctx.config.alterar("topo", True)
-    ctx.config.alterar("rodape", True)
+def test_ao_abrir_com_topo_e_caixas(ctx):
+    ctx.config.alterar("topo", False)
+    ctx.config.alterar("rodape", False)
     ctx.config.alterar("pwa", False)
     tela.preparar_inicio(ctx)
     v = ctx.config.valores
-    assert (v["visual"], v["pwa"], v["topo"], v["rodape"]) == ("cmd", True, False, False)
+    assert (v["visual"], v["pwa"], v["topo"], v["rodape"]) == ("cmd", True, True, True)
     assert all(v[caixa] for caixa in tela.OPCOES_CAIXA)                    # as caixas começam marcadas
 
 
@@ -1297,3 +1328,56 @@ def test_terminal_e_scripts_raiz_isolam_django_settings_module(tmp_path, monkeyp
     assert "-r Gerador_Sistemas/requirements.txt" in (raiz / "requirements.txt").read_text(encoding="utf-8")
     r = subprocess.run(["bash", "iniciar.sh", "ajuda"], cwd=raiz, capture_output=True, text=True, timeout=30)
     assert r.returncode == 0 and "source iniciar.sh ativar" in r.stdout and "provap3" in r.stdout
+
+
+def test_sgs_dominios_novo_direto_guiado_e_remover(tmp_path):
+    """sgs dominios novo cadastra domínios personalizados (direto ou guiado), ativa em sgs gerar e remove limpo."""
+    extras = tmp_path / "dominios_extras.json"
+    c = tela.Contexto(saida=tmp_path / "sistemas", config=tmp_path / "cfg.json", raiz=tmp_path,
+                      caminho_dominios_extras=extras)
+    c.config.alterar("perguntar", False)
+    try:
+        # 1) Direto numa linha
+        r = rodar(c, 'sgs dominios novo energia_eolica sistema="Eólica Sul" entidade=Turbina '
+                     'palavras="eolica, turbina, vento, aerogerador"')
+        assert r["ok"] and "102" in textos(r) and "energia_eolica" in textos(r), textos(r)
+        assert "energia_eolica" in textos(rodar(c, "sgs dominios"))
+        g_res = rodar(c, "sgs gerar energia_eolica strategy", testar=False)
+        assert g_res["ok"] and g_res["cartao"]["sistema"] == "Eólica Sul"
+        # 2) Fluxo guiado (QuestionarioDominio)
+        r = rodar(c, "sgs dominios novo")
+        assert r["pergunta"] and "Nome do sistema" in textos(r)
+        rodar(c, "Marcenaria Fina")
+        rodar(c, "marcenaria_fina")
+        rodar(c, "Bancada")
+        rodar(c, "")                                                # setor = Personalizados
+        rodar(c, "marcenaria, serraria, bancada, madeira macica")
+        r = rodar(c, "sgs dominios novo -sp")
+        assert r["ok"] and "103" in textos(r) and "marcenaria_fina" in textos(r), textos(r)
+        assert c.questionario is None
+        # 3) Remoção (protege nativos; remove extras)
+        assert rodar(c, "sgs dominios remover hotel")["ok"] is False
+        assert rodar(c, "sgs dominios remover marcenaria_fina")["ok"] is True
+        assert rodar(c, "sgs dominios remover 102")["ok"] is True
+        assert "energia_eolica" not in gs.DOMINIOS
+    finally:
+        gs.recarregar_dominios()
+
+
+def test_sistema_deletado_com_sgs_aberto_nao_quebra(ctx):
+    """Apagar a pasta de um sistema com o SGS aberto não quebra o terminal nem questionários pendentes."""
+    import shutil
+    rodar(ctx, "sgs gerar hotel strategy", testar=False)
+    pasta = ctx.pasta_do_numero(1)
+    assert rodar(ctx, "cd 01")["prompt"]["cwd"].endswith(pasta.name)
+    ctx.config.alterar("perguntar", True)
+    assert rodar(ctx, "sgs incrementar 01")["pergunta"]
+    shutil.rmtree(pasta)
+    # 1) Questionário em andamento falha limpo sem FileNotFoundError
+    r_inc = rodar(ctx, "sgs incrementar -sp")
+    assert r_inc["ok"] is False and "não existe mais no disco" in textos(r_inc)
+    # 2) Terminal dentro da pasta deletada volta sozinho para ~ com aviso
+    r_ls = rodar(ctx, "ls")
+    assert r_ls["ok"] and "voltei para a raiz" in textos(r_ls) and r_ls["prompt"]["cwd"] == "~"
+    # 3) sgs listar continua funcionando sem o sistema apagado
+    assert rodar(ctx, "sgs listar")["ok"] is True

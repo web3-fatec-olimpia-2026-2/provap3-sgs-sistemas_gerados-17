@@ -78,7 +78,8 @@ def test_catalogo_tem_os_100_dominios_em_10_setores_e_o_101_da_prova():
                  "biblioteca": "045", "estacionamento": "055", "generico": "100"}
     assert {c: g.INFO_DOMINIOS[c]["id"] for c in originais} == originais
     for chave, d in g.DOMINIOS.items():
-        assert len(d["palavras"]) >= 25 and not any("_" in p for p in d["palavras"]), chave   # "_" vira frase
+        esperado = 101 if chave == "citricultura" else 100
+        assert len(d["palavras"]) == esperado and not any("_" in p for p in d["palavras"]), chave   # "_" vira frase
 
 
 def test_os_8_dominios_originais_so_trocaram_as_palavras():
@@ -670,3 +671,33 @@ def test_manage_py_e_iniciar_sh_isolam_django_settings_module_do_sgs(tmp_path):
     r = subprocess.run([sys.executable, "manage.py", "check"], cwd=destino / "web", env=env,
                        capture_output=True, text=True, timeout=60)
     assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_modulo_sgs_dominios_cadastra_gera_e_remove(tmp_path):
+    """sgs_dominios.py adiciona domínios personalizados (ID >= 102), gera sistemas completos com testes verdes
+    e protege os 101 domínios nativos contra remoção."""
+    import sgs_dominios
+    extras = tmp_path / "dominios_extras.json"
+    try:
+        novo = sgs_dominios.cadastrar_dominio(
+            "energia_eolica", "Eólica Sul", "Turbina",
+            "eolica, turbina, vento, aerogerador, parque eolico, geracao vento",
+            ident="operador", recurso="torre", quantidade="horas", preco="tarifa_hora", unidade="hora(s)",
+            caminho=extras,
+        )
+        assert novo["id"] == 102 and novo["chave"] == "energia_eolica" and len(novo["palavras"]) == 6
+        g.recarregar_dominios(extras)
+        assert "energia_eolica" in g.DOMINIOS and g.INFO_DOMINIOS["energia_eolica"]["id"] == "102"
+        assert g.analisar_assunto("usina eolica com turbina, vento e aerogerador")["dominio"] == "energia_eolica"
+        destino, s = g.gerar(dominio="energia_eolica", padroes=["strategy"], django=False, saida=tmp_path)
+        assert s.sistema == "Eólica Sul" and s.dados["entidade"] == "Turbina"
+        codigo, saida = rodar_pytest(destino)
+        assert codigo == 0, saida
+        with pytest.raises(ValueError, match="nativo"):
+            sgs_dominios.remover_dominio("hotel", caminho=extras)
+        removido = sgs_dominios.remover_dominio("energia_eolica", caminho=extras)
+        assert removido["chave"] == "energia_eolica"
+        g.recarregar_dominios(extras)
+        assert "energia_eolica" not in g.DOMINIOS
+    finally:
+        g.recarregar_dominios()

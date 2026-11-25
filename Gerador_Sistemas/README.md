@@ -14,7 +14,7 @@ temas, `.env`, migrations, superusuário, PWA). **A mesma entrada gera sempre a 
 | [`gerar_sistema.py`](gerar_sistema.py) | o gerador (também roda sozinho, pela linha de comando) |
 | [`sgs_terminal.py`](sgs_terminal.py) · [`sgs_comand.py`](sgs_comand.py) · [`sgs_perguntas.py`](sgs_perguntas.py) | terminal da tela · help numerado · perguntas antes de gerar |
 | [`temas_web.py`](temas_web.py) | cores dos 10 temas × 6 tons (pasta `temas/`) e das 20 paletas, com contraste WCAG |
-| [`dominios.py`](dominios.py) · [`catalogo_100_dominios.txt`](catalogo_100_dominios.txt) | os **101 domínios** em 11 setores: a lista do usuário (001–100) + o **101** da Prova Prática P3 (`citricultura`) |
+| [`dominios.py`](dominios.py) · [`catalogo_100_dominios.txt`](catalogo_100_dominios.txt) · [`sgs_dominios.py`](sgs_dominios.py) | os **101 domínios** em 11 setores (**100 palavras** em cada domínio `001`–`100` + **101 palavras** no `101` `citricultura` da Prova P3) + módulo para **adicionar novos domínios** (`sgs dominios novo`, salvos em `dominios_extras.json`) |
 | [`tipos_campos.py`](tipos_campos.py) | **identificador de tipos**: acha os campos do pedido e deduz o tipo pelo nome (texto, inteiro, decimal, sim/não, data) |
 | `recursos/bootstrap-5.3.3/` | Bootstrap copiado para dentro do projeto (ver [`recursos/README.md`](recursos/README.md)) |
 | `temas/` · `Instruçõs de desenvolvimento DJANGO/` · `motor-id-interno/` | referências usadas nas opções da camada web |
@@ -98,10 +98,10 @@ o título **SGS** e os botões da janela, sem o ícone de extensão e sem o ⋮.
 continua mostrando os dois: é o Chrome que põe esses botões nos apps instalados.) **Alt+Enter** maximiza a janela;
 de novo, volta ao tamanho de antes.
 
-A tela abre limpa como o Prompt de Comando: `sgs topo` mostra no topo os **comandos principais sem o `sgs` na
+A tela abre com o **topo (`sgs topo`) e as caixas do rodapé (`sgs foot`) à mostra**: o topo traz os **comandos principais sem o `sgs` na
 frente** (`ajuda|gerar|listar|…|cmd|topo|foot`, fonte menor, separados por `|`, até o fim da tela; o clique executa
-ou escreve no prompt o comando inteiro) e, de novo, oculta. `sgs foot` mostra as caixas de seleção e, de novo,
-oculta (a linha do comando sempre fica) — a tela abre sem as duas. Ao digitar `sgs`, as duas primeiras sugestões
+ou escreve no prompt o comando inteiro) e `sgs topo` alterna (oculta/mostra). `sgs foot` oculta/mostra as caixas de seleção
+(a linha do comando sempre fica). Ao digitar `sgs`, as duas primeiras sugestões
 do intellisense são sempre `sgs topo` e `sgs foot`. Não há botão executar: o Enter executa.
 
 A tela **abre sempre no estilo do Prompt de Comando** do Windows (`sgs cmd`): fundo `#0c0c0c` e tudo em cinza
@@ -155,17 +155,18 @@ Principais comandos `sgs`:
 | `sgs provap3` | **Prova Prática P3**: gera o domínio 101 (`citricultura`) em `sistemas_gerados/provaP3` (projeto `cooperativa`, app `citricultura`, `/citricultura/` + DRF em `/api/`) e prepara o ambiente; se a pasta já existe, pergunta (`s/N`) antes de apagar |
 | `sgs listar` · `sgs info NN` · `sgs testar NN` | sistemas pelo **número fixo** (01, 02…, dado na geração) e as **versões** (01.1, 01.2…) |
 | `sgs rodar NN [porta]` · `sgs parar NN` · `sgs servidores` | sobe/derruba o site; o SGS é o 00 (porta 6100), o 01 roda na 6101, a versão 01.3 na 61013 |
-| `sgs editar NN` | **editar = copiar**: cria a versão NN.k (01.1 … 01.99); o original não muda |
-| `sgs app NN <pedido> [entidade=Nome] [padroes=a,b] [ligar=Classe.campo] [-sv]` | **funcionalidade nova** (módulo): mais uma app Django (form, CRUD, API REST, padrões, settings, models, views, testes); com “Perguntar”, pergunta o nome dela, versão ou edição e a ligação |
-| `sgs ligar NN Classe.campo Alvo [-sv]` | campo de **referência** opcional entre duas classes do sistema (ex.: `Viagcert.destino → Destino`) |
-| `sgs incrementar NN Classe.campo <padrão> [-sv]` | **incrementar/modificar** um campo com um padrão (`inteiro>=0`, `inteiro:1..30`, `lista:a,b,c`…), no @property e no Django |
+| `sgs editar NN` | **painel guiado de edição no próprio NN** (Incrementar Campos, Ligar Classes, Nova Classe/App, API) — nunca cria cópia |
+| `sgs duplicar NN` | **duplicar = copiar**: cria a cópia versionada NN.k (01.1 … 01.99); o original NN não muda (único comando que duplica) |
+| `sgs app NN <pedido> [entidade=Nome] [padroes=a,b] [ligar=Classe.campo]` | **funcionalidade nova** (módulo) diretamente no sistema NN: mais uma app Django (form, CRUD, API REST, padrões, settings, models, views, testes); com “Perguntar”, conduz nome, ligação, campos e padrões |
+| `sgs ligar NN [Classe.campo Alvo]` | **ligar classes** diretamente no sistema NN: campo de referência opcional entre duas classes (ex.: `Viagcert.destino → Destino`); sozinho conduz passo a passo |
+| `sgs incrementar NN [Classe.campo <padrão>]` | **incrementar/modificar campos** diretamente no sistema NN (`inteiro>=0`, `inteiro:1..30`, `lista:a,b,c`…), no @property e no Django; sozinho conduz passo a passo |
 | `sgs api config NN [<endpoint> campo=sim\|nao …]` | os **campos de cada endpoint** da API (v1 e resumo de cada app): expor ou ocultar, campo a campo |
 | `sgs comandos NN` | comandos de terminal para rodar o sistema fora da tela |
 | `sgs comand [n]` · `sgs exit` | help numerado da esteira de desenvolvimento · volta à tela principal |
 | `sgs estilo [simples\|cmd\|bootstrap\|web]` · `sgs tema [T01…T10] [tom] [P01…P20]` | formatação das páginas geradas |
 | `sgs tipos <campos>` | mostra o tipo que cada campo recebe pelo nome e quais viram pergunta (ex.: `sgs tipos nome, idade, status`) |
 | `sgs cancelar` | desiste das perguntas em andamento |
-| `sgs dominios [termo]` | os 101 domínios por setor (101 = Prova P3: `citricultura`); com termo, só os que batem (`sgs dominios saude`, `sgs dominios pet`, `sgs dominios 101`) |
+| `sgs dominios [termo \| novo \| remover]` | os 101 domínios (100 palavras cada nos `001`–`100`; 101 = Prova P3: `citricultura`) + cadastro de novos domínios (`sgs dominios novo`, guiado ou direto) e remoção de personalizados (`sgs dominios remover <chave>`) |
 | `sgs padroes` · `sgs config` · `sgs pwa=false` · `clear` | catálogo, configuração, PWA, limpar |
 | `sgs tutorial` · `sgs wiki` · `sgs hub` | tutorial prático · Wikipédia (padrões GoF) · Django Study Hub, lado a lado |
 | `sgs cmd` · `sgs cmd sgs` (ou `cmd` · `cmd sgs`) | estilo da tela: Prompt de Comando (padrão ao abrir) · cores do SGS |
@@ -285,7 +286,7 @@ sgs api config 16 todos=sim                           ← sem endpoint: vale par
 ```
 
 **O site no ar acompanha.** Se o site do sistema está no ar pela tela, o SGS o reinicia sozinho na mesma porta
-depois de um `sgs api config` ou de uma edição sem versão (`app`, `ligar`, `incrementar` com `-sv`), já com as
+depois de um `sgs api config` ou de uma edição no sistema (`app`, `ligar`, `incrementar`), já com as
 migrations, porque o servidor não recarrega sozinho. Depois é só dar F5 no navegador. Se o site estiver no ar por
 fora da tela, o SGS só avisa.
 
@@ -298,47 +299,45 @@ campo oculto não aparece nem pedindo, e `/api/v1/campos/` lista os disponíveis
 Os testes da app conferem sempre o padrão, por isso a sua escolha não os quebra. Uma app gerada antes deste
 recurso é refeita na primeira mudança, com as mesmas regras e as ligações de volta.
 
-### Módulos (`sgs app`) e versões (`sgs editar`)
+### Editar (`sgs editar`), Duplicar (`sgs duplicar`), Módulos (`sgs app`), Ligar Classes (`sgs ligar`) e Incrementar Campos (`sgs incrementar`)
 
-**Editar um sistema gera uma cópia**: `sgs editar 01` cria a versão **01.1** (depois 01.2 … até 01.99) na pasta
-`<pasta do 01>_v1`, com o banco e o `web/.env` (a `PORTA` já ajustada) e sem `.venv`, caches e log. O original não
-muda. Editar uma versão cria a próxima do mesmo sistema (editar a 01.1 gera a 01.2). As versões ficam em
-`sistemas_gerados/.sgs_registro.json` (`versoes`) e nunca ganham número de sistema novo.
+**Por padrão, toda edição altera diretamente o sistema NN indicado** — evitando cópias involuntárias (`NN.1`, `NN.2`).
+- `sgs editar 01` abre o **painel guiado de edição do próprio 01** (mostra classes e campos atuais e conduz para **Incrementar Campos**, **Ligar Classes**, **Nova Classe/App**, **Configurar API** e **Duplicar**). Aceita atalhos diretos (`sgs editar 01 incrementar`, `sgs editar 01 ligar`, `sgs editar 01 app <pedido>`).
+- **Para duplicar antes de experimentar**: `sgs duplicar 01` cria a cópia versionada **01.1** (depois 01.2 … até 01.99) na pasta `<pasta do 01>_v1`, com o banco e o `web/.env` (a `PORTA` já ajustada) e sem `.venv`, caches e log. O original não muda. Duplicar uma cópia cria a próxima do mesmo sistema (`sgs duplicar 01.1` gera a `01.2`). As cópias ficam em `sistemas_gerados/.sgs_registro.json` (`versoes`) e nunca ganham número de sistema novo.
 
-`sgs app 01 <pedido>` acrescenta ao 01 **mais uma app Django** — a funcionalidade nova. O módulo é gerado pelo
+`sgs app 01 <pedido>` acrescenta diretamente ao 01 **mais uma app Django** — a funcionalidade nova. O módulo é gerado pelo
 mesmo gerador, com o estilo, o tema e as opções do sistema; o pedido escolhe o domínio, os campos e os padrões, como
 no `sgs gerar`.
 
-Com a caixa **Perguntar antes de gerar**, o SGS pergunta antes de mexer em qualquer arquivo:
+Com a caixa **Perguntar antes de gerar**, o SGS conduz passo a passo antes de mexer em qualquer arquivo:
 
 1. **que funcionalidade é** — o nome da classe nova, que depende do contexto. O padrão vem do pedido: “destinos de
    viagem” → `Destino`, “cadastro de horários de voos” → `Horario`. Você pode trocar por `Voo`, por exemplo;
-2. **versão ou edição** — versão nova 01.k (cópia) ou editar o próprio 01, **sem versionar**;
-3. **ligação** — ligar a classe nova a uma que já existe, nos dois sentidos: `Viagcert.destino → Destino` (a classe
+2. **ligar classes** — ligar a classe nova a uma que já existe, nos dois sentidos: `Viagcert.destino → Destino` (a classe
    que existe ganha a referência) ou `Destino.viagcert → Viagcert` (a nova aponta para ela);
-4. o **nome do campo** de referência, os **campos a mais** (com os tipos duvidosos), os **padrões** (o Strategy entra
+3. o **nome do campo** de referência, os **campos a mais** (com os tipos duvidosos), os **padrões** (o Strategy entra
    sempre), a máquina de estados e o domínio base.
 
-`sgs app -sp` encerra as perguntas e aplica. Sem perguntas, tudo vai no comando:
-`sgs app 16 -sp destinos de viagem ligar=Viagcert.destino padroes=state -sv`. `ligar=Classe.campo` aponta para a classe
+`sgs app -sp` encerra as perguntas e aplica no próprio sistema. Sem perguntas, tudo vai no comando:
+`sgs app 16 -sp destinos de viagem ligar=Viagcert.destino padroes=state`. `ligar=Classe.campo` aponta para a classe
 nova; `ligar=Classe.campo:Alvo` serve para qualquer par. Tudo é planejado e conferido **antes** de escrever: nome
 repetido ou ligação errada não muda nada.
 
-**Passo a passo — o `ligar` liga duas classes que JÁ existem.** No sistema 16, que só tem a `Viagcert`:
+**Passo a passo — tudo aplicado diretamente no sistema 16 (use `sgs duplicar 16` antes se quiser cópia):**
 
 ```
-sgs app 16 destinos de viagem ligar=Viagcert.destino -sv   ← cria a Destino e já liga (Viagcert.destino → Destino)
-sgs app 16 horarios de voos entidade=Voo -sv               ← cria a Voo
-sgs ligar 16 Voo.destino Destino -sv                       ← liga duas classes que já existem
-sgs incrementar 16 Viagcert.noites inteiro:1..15 -sv        ← muda o padrão de um campo que existe
-sgs incrementar 16 Viagcert.assento lista:janela,meio,corredor -sv   ← cria um campo novo com o padrão
+sgs editar 16                                                   ← abre o painel guiado do sistema 16
+sgs app 16 destinos de viagem ligar=Viagcert.destino            ← cria a Destino e já liga (Viagcert.destino → Destino)
+sgs app 16 horarios de voos entidade=Voo                        ← cria a Voo
+sgs ligar 16 Voo.destino Destino                                ← liga duas classes que já existem (ou só `sgs ligar 16` guiado)
+sgs incrementar 16 Viagcert.noites inteiro:1..15                ← muda o padrão de um campo que existe
+sgs incrementar 16 Viagcert.assento lista:janela,meio,corredor  ← cria um campo novo com o padrão
+sgs duplicar 16                                                 ← cria a cópia 16.1 (só quando você pedir)
 ```
 
-`sgs ligar NN` e `sgs incrementar NN` sozinhos mostram as classes e os campos, com este passo a passo. Se o Alvo
-ainda não existe, o `ligar` diz o comando que cria e liga. Sem o padrão, `sgs incrementar NN Classe.campo` mostra
-como o campo está hoje e comandos prontos para ele.
+`sgs ligar NN` e `sgs incrementar NN` sozinhos conduzem passo a passo (com “Perguntar” ligado) ou mostram as classes e os campos com comandos prontos. Se o Alvo ainda não existe, o `ligar` diz o comando que cria e liga. Sem o padrão, `sgs incrementar NN Classe.campo` mostra como o campo está hoje e comandos prontos para ele.
 
-**Ligação** (`sgs ligar NN Classe.campo Alvo [-sv]`, ou `ligar=` no `sgs app`) é um `ForeignKey` **opcional**
+**Ligar Classes** (`sgs ligar NN Classe.campo Alvo`, ou `ligar=` no `sgs app`) cria um `ForeignKey` **opcional**
 (`null`/`blank`, `SET_NULL`: apagar o alvo só limpa o campo). Ela entra:
 
 - no `models.py`, antes do `tipo`, e no `Meta.fields` do form, onde vira uma lista de escolha;
@@ -348,8 +347,8 @@ como o campo está hoje e comandos prontos para ele.
 Se o site já subiu (o sistema tem migrations), o SGS roda o `makemigrations` na hora, para o banco e os testes
 acompanharem. Depois é só `sgs parar NN` e `sgs rodar NN`, que aplicam o `migrate`.
 
-**Incrementar/modificar um campo** (`sgs incrementar NN Classe.campo <padrão> [-sv]`): define o padrão (a regra)
-de UM campo de uma classe — a principal ou a de um módulo. Se o campo já existe, a regra dele **muda**; se o nome
+**Incrementar Campos** (`sgs incrementar NN Classe.campo <padrão>`): define o padrão (a regra)
+de UM campo de uma classe — a principal ou a de um módulo — diretamente no sistema NN. Se o campo já existe, a regra dele **muda**; se o nome
 é novo, a classe **ganha** o campo.
 
 | Padrão | O que o campo aceita |
@@ -372,8 +371,8 @@ A classe é **refeita pelo gerador** a partir da especificação atualizada (`es
 
 O SGS recusa, sem escrever nada, o que quebraria a classe — por exemplo, a quantidade passar a ser decimal — e
 ligações, que mudam com `sgs ligar`. `sgs incrementar NN` sozinho lista os campos com o padrão de cada um. Com
-“Perguntar”, ele pergunta a classe, o campo (um que existe ou um novo), o padrão, o valor dele (mínimo, faixa, os
-valores da lista) e versão ou edição; `sgs incrementar -sp` aplica. Anotado em `incrementos.json`.
+“Perguntar”, ele pergunta a classe, o campo (um que existe ou um novo), o padrão e o valor dele (mínimo, faixa, os
+valores da lista); `sgs incrementar -sp` aplica diretamente no sistema NN. Anotado em `incrementos.json`.
 
 Cada módulo tem:
 
@@ -512,7 +511,7 @@ Para os testes do gerador e do SGS, rode `cd Gerador_Sistemas && python -m pytes
 - os campos a mais de cada tipo (texto, inteiro, decimal, sim/não, data) e o identificador de tipos;
 - o modo exercício (questionário, código completo);
 - a API REST (CRUD, 400/404/405, os settings da app e o CSRF) e os módulos (`sgs app`, nas estruturas plana e `apps/`);
-- as versões (`sgs editar`), as portas 6100/61011… e a pergunta de forçar a porta ocupada;
+- as cópias/versões (`sgs duplicar`), o painel guiado (`sgs editar`), as portas 6100/61011… e a pergunta de forçar a porta ocupada;
 - o determinismo, inclusive dos binários;
 - as perguntas e o `-sp`;
 - o terminal, o histórico em arquivo (`history`, `history -c`) e o `sgs comand`;

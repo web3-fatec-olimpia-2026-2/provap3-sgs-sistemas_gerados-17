@@ -129,6 +129,8 @@ def nota(texto):
 
 def rodar(argv, cwd, env_extra=None, tempo=TEMPO_PADRAO):
     """Executa DE VERDADE (sem teclado: stdin fechado) e devolve a saída como blocos."""
+    if not Path(cwd).is_dir():
+        return [saida(f"pasta não existe mais no disco: {cwd} (use cd ~ para voltar à raiz)", "erro")]
     # Remove DJANGO_SETTINGS_MODULE do SGS (sgs_web.settings) para não contaminar manage.py/pytest dos sistemas.
     env = {k: v for k, v in os.environ.items() if k != "DJANGO_SETTINGS_MODULE"}
     if env_extra:
@@ -536,8 +538,13 @@ def executar(linha, ctx):
     funcao = COMANDOS.get(nome)
     if funcao is None:
         return None
+    aviso_cwd = []
+    if not ctx.sessao.cwd.is_dir():
+        antiga = ctx.sessao.mostrar()
+        ctx.sessao.cwd = ctx.sessao.raiz
+        aviso_cwd = [nota(f"a pasta atual ({antiga}) não existe mais — voltei para a raiz (~)")]
     try:
-        return funcao(args, ctx, env)
+        return aviso_cwd + funcao(args, ctx, env)
     except PermissionError:
         return [saida(f"{nome}: fora do projeto — a tela só acessa a pasta do projeto (~)", "erro")]
     except (FileNotFoundError, IsADirectoryError, ValueError) as erro:

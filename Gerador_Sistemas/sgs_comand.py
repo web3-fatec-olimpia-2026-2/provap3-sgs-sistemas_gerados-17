@@ -167,21 +167,32 @@ CATALOGO = [
      "00  SGS (esta tela)  porta 6100\n01  biblioteca_municipal__strategy  6101\n01.1  biblioteca_municipal__strategy_v1  61011",
      "O número não muda quando aparece outro sistema — por isso a porta também não. 01.1, 01.2… são versões.",
      "comando sgs"),
-    ("sgs editar NN", "8 · SGS", "EDITAR = COPIAR: cria a versão NN.k do sistema (01.1 … 01.99); o original não muda.",
-     "sgs editar NN", "sgs editar 01", "✓ versão 01.1 criada: cópia do 01 — porta 61011",
-     "A porta da versão é a do sistema + o último dígito da versão (01.9, 01.19 … 01.99 → 61019).", "comando sgs"),
+    ("sgs editar NN", "8 · SGS",
+     "PAINEL GUIADO DE EDIÇÃO do próprio sistema NN: mostra classes/campos atuais e conduz para Incrementar Campos, "
+     "Ligar Classes, Nova Funcionalidade (app) e API — nunca cria cópia.",
+     "sgs editar NN [incrementar | ligar | app <pedido> | api]", "sgs editar 01",
+     "Editar o sistema 01 — ações clicáveis no próprio 01",
+     "Para criar uma cópia antes de experimentar mudanças, use sgs duplicar NN.", "comando sgs"),
+    ("sgs duplicar NN", "8 · SGS",
+     "DUPLICAR = COPIAR: cria uma cópia versionada NN.k do sistema (01.1 … 01.99); o original NN não muda. "
+     "É o único comando que gera cópia.",
+     "sgs duplicar NN", "sgs duplicar 01", "✓ cópia (versão 01.1) criada a partir do 01 — porta 61011",
+     "A porta da cópia é a do sistema + o último dígito da versão (01.9, 01.19 … 01.99 → 61019).", "comando sgs"),
     ("sgs app NN <pedido>", "8 · SGS",
-     "FUNCIONALIDADE NOVA: mais uma app Django — form, CRUD, API REST, padrões, settings, models, views e testes. Com "
-     "“Perguntar”, pergunta o nome (pelo contexto: Destino, Voo…), versão ou edição, ligação, campos e padrões.",
-     "sgs app NN <pedido> [entidade=Nome] [padroes=a,b] [ligar=Classe.campo] [-sv] [-sp]",
+     "FUNCIONALIDADE NOVA diretamente no sistema NN: acrescenta mais uma app Django — form, CRUD, API REST, padrões, "
+     "settings, models, views e testes. Com “Perguntar”, conduz nome, ligação, campos e padrões.",
+     "sgs app NN <pedido> [entidade=Nome] [padroes=a,b] [ligar=Classe.campo] [-sp]",
      "sgs app 16 destinos de viagem com os campos cidade e pais",
-     "✓ módulo destinos (Destino) acrescentado ao próprio 16 (sem versão) · Viagcert.destino → Destino",
-     "Sem -sv cria a versão NN.k; -sv edita o próprio NN. sgs app -sp encerra as perguntas e aplica.", "comando sgs"),
+     "✓ o módulo destinos (Destino): aplicado no sistema 16 · Viagcert.destino → Destino",
+     "Altera diretamente o NN (para cópia antes, use sgs duplicar NN). sgs app -sp encerra as perguntas e aplica.",
+     "comando sgs"),
     ("sgs ligar NN Classe.campo Alvo", "8 · SGS",
-     "Campo de REFERÊNCIA (opcional) de uma classe para outra do mesmo sistema: entra no models, no form, na API e "
-     "ganha teste; o site que já subiu ganha a migration.", "sgs ligar NN [Classe.campo Alvo] [-sv]",
-     "sgs ligar 16 Viagcert.destino Destino", "✓ campo Viagcert.destino acrescentado",
-     "sgs ligar NN sozinho lista as classes. Apagar o Alvo só limpa o campo (SET_NULL).", "comando sgs"),
+     "LIGAR CLASSES diretamente no sistema NN: cria campo de REFERÊNCIA (ForeignKey opcional) de uma classe para outra "
+     "(entra no models, form como lista de escolha, API e teste). Sozinho conduz passo a passo.",
+     "sgs ligar NN [Classe.campo Alvo] [-sp]",
+     "sgs ligar 16 Viagcert.destino Destino", "✓ a ligação Viagcert.destino → Destino: aplicado no sistema 16",
+     "Com “Perguntar” ligado e ≥ 2 classes, sgs ligar NN pergunta origem, alvo e nome do campo. Apagar o Alvo só limpa "
+     "o campo (SET_NULL).", "comando sgs"),
     ("sgs api config NN", "8 · SGS",
      "CAMPOS DA API: que campos cada endpoint expõe — o v1 (REST, /api/v1/) e o resumo (/api/, o link “API” do "
      "site) de cada app; nos módulos, /destinos/api/v1/…", "sgs api config NN [<endpoint> campo=sim|nao … | todos=nao | "
@@ -190,11 +201,12 @@ CATALOGO = [
      "Grava em config/settings.py (<APP>_API_CAMPOS). Quem chama escolhe entre os expostos: /api/v1/?campos=id,total.",
      "comando sgs"),
     ("sgs incrementar NN Classe.campo <padrão>", "8 · SGS",
-     "INCREMENTAR (campo novo) ou MODIFICAR (campo que existe) um campo com um padrão: inteiro>=0, inteiro:1..30, "
-     "decimal>=0, lista:a,b,c, texto, texto-livre, simnao, data. A classe é refeita: o @property do núcleo, o "
-     "model/form/API do Django e os testes seguem o padrão.", "sgs incrementar NN [Classe.campo <padrão>] [-sv] [-sp]",
-     "sgs incrementar 16 Viagcert.voo inteiro>=1 -sv", "✓ campo Viagcert.voo acrescentado ao próprio 16 (sem versão)",
-     "sgs incrementar NN sozinho lista os campos e os padrões. Ligação (referência) muda com sgs ligar.",
+     "INCREMENTAR CAMPOS diretamente no sistema NN: cria um campo novo ou modifica a regra de um campo existente "
+     "(inteiro>=0, inteiro:1..30, decimal>=0, lista:a,b,c, texto, texto-livre, simnao, data). A classe é refeita no "
+     "@property do núcleo, no model/form/API do Django e nos testes.",
+     "sgs incrementar NN [Classe.campo <padrão>] [-sp]",
+     "sgs incrementar 16 Viagcert.voo inteiro>=1", "✓ o campo Viagcert.voo (modificado): aplicado no sistema 16",
+     "sgs incrementar NN sozinho conduz passo a passo ou lista os campos e padrões. Para cópia antes: sgs duplicar NN.",
      "comando sgs"),
     ("sgs info NN", "8 · SGS", "Detalhes e arquivos do sistema NN.", "sgs info NN", "sgs info 01", "(o cartão do sistema)",
      "", "comando sgs"),
@@ -203,9 +215,18 @@ CATALOGO = [
     ("sgs padroes", "8 · SGS", "Os 28 padrões por categoria e as palavras que os ativam.", "sgs padroes [categoria]",
      "sgs padroes criacao", "(tabela)", "sgs dominios mostra os domínios.", "comando sgs"),
     ("sgs dominios [termo]", "8 · SGS",
-     "Os 100 domínios em 10 setores; com um termo, só os que batem (nome, sistema, entidade, setor ou palavra).",
+     "Os 101 domínios nativos (100 palavras cada nos 001–100; 101 na Prova P3) + domínios personalizados; com termo, "
+     "filtra por nome, sistema, entidade, setor ou palavra.",
      "sgs dominios [termo]", "sgs dominios saude", "011 clinica · 013 hospital · 014 odontologia …",
-     "Sem termo mostra só os setores, para não encher a tela.", "comando sgs"),
+     "Sem termo mostra só os setores. Para adicionar um domínio novo: sgs dominios novo.", "comando sgs"),
+    ("sgs dominios novo", "8 · SGS",
+     "Módulo para cadastrar um NOVO domínio personalizado (além dos 101 nativos), com dados básicos e palavras-chave. "
+     "Salvo em dominios_extras.json (ID ≥ 102) e ativo na hora em sgs gerar e sgs dominios.",
+     'sgs dominios novo [chave sistema="..." entidade=Classe palavras="a, b, c"]',
+     'sgs dominios novo energia_eolica sistema="Eólica Sul" entidade=Turbina palavras="eolica, turbina, vento"',
+     "✓ domínio 102 (energia_eolica · Eólica Sul · Turbina) cadastrado",
+     "Sem argumentos, conduz passo a passo (termine com sgs dominios novo -sp). Para remover: sgs dominios remover <chave>.",
+     "comando sgs"),
     ("sgs config", "8 · SGS", "Mostra ou altera a configuração (caixas, porta base, admin, PWA).",
      "sgs config [chave=valor …]", "sgs config admin_senha=minhaSenha1", "✓ alterado: admin_senha", "",
      "comando sgs"),
@@ -231,11 +252,11 @@ CATALOGO = [
      "padrão ao abrir) · sgs cmd sgs = as cores do SGS (prompt verde).", "sgs cmd [sgs]   ou   cmd [sgs]",
      "sgs cmd sgs", "a tela passa para as cores do SGS", "Sem o sgs na frente também vale: cmd · cmd sgs.",
      "comando sgs"),
-    ("sgs topo", "8 · SGS", "Mostra os comandos principais no topo da tela; de novo, oculta (a tela abre com eles "
-     "ocultos).", "sgs topo [sim|nao]", "sgs topo", "os comandos aparecem no topo", "", "comando sgs"),
-    ("sgs foot", "8 · SGS", "Mostra as caixas de seleção embaixo do prompt; de novo, oculta (a tela abre sem "
-     "elas; a linha do comando sempre fica).", "sgs foot [sim|nao]", "sgs foot", "as caixas aparecem embaixo do "
-     "prompt", "Alt+Enter maximiza a janela e, de novo, volta ao tamanho de antes.", "comando sgs"),
+    ("sgs topo", "8 · SGS", "Mostra/oculta os comandos principais no topo da tela (a tela abre com eles à mostra).",
+     "sgs topo [sim|nao]", "sgs topo", "comandos do topo ocultos / à mostra", "", "comando sgs"),
+    ("sgs foot", "8 · SGS", "Mostra/oculta as caixas de seleção embaixo do prompt (a tela abre com elas à mostra; "
+     "a linha do comando sempre fica).", "sgs foot [sim|nao]", "sgs foot", "caixas de seleção ocultas / à mostra",
+     "Alt+Enter maximiza a janela e, de novo, volta ao tamanho de antes.", "comando sgs"),
     ("sgs comand", "8 · SGS", "Este módulo: a lista numerada dos comandos.", "sgs comand [n]", "sgs comand 24",
      "(a explicação do comando 24)", "Dentro do módulo, digitar só o número também funciona.", "comando sgs"),
     ("sgs exit", "8 · SGS", "Sai do módulo comand e volta para a tela principal (como estava).", "sgs exit   ou   exit",
