@@ -6,12 +6,28 @@ python é o do sistema (`python3`, sem Django) e o runserver falharia — então
 novo com o python do .venv. Este módulo não importa o Django (é chamado antes, justamente para saber se ele existe).
 """
 import os
+import subprocess
 import sys
 from pathlib import Path
 
 PASTA_SGS = Path(__file__).resolve().parents[1]              # sgs_web → Gerador_Sistemas
+RAIZ_PROJETO = PASTA_SGS.parent
 VENV_PYTHON = PASTA_SGS / ".venv" / "bin" / "python"
 MARCA = "SGS_REEXEC"                                         # já trocou de python uma vez: não tenta de novo
+
+
+def _achar_python_do_venv():
+    """Procura o Python do .venv em Gerador_Sistemas/.venv ou na raiz (Linux/WSL e Windows)."""
+    candidatos = (
+        PASTA_SGS / ".venv" / "bin" / "python",
+        PASTA_SGS / ".venv" / "Scripts" / "python.exe",
+        RAIZ_PROJETO / ".venv" / "bin" / "python",
+        RAIZ_PROJETO / ".venv" / "Scripts" / "python.exe",
+    )
+    for caminho in candidatos:
+        if caminho.exists():
+            return caminho
+    return None
 
 
 def usar_o_venv_do_projeto():
@@ -23,10 +39,18 @@ def usar_o_venv_do_projeto():
     else:
         os.environ.pop(MARCA, None)
         return
-    if not VENV_PYTHON.exists() or os.environ.get(MARCA) == "1":
-        sys.exit(f"Django não encontrado neste python ({sys.executable}). Crie/ative o ambiente do projeto:\n"
-                 f'    cd "{PASTA_SGS}" && python3 -m venv .venv && source .venv/bin/activate '
-                 f"&& pip install -r requirements.txt")
-    print(f"(o .venv não está ativado — usando o do projeto: {VENV_PYTHON})", file=sys.stderr, flush=True)
+    venv_python = _achar_python_do_venv()
+    if venv_python is None or os.environ.get(MARCA) == "1":
+        sys.exit(
+            f"Django não encontrado neste python ({sys.executable}). Prepare e suba o ambiente com um comando:\n"
+            f'    Linux/WSL: bash "{RAIZ_PROJETO / "iniciar.sh"}"   (ou: source iniciar.sh ativar)\n'
+            f'    Windows:   "{RAIZ_PROJETO / "iniciar.bat"}"\n'
+            f"Ou manualmente:\n"
+            f'    cd "{PASTA_SGS}" && python3 -m venv .venv && source .venv/bin/activate '
+            f"&& pip install -r requirements.txt"
+        )
+    print(f"(o .venv não está ativado — usando o do projeto: {venv_python})", file=sys.stderr, flush=True)
     os.environ[MARCA] = "1"
-    os.execv(str(VENV_PYTHON), [str(VENV_PYTHON), *sys.argv])
+    if os.name == "nt":
+        sys.exit(subprocess.call([str(venv_python), *sys.argv]))
+    os.execv(str(venv_python), [str(venv_python), *sys.argv])

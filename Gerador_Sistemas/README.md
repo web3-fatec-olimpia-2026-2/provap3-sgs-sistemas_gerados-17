@@ -9,6 +9,7 @@ temas, `.env`, migrations, superusuário, PWA). **A mesma entrada gera sempre a 
 |---|---|
 | [`tela_prompt.py`](tela_prompt.py) | o **SGS**: tela estilo terminal no navegador (porta 6100); as rotas em `atender()` |
 | [`manage.py`](manage.py) · [`sgs_web/`](sgs_web/) | a mesma tela pelo **Django**: `python manage.py runserver` (settings mínimo, uma view que chama `atender()`) |
+| [`../iniciar.sh`](../iniciar.sh) · [`../iniciar.bat`](../iniciar.bat) · [`../requirements.txt`](../requirements.txt) | **um comando num PC novo** (Linux/WSL e Windows/FATEC): prepara `.venv`, `requirements.txt`, `.env`, migrations e sobe o SGS ou qualquer sistema gerado |
 | [`requirements.txt`](requirements.txt) · `.venv/` | o ambiente do projeto (Python 3.12+, Django, DRF, pytest, pytest-django, argon2): o `.venv` mora aqui; na raiz há um atalho para ele |
 | [`gerar_sistema.py`](gerar_sistema.py) | o gerador (também roda sozinho, pela linha de comando) |
 | [`sgs_terminal.py`](sgs_terminal.py) · [`sgs_comand.py`](sgs_comand.py) · [`sgs_perguntas.py`](sgs_perguntas.py) | terminal da tela · help numerado · perguntas antes de gerar |
@@ -24,6 +25,45 @@ temas, `.env`, migrations, superusuário, PWA). **A mesma entrada gera sempre a 
 ---
 
 ## 1. Rodar o SGS
+
+### Como usar em um PC novo (um comando)
+
+Depois de clonar o repositório em qualquer máquina com **Python 3.12+**, rode na **raiz do projeto** (ou `bash ../iniciar.sh` / `..\iniciar.bat` de dentro de `Gerador_Sistemas/`):
+
+**Linux / WSL / macOS / Git Bash:**
+
+```bash
+bash iniciar.sh                       # prepara tudo e sobe o SGS (http://127.0.0.1:6100)
+bash iniciar.sh provap3               # prepara ambiente, .env, migrations e admin e sobe o provaP3
+bash iniciar.sh sistema <pasta> [p]   # prepara e sobe qualquer sistema em sistemas_gerados/<pasta>
+source iniciar.sh ativar              # prepara (se precisar) e deixa o .venv ATIVO no terminal atual
+bash iniciar.sh preparar              # prepara .venv, atalho na raiz, deps e .env sem subir servidor
+bash iniciar.sh testar [filtro]       # garante o ambiente e roda rodar_testes.sh
+```
+
+**Windows (`cmd` ou PowerShell — ex.: máquinas da FATEC, sem alterar `ExecutionPolicy`):**
+
+```bat
+iniciar.bat                           REM prepara tudo e sobe o SGS (http://127.0.0.1:6100)
+iniciar.bat provap3                   REM prepara .env, migrations e admin e sobe o provaP3
+iniciar.bat sistema <pasta> [porta]   REM prepara e sobe qualquer sistema em sistemas_gerados\<pasta>
+iniciar.bat ativar                    REM prepara (se precisar) e ativa o .venv no cmd atual
+iniciar.bat preparar                  REM prepara .venv e deps sem subir servidor
+iniciar.bat testar [nome]             REM roda pytest do SGS ou de um sistema específico
+```
+
+**O que os scripts fazem automaticamente (de forma idempotente — se já estiver pronto, pulam rápido):**
+1. Limpam `DJANGO_SETTINGS_MODULE` antes de rodar (evita que `sgs_web.settings` contamine os sistemas gerados).
+2. Localizam o Python ≥ 3.12 disponível (`python3`, `python3.14`, `python3.13`, `python3.12`, `python` ou `py -3` no Windows).
+3. Criam `Gerador_Sistemas/.venv` (se não existir) e o atalho `.venv` na raiz; os sistemas gerados reaproveitam o `Gerador_Sistemas/.venv` automaticamente quando presente.
+4. Instalam `requirements.txt` apenas se faltar alguma dependência (checagem offline `--no-index` antes).
+5. Criam `.env` a partir de `.env.example` quando existir e ainda não houver `.env` (gerando uma `SECRET_KEY` nova, sem nunca sobrescrever um `.env` existente).
+6. Aplicam `makemigrations` + `migrate` e `garantir_admin` quando o projeto/sistema usar banco de dados.
+7. Verificam se a porta está livre antes de subir o `runserver`.
+
+*(Também funciona dentro da pasta de qualquer sistema gerado: `cd Gerador_Sistemas/sistemas_gerados/provaP3 && bash iniciar.sh` ou `source iniciar.sh ativar`.)*
+
+### Rodar manualmente (com o ambiente já pronto)
 
 No WSL, na raiz do projeto, com o `.venv` ativado — pelo **Django**:
 

@@ -1281,3 +1281,19 @@ def test_janela_de_app_num_perfil_so_do_sgs():
 ])
 def test_servidor_recusa(servidor, metodo, caminho, corpo, cabecalhos, esperado):
     assert pedir(servidor, metodo, caminho, corpo, cabecalhos)[0] == esperado
+
+
+def test_terminal_e_scripts_raiz_isolam_django_settings_module(tmp_path, monkeypatch):
+    """Com o SGS rodando via Django (DJANGO_SETTINGS_MODULE=sgs_web.settings), comandos do terminal e os scripts
+    facilitadores da raiz devem limpar essa variável para não contaminar os sistemas gerados."""
+    import sgs_terminal as terminal
+    monkeypatch.setenv("DJANGO_SETTINGS_MODULE", "sgs_web.settings")
+    blocos = terminal.rodar([sys.executable, "-c", "import os; print(os.environ.get('DJANGO_SETTINGS_MODULE', 'LIMPO'))"],
+                            tmp_path)
+    assert blocos[0]["texto"].strip() == "LIMPO"
+    raiz = tela.RAIZ_PROJETO
+    assert (raiz / "iniciar.sh").is_file() and ((raiz / "iniciar.sh").stat().st_mode & 0o111)
+    assert (raiz / "iniciar.bat").is_file()
+    assert "-r Gerador_Sistemas/requirements.txt" in (raiz / "requirements.txt").read_text(encoding="utf-8")
+    r = subprocess.run(["bash", "iniciar.sh", "ajuda"], cwd=raiz, capture_output=True, text=True, timeout=30)
+    assert r.returncode == 0 and "source iniciar.sh ativar" in r.stdout and "provap3" in r.stdout

@@ -61,7 +61,17 @@ de comparar. ADRs (tarefas de equipe) estão como *modelos* a adaptar ao projeto
 
 ## 4. Como rodar
 
-Ambiente: `.venv` na raiz (Python 3 do WSL, com `pytest` e `pypdf`).
+Em um **PC novo** (Linux/WSL ou Windows/FATEC — detalhes em [`Gerador_Sistemas/README.md`](Gerador_Sistemas/README.md#como-usar-em-um-pc-novo-um-comando)):
+
+```bash
+bash iniciar.sh                 # Linux/WSL: cria .venv, instala deps e sobe o SGS (http://127.0.0.1:6100)
+bash iniciar.sh provap3         # Linux/WSL: prepara .env, migrations, admin e sobe o sistema provaP3
+source iniciar.sh ativar        # Linux/WSL: prepara (se precisar) e ativa o .venv no terminal atual
+```
+
+No Windows (`cmd`/PowerShell, sem precisar mudar `ExecutionPolicy`): `iniciar.bat`, `iniciar.bat provap3`, `iniciar.bat ativar`.
+
+Ambiente: `Gerador_Sistemas/.venv` (com atalho `.venv` na raiz, Python 3.12+, Django 6, DRF, `pytest` e `pytest-django`).
 
 ```bash
 bash rodar_testes.sh            # todas as pastas (em 22/11/2026: 35 conjuntos, 1015 testes)
@@ -156,3 +166,8 @@ cd "Treino_Prova/exercicios/ex01_strategy_frete" && ALVO=exercicio ../../../.ven
       (`djangorestframework` com Serializer, ViewSet, router em `/api/` e `tests/test_drf.py`), projeto `cooperativa`,
       app `citricultura`, rotas `/citricultura/` e comando `sgs provap3` (gera em `sistemas_gerados/provaP3`, prepara o
       ambiente e protege a pasta contra sobrescrita sem confirmação)
+- [x] Fluidez em PC novo e isolamento definitivo de `DJANGO_SETTINGS_MODULE`: scripts `iniciar.sh` (Linux/WSL/Git Bash,
+      com `source iniciar.sh ativar`), `iniciar.bat` (Windows/FATEC) e `requirements.txt` na raiz; `sgs_web/ambiente.py`
+      multiplataforma; remoção de `DJANGO_SETTINGS_MODULE` em `Servidores.runserver()`, `sgs_terminal.rodar()`,
+      `rodar_testes.sh`, `iniciar.sh` e `web/manage.py` gerados (e aplicados a `provaP3` e aos demais sistemas gerados);
+      guia "Como usar em um PC novo" em `Gerador_Sistemas/README.md`

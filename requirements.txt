@@ -1,0 +1,3 @@
+# Dependências do projeto (fonte única em Gerador_Sistemas/requirements.txt).
+# Permite rodar `pip install -r requirements.txt` tanto da raiz quanto de Gerador_Sistemas/.
+-r Gerador_Sistemas/requirements.txt

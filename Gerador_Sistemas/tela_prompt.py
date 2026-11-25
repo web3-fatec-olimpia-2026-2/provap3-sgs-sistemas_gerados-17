@@ -930,10 +930,13 @@ class Servidores:
         if not porta_livre(porta):
             return False, [f"Error: That port is already in use. ({porta})"]
         log = web / "servidor.log"
+        # Quando o SGS sobe via `python manage.py runserver`, o processo herda DJANGO_SETTINGS_MODULE=sgs_web.settings.
+        # Removemos antes de lançar o runserver do sistema gerado para o manage.py dele carregar o próprio settings.
+        env = {k: v for k, v in os.environ.items() if k != "DJANGO_SETTINGS_MODULE"}
         with open(log, "w", encoding="utf-8") as arquivo_log:
             processo = subprocess.Popen([python, "manage.py", "runserver", f"127.0.0.1:{porta}", "--noreload"],
-                                        cwd=web, stdout=arquivo_log, stderr=subprocess.STDOUT, start_new_session=True,
-                                        stdin=subprocess.DEVNULL)
+                                        cwd=web, env=env, stdout=arquivo_log, stderr=subprocess.STDOUT,
+                                        start_new_session=True, stdin=subprocess.DEVNULL)
         return self._registrar(chave, processo, porta, web.parent, log)
 
     def parar(self, chave):

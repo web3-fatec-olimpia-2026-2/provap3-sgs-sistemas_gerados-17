@@ -653,3 +653,20 @@ def test_campos_pela_linha_de_comando(tmp_path, capsys):
                         "--campos", "entregue", "peso_kg:float", "prazo"]) == 0
     saida = capsys.readouterr().out
     assert "entregue (sim/não (BOOL))" in saida and "'prazo': o tipo não é óbvio" in saida
+
+
+def test_manage_py_e_iniciar_sh_isolam_django_settings_module_do_sgs(tmp_path):
+    """Subprocessos herdam DJANGO_SETTINGS_MODULE=sgs_web.settings quando o SGS sobe via Django;
+    o iniciar.sh e o web/manage.py gerados devem isolar essa variável para o sistema nunca quebrar."""
+    pytest.importorskip("django")
+    destino, _ = g.gerar(dominio="citricultura", padroes=["prova"], django=True, saida=tmp_path)
+    iniciar = (destino / "iniciar.sh").read_text(encoding="utf-8")
+    assert "unset DJANGO_SETTINGS_MODULE" in iniciar
+    assert "achar_python_base" in iniciar
+    assert (destino / "iniciar.sh").stat().st_mode & 0o111
+    manage = (destino / "web" / "manage.py").read_text(encoding="utf-8")
+    assert 'DJANGO_SETTINGS_MODULE") == "sgs_web.settings"' in manage
+    env = {**os.environ, "DJANGO_SETTINGS_MODULE": "sgs_web.settings"}
+    r = subprocess.run([sys.executable, "manage.py", "check"], cwd=destino / "web", env=env,
+                       capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0, r.stdout + r.stderr

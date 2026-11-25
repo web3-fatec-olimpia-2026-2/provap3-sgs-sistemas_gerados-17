@@ -1,4 +1,5 @@
 #!/bin/bash
+unset DJANGO_SETTINGS_MODULE
 # Roda os testes de TODAS as resoluções e sistemas gerados, uma pasta por vez.
 # (Cada pasta é independente: vários labs têm um "quarto.py"/"test_quarto.py" com o mesmo
 #  nome, então rodar tudo de uma vez a partir da raiz confundiria os imports.)
@@ -10,7 +11,9 @@
 cd "$(dirname "$0")" || exit 1
 RAIZ="$(pwd)"
 PY="$RAIZ/Gerador_Sistemas/.venv/bin/python"     # o .venv do projeto (na raiz, .venv é um atalho para ele)
+[ -x "$PY" ] || PY="$RAIZ/Gerador_Sistemas/.venv/Scripts/python.exe"
 [ -x "$PY" ] || PY="$RAIZ/.venv/bin/python"
+[ -x "$PY" ] || PY="$RAIZ/.venv/Scripts/python.exe"
 [ -x "$PY" ] || PY="python3"
 
 filtro="${1:-}"

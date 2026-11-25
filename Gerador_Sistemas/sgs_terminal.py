@@ -129,7 +129,10 @@ def nota(texto):
 
 def rodar(argv, cwd, env_extra=None, tempo=TEMPO_PADRAO):
     """Executa DE VERDADE (sem teclado: stdin fechado) e devolve a saída como blocos."""
-    env = dict(os.environ, **(env_extra or {}))
+    # Remove DJANGO_SETTINGS_MODULE do SGS (sgs_web.settings) para não contaminar manage.py/pytest dos sistemas.
+    env = {k: v for k, v in os.environ.items() if k != "DJANGO_SETTINGS_MODULE"}
+    if env_extra:
+        env.update(env_extra)
     try:
         r = subprocess.run(argv, cwd=cwd, env=env, capture_output=True, text=True, timeout=tempo,
                            stdin=subprocess.DEVNULL)
@@ -149,8 +152,10 @@ def rodar(argv, cwd, env_extra=None, tempo=TEMPO_PADRAO):
 def python_da_sessao(ctx):
     """Com um .venv "ativado", usa o python dele; senão, o Python que roda a tela."""
     venv = ctx.sessao.venv
-    if venv and (venv / "bin" / "python").exists():
-        return str(venv / "bin" / "python")
+    if venv:
+        for candidato in (venv / "bin" / "python", venv / "Scripts" / "python.exe"):
+            if candidato.exists():
+                return str(candidato)
     return ctx.python_padrao()
 
 
