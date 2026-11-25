@@ -413,9 +413,22 @@ def conflitos_padroes(ativos):
 
 
 def _extrair_ligacoes(pasta, classes):
-    """Extrai ligações ForeignKey registradas no especificacao.json ou nos atributos das classes."""
+    """Extrai ligações ForeignKey registradas em ligacoes.json, especificacao.json ou nos atributos das classes."""
     ligacoes = []
     vistas = set()
+
+    def _add(origem, campo, alvo):
+        if not (origem and alvo):
+            return
+        chave = (origem, campo or "", alvo)
+        if chave not in vistas:
+            vistas.add(chave)
+            ligacoes.append({"origem": origem, "campo": campo or "", "alvo": alvo})
+
+    for lig in gs.ler_ligacoes(pasta) or []:
+        if isinstance(lig, dict):
+            _add(lig.get("origem"), lig.get("campo", ""), lig.get("alvo"))
+
     spec_path = Path(pasta) / "especificacao.json"
     if spec_path.is_file():
         try:
@@ -423,19 +436,13 @@ def _extrair_ligacoes(pasta, classes):
         except (OSError, ValueError):
             spec = {}
         for lig in spec.get("ligacoes", []) or []:
-            if isinstance(lig, dict) and lig.get("origem") and lig.get("alvo"):
-                chave = (lig["origem"], lig.get("campo", ""), lig["alvo"])
-                if chave not in vistas:
-                    vistas.add(chave)
-                    ligacoes.append({"origem": lig["origem"], "campo": lig.get("campo", ""), "alvo": lig["alvo"]})
+            if isinstance(lig, dict):
+                _add(lig.get("origem"), lig.get("campo", ""), lig.get("alvo"))
     for nome_cls, dados in (classes or {}).items():
         for atr in dados.get("atributos", []):
             alvo = atr.get("alvo") or atr.get("fk")
             if atr.get("tipo") == "fk" or alvo:
-                chave = (nome_cls, atr["nome"], alvo or "")
-                if chave not in vistas:
-                    vistas.add(chave)
-                    ligacoes.append({"origem": nome_cls, "campo": atr["nome"], "alvo": alvo or ""})
+                _add(nome_cls, atr["nome"], alvo or "")
     return ligacoes
 
 
@@ -449,37 +456,58 @@ def _resumo_projeto(ctx, num, pasta, servidores_por_pasta):
     porta = tp.porta_de(num, ctx.config.valores["porta_base"])
     srv = servidores_por_pasta.get(pasta.resolve())
     classes_raw = gs.classes_do_projeto(pasta) if pasta.is_dir() else {}
-    classes = [
-        {
+    ligacoes = _extrair_ligacoes(pasta, classes_raw)
+    fks_por_origem = {}
+    for lig in ligacoes:
+        fks_por_origem.setdefault(lig["origem"], []).append(lig)
+    classes = []
+    for nome, dados in sorted(classes_raw.items(), key=lambda kv: (not kv[1].get("principal"), kv[0])):
+        atrs = [
+            {
+                **a,
+                "regra_texto": gs.regra_em_texto(a)
+                if a.get("tipo") in gs.TIPOS_ATRIBUTO and a.get("regra") in gs.REGRAS_VALIDAS
+                else str(a.get("regra") or ""),
+            }
+            for a in dados.get("atributos", [])
+        ]
+        nomes_existentes = {a.get("nome") for a in atrs}
+        for lig in fks_por_origem.get(nome, []):
+            if lig["campo"] and lig["campo"] not in nomes_existentes:
+                atrs.append({
+                    "nome": lig["campo"],
+                    "tipo": "fk",
+                    "alvo": lig["alvo"],
+                    "regra": "fk",
+                    "regra_texto": "FK",
+                })
+                nomes_existentes.add(lig["campo"])
+        classes.append({
             "nome": nome,
             "app": dados.get("app", ""),
             "principal": bool(dados.get("principal")),
             "padroes": list(info.get("padroes", []))
             if dados.get("principal")
             else list((dados.get("modulo") or {}).get("padroes") or []),
-            "atributos": [
-                {
-                    **a,
-                    "regra_texto": gs.regra_em_texto(a)
-                    if a.get("tipo") in gs.TIPOS_ATRIBUTO and a.get("regra") in gs.REGRAS_VALIDAS
-                    else str(a.get("regra") or ""),
-                }
-                for a in dados.get("atributos", [])
-            ],
-        }
-        for nome, dados in sorted(classes_raw.items(), key=lambda kv: (not kv[1].get("principal"), kv[0]))
-    ]
-    ligacoes = _extrair_ligacoes(pasta, classes_raw)
+            "atributos": atrs,
+        })
     endpoints = []
     if info.get("django"):
         try:
             for ep in gs.endpoints_do_projeto(pasta):
+                pares = ep.get("campos") or []
+                if pares and isinstance(pares[0], (list, tuple)):
+                    campos_ep = [c for c, *_ in pares]
+                    ativos_ep = [c for c, exposto, *_ in pares if exposto]
+                else:
+                    campos_ep = list(pares)
+                    ativos_ep = list(ep.get("ativos") or campos_ep)
                 endpoints.append({
                     "rota": ep["rota"],
-                    "entidade": ep["entidade"],
+                    "entidade": ep.get("classe") or ep.get("entidade") or "",
                     "app": ep.get("app", ""),
-                    "campos": list(ep.get("campos", [])),
-                    "ativos": list(ep.get("ativos", [])),
+                    "campos": campos_ep,
+                    "ativos": ativos_ep,
                 })
         except Exception:
             endpoints = []
