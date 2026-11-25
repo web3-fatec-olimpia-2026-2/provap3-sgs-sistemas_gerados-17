@@ -252,6 +252,11 @@ CATALOGO = [
      "padrão ao abrir) · sgs cmd sgs = as cores do SGS (prompt verde).", "sgs cmd [sgs]   ou   cmd [sgs]",
      "sgs cmd sgs", "a tela passa para as cores do SGS", "Sem o sgs na frente também vale: cmd · cmd sgs.",
      "comando sgs"),
+    ("sgs wysiwyg", "8 · SGS", "Modo WYSIWYG (bancada Kanban de encaixe de blocos): monta Domínio, Classes, Campos "
+     "(arrastar-e-soltar), Ligações FK, API REST e Padrões de Projeto com desativação automática de padrões "
+     "mutuamente excludentes (alternância CMD ↔ WYSIWYG no topo).", "sgs wysiwyg [NN]",
+     "sgs wysiwyg 01", "abre a bancada visual em /wysiwyg (ou direto no sistema 01)",
+     "Toda ação no WYSIWYG executa o mesmo motor do SGS e exibe ao vivo o comando sgs equivalente.", "comando sgs"),
     ("sgs topo", "8 · SGS", "Mostra/oculta os comandos principais no topo da tela (a tela abre com eles à mostra).",
      "sgs topo [sim|nao]", "sgs topo", "comandos do topo ocultos / à mostra", "", "comando sgs"),
     ("sgs foot", "8 · SGS", "Mostra/oculta as caixas de seleção embaixo do prompt (a tela abre com elas à mostra; "

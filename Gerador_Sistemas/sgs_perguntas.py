@@ -498,22 +498,37 @@ class QuestionarioModulo(Questionario):
 
 NOVO = "__novo__"   # na pergunta do campo: um campo que ainda não existe
 REGRAS = [           # (chave, rótulo, o que pede depois) — o padrão do campo no sgs incrementar
-    ("texto", "texto obrigatório (vazio é recusado)", None),
-    ("texto-livre", "texto opcional, sem regra", None),
-    ("inteiro>=", "inteiro com MÍNIMO (negativo e letras são recusados)", "minimo"),
-    ("inteiro:", "inteiro numa FAIXA (mínimo..máximo)", "faixa"),
-    ("decimal>=", "decimal com MÍNIMO", "minimo"),
-    ("decimal:", "decimal numa FAIXA", "faixa"),
-    ("lista:", "LISTA fechada de valores (só eles entram)", "lista"),
-    ("simnao", "sim/não (True/False)", None),
-    ("data", "data AAAA-MM-DD", None),
+    ("texto", "[Primitivo] texto curto obrigatório (vazio é recusado)", None),
+    ("texto-livre", "[Primitivo] texto opcional, sem regra", None),
+    ("texto-longo", "[Primitivo] texto longo / memo (TextField)", None),
+    ("inteiro>=", "[Primitivo] inteiro com MÍNIMO (negativo e letras são recusados)", "minimo"),
+    ("inteiro:", "[Primitivo] inteiro numa FAIXA (mínimo..máximo)", "faixa"),
+    ("decimal>=", "[Primitivo] decimal com MÍNIMO", "minimo"),
+    ("decimal:", "[Primitivo] decimal numa FAIXA", "faixa"),
+    ("simnao", "[Primitivo] booleano sim/não (True/False)", None),
+    ("data", "[Primitivo] data AAAA-MM-DD", None),
+    ("data-hora", "[Primitivo] data e hora AAAA-MM-DDTHH:MM", None),
+    ("lista:", "[Seleção] LISTA única fechada de valores", "lista"),
+    ("multipla:", "[Seleção] MÚLTIPLA escolha / tags separadas por vírgula", "multipla"),
+    ("moeda", "[Negócio] moeda BRL >= 0 (Decimal 12,2)", None),
+    ("email", "[Negócio] e-mail validado", None),
+    ("telefone", "[Negócio] telefone (10 ou 11 dígitos)", None),
+    ("url", "[Negócio] URL (http:// ou https://)", None),
+    ("cpf", "[Negócio] CPF com dígitos verificadores", None),
+    ("cnpj", "[Negócio] CNPJ com dígitos verificadores", None),
+    ("cep", "[Negócio] CEP (00000-000)", None),
+    ("arquivo", "[Estruturado] arquivo / anexo (caminho ou URL)", None),
+    ("imagem", "[Estruturado] imagem (.png, .jpg, .webp, .gif, .svg)", None),
+    ("geolocalizacao", "[Estruturado] geolocalização (latitude,longitude)", None),
+    ("json", "[Estruturado] JSON / objeto dinâmico (JSONField)", None),
 ]
 
 
 def _chave_da_regra(texto):
     """"inteiro>=0" → ("inteiro>=", "0") · "lista:a,b" → ("lista:", "a,b") · "texto" → ("texto", "")."""
     for apelido, chave in (("int>=", "inteiro>="), ("int:", "inteiro:"), ("faixa:", "inteiro:"),
-                           ("float>=", "decimal>="), ("float:", "decimal:"), ("opcoes:", "lista:"), ("valores:", "lista:")):
+                           ("float>=", "decimal>="), ("float:", "decimal:"), ("opcoes:", "lista:"),
+                           ("valores:", "lista:"), ("tags:", "multipla:"), ("multi:", "multipla:")):
         if texto.startswith(apelido):
             texto = chave + texto[len(apelido):]
     for chave, _, _ in REGRAS:
@@ -538,7 +553,7 @@ class QuestionarioIncremento(Questionario):
         campo = gs.camel_para_snake(gs.camel(campo)) if campo else ""
         existe = any(a["nome"] == campo for a in classes[nome_classe]["atributos"])
         chave, parametro = _chave_da_regra(gs.normalizar(regra or "").replace(" ", "")) if regra else ("", "")
-        if regra and chave == "lista:":
+        if regra and chave in ("lista:", "multipla:"):
             parametro = regra.split(":", 1)[1]                # a lista com as maiúsculas e acentos digitados
         self.decisoes = {"classe": nome_classe, "campo": campo if existe else NOVO, "nome_novo": "" if existe else campo,
                          "regra": chave, "parametro": parametro}
@@ -585,7 +600,8 @@ class QuestionarioIncremento(Questionario):
         padrao = d["parametro"] or (valor_atual if chave_atual == d["regra"] else "")
         texto = {"minimo": "Valor MÍNIMO (ex.: 0 — aí negativo é recusado)?",
                  "faixa": "FAIXA mínimo..máximo (ex.: 1..30)?",
-                 "lista": "Os valores da LISTA, separados por vírgula (ex.: janela, meio, corredor · ou 1, 2, 3)?"}[pede]
+                 "lista": "Os valores da LISTA, separados por vírgula (ex.: janela, meio, corredor · ou 1, 2, 3)?",
+                 "multipla": "As opções da MÚLTIPLA ESCOLHA, separadas por vírgula (ex.: urgente, vip, recorrente)?"}[pede]
         return _livre("parametro", "Valor da regra", texto, padrao or {"minimo": "0", "faixa": "1..30"}.get(pede, ""))
 
     def _validar(self, chave, bruto):

@@ -54,6 +54,7 @@ import sgs_perguntas as perguntas  # noqa: E402
 import sgs_terminal as terminal  # noqa: E402
 import temas_web  # noqa: E402
 import sgs_tutorial  # noqa: E402
+import sgs_wysiwyg  # noqa: E402
 import tipos_campos  # noqa: E402
 
 NOME_SGS = "SGS - Sistema Gerador de Sistema"
@@ -1218,6 +1219,8 @@ COMANDOS_SGS = [
     ("sgs hub", "abre a cópia do Django Study Hub (estudo de Django: models, views, ORM, forms, DRF, P3)", False),
     ("sgs cmd [sgs]", "estilo da tela: sgs cmd = como o Prompt de Comando do Windows (o padrão ao abrir) · "
                       "sgs cmd sgs = as cores do SGS · sem o sgs também vale: cmd · cmd sgs", False),
+    ("sgs wysiwyg [NN]", "MODO WYSIWYG (bancada Kanban de blocos): monta Domínio, Classes, Campos, Ligações, API e "
+                         "Padrões de Projeto com exclusão mútua visual (CMD ↔ WYSIWYG)", False),
     ("sgs topo", "mostra/oculta os comandos principais no topo (a tela abre com eles à mostra)", False),
     ("sgs foot", "mostra/oculta as caixas de seleção embaixo do prompt (a tela abre com elas à mostra; a linha "
                  "do comando sempre fica)", False),
@@ -1876,6 +1879,22 @@ def sgs_tutorial_cmd(ctx, _args, _opcoes=None):
               _paginas_de_estudo(), abrir="/tutorial")
 
 
+def sgs_wysiwyg_cmd(ctx, args, _opcoes=None):
+    """sgs wysiwyg [NN] — abre o Modo WYSIWYG (bancada Kanban de encaixe de blocos) no navegador."""
+    href = "/wysiwyg"
+    if args:
+        try:
+            _, n = escolher(ctx, args[0])
+            href = f"/wysiwyg?projeto={n}"
+        except ValueError as erro:
+            return falha(str(erro))
+    return ok(bloco("titulo", texto="Modo WYSIWYG — bancada Kanban de blocos (CMD ↔ WYSIWYG)"),
+              bloco("link", texto=f"abrir o Modo WYSIWYG: {href}", href=href),
+              texto("Monte Domínio, Classes, Campos (arrastar-e-soltar), Ligações FK, API REST e Padrões de Projeto "
+                    "com bloqueio automático de padrões mutuamente excludentes.", "suave"),
+              abrir=href)
+
+
 def sgs_cmd(ctx, args, _opcoes=None):
     """sgs cmd [sgs] — o estilo desta tela. sgs cmd = como o Prompt de Comando do Windows (preto e cinza, o padrão
     ao abrir) · sgs cmd sgs = as cores do SGS (prompt verde). Sem o "sgs" na frente também vale: cmd · cmd sgs."""
@@ -2474,6 +2493,7 @@ SGS = {"ajuda": sgs_ajuda, "help": sgs_ajuda, "gerar": sgs_gerar, "listar": sgs_
        "versao": sgs_duplicar, "versão": sgs_duplicar, "app": sgs_app, "modulo": sgs_app, "módulo": sgs_app,
        "ligar": sgs_ligar, "incrementar": sgs_incrementar, "modificar": sgs_incrementar, "api": sgs_api,
        "tutorial": sgs_tutorial_cmd, "hub": sgs_hub, "cmd": sgs_cmd, "visual": sgs_cmd, "cor": sgs_cmd,
+       "wysiwyg": sgs_wysiwyg_cmd, "blocos": sgs_wysiwyg_cmd, "kanban": sgs_wysiwyg_cmd,
        "topo": sgs_topo, "foot": sgs_foot, "rodape": sgs_foot, "rodapé": sgs_foot, "provap3": sgs_provap3}
 
 
@@ -2576,7 +2596,7 @@ MANIFEST = json.dumps({
 }, ensure_ascii=False)
 SERVICE_WORKER = """
 // Service worker do SGS: a página principal funciona como app (PWA); os comandos sempre vão ao servidor.
-const CACHE = "sgs-v2";
+const CACHE = "sgs-v4";
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(["/"]))); self.skipWaiting(); });
 self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
 self.addEventListener("fetch", (e) => {
@@ -2633,7 +2653,8 @@ def atender(ctx, metodo, alvo, cabecalhos, ler_corpo):
 
 def _atender_get(ctx, url, responder, responder_json):
     rotas = {
-        "/": lambda: responder(200, PAGINA, "text/html; charset=utf-8"),
+        "/": lambda: responder(200, sgs_wysiwyg.pagina(), "text/html; charset=utf-8"),
+        "/cmd": lambda: responder(200, PAGINA, "text/html; charset=utf-8"),
         "/config": lambda: responder_json(200, {"ok": True, "config": ctx.config.publica(),
                                                 "prompt": ctx.sessao.prompt(),
                                                 "historico": ctx.historico.linhas()}),   # ↑/↓ depois do F5
@@ -2644,9 +2665,21 @@ def _atender_get(ctx, url, responder, responder_json):
         "/icone-192.png": lambda: responder(200, gs.icone_png(192), "image/png"),
         "/icone-512.png": lambda: responder(200, gs.icone_png(512), "image/png"),
         "/tutorial": lambda: responder(200, sgs_tutorial.pagina(), "text/html; charset=utf-8"),
+        "/wysiwyg": lambda: responder(200, sgs_wysiwyg.pagina(), "text/html; charset=utf-8"),
+        "/wysiwyg/estado": lambda: responder_json(200, sgs_wysiwyg.estado_completo(ctx)),
     }
     if url.path in rotas:
         return rotas[url.path]()
+    if url.path == "/wysiwyg/tema":
+        q = parse_qs(url.query)
+        r = sgs_wysiwyg.resolver_tema_wysiwyg(
+            q.get("tema", ["T09"])[0], q.get("tom", ["escuro"])[0], q.get("paleta", ["P01"])[0]
+        )
+        return responder_json(200, r)
+    if url.path == "/wysiwyg/projeto":
+        q = parse_qs(url.query)
+        r = sgs_wysiwyg.detalhe_projeto(ctx, q.get("numero", [""])[0])
+        return responder_json(200 if r["ok"] else 404, r)
     if url.path == "/arquivo":
         q = parse_qs(url.query)
         r = ler_arquivo(q.get("pasta", [""])[0], q.get("caminho", [""])[0], ctx.saida)
@@ -2867,6 +2900,14 @@ PAGINA = r"""<!doctype html>
   .principais { margin: 0 0 8px; font-size: 12px; line-height: 1.5; color: var(--suave); overflow-wrap: anywhere; }
   .principais .cmd { color: var(--topo); text-decoration: none; white-space: nowrap; }   /* "api config" não parte */
   .principais .cmd:hover { color: #ffffff; text-decoration: underline; }
+  .barra-modo { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+  .barra-modo .principais { margin: 0; flex: 1; }
+  .switch-modo { display: inline-flex; flex: none; border: 1px solid var(--borda); border-radius: 999px; padding: 2px;
+                 gap: 2px; font-size: 11px; background: var(--painel); }
+  .switch-modo span, .switch-modo a { padding: 2px 9px; border-radius: 999px; text-decoration: none; font-weight: 700; }
+  .switch-modo .on { background: var(--marca); color: var(--fundo); }
+  .switch-modo a { color: var(--topo); }
+  .switch-modo a:hover { background: var(--selecao); color: #ffffff; }
   :root[data-topo="0"] #principais { display: none; }      /* sgs topo oculta/mostra (abre à mostra) */
   :root[data-rodape="0"] .opcoes { display: none; }        /* sgs foot oculta/mostra as caixas; o prompt fica */
   .eco-cmd { margin-top: 14px; color: var(--forte); white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -2942,7 +2983,13 @@ PAGINA = r"""<!doctype html>
 </head>
 <body>
 <main>
-  <p class="principais" id="principais"></p>
+  <div class="barra-modo">
+    <p class="principais" id="principais"></p>
+    <nav class="switch-modo" aria-label="Alternar WYSIWYG e CMD">
+      <a href="/" title="Abrir bancada visual WYSIWYG (tela inicial)">WYSIWYG</a>
+      <span class="on">CMD</span>
+    </nav>
+  </div>
   <section id="saida"></section>
 </main>
 <div id="prompt">
@@ -2983,8 +3030,8 @@ const PRINCIPAIS = [
   ["sgs info ", true], ["sgs testar ", true], ["sgs servidores", false], ["sgs parar ", true], ["sgs editar ", true],
   ["sgs duplicar ", true], ["sgs app ", true], ["sgs ligar ", true], ["sgs incrementar ", true], ["sgs api config ", true], ["history", false],
   ["sgs dominios", false], ["sgs tipos ", true], ["sgs tema", false], ["sgs comandos ", true], ["sgs cancelar", false],
-  ["sgs tutorial", false], ["sgs wiki", false], ["sgs hub", false], ["sgs cmd ", true], ["sgs topo", false],
-  ["sgs foot", false]
+  ["sgs tutorial", false], ["sgs wiki", false], ["sgs hub", false], ["sgs wysiwyg", false], ["sgs cmd ", true],
+  ["sgs topo", false], ["sgs foot", false]
 ];
 const historico = [];             // cópia do arquivo .sgs_historico (vem do servidor: sobrevive ao F5)
 let posHist = 0;

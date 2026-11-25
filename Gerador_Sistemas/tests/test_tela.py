@@ -28,10 +28,12 @@ PEDIDO = "biblioteca onde a multa varia conforme o tipo de leitor"
 
 @pytest.fixture
 def ctx(tmp_path):
-    """Contexto isolado: sistemas em tmp/saida, config em tmp/cfg.json, terminal preso em tmp."""
-    contexto = tela.Contexto(saida=tmp_path / "saida", config=tmp_path / "cfg.json", raiz=tmp_path)
+    """Contexto isolado: sistemas em tmp/saida, config em tmp/cfg.json, extras em tmp e terminal preso em tmp."""
+    contexto = tela.Contexto(saida=tmp_path / "saida", config=tmp_path / "cfg.json", raiz=tmp_path,
+                             caminho_dominios_extras=tmp_path / "dominios_extras.json")
     yield contexto
     contexto.servidores.parar_todos()
+    gs.recarregar_dominios()
 
 
 def rodar(ctx, linha, **opcoes):
@@ -425,7 +427,7 @@ def test_sugestoes_tem_historico_pastas_sistemas_sgs_e_terminal_com_e_sem_sgs(ct
 
 
 def test_pagina_tem_o_intellisense(servidor):
-    html = pedir(servidor, "GET", "/")[2].decode("utf-8")
+    html = pedir(servidor, "GET", "/cmd")[2].decode("utf-8")
     assert 'id="sugestoes"' in html and 'id="fantasma"' in html and "MAX_SUG = 5" in html
     assert 'ev.key === "Tab"' in html and "escolherSugestao" in html and '"mousedown"' in html
     assert 'ev.key === "ArrowRight" && caixaAberta()' in html                  # → no fim da linha = TAB
@@ -1016,7 +1018,7 @@ def postar(porta, caminho, dados):
 
 
 def test_pagina_tem_os_comandos_do_topo_e_o_terminal(servidor):
-    status, tipo, html = pedir(servidor, "GET", "/")
+    status, tipo, html = pedir(servidor, "GET", "/cmd")
     html = html.decode("utf-8")
     assert status == 200 and tipo.startswith("text/html")
     assert "<title>SGS</title>" in html and 'class="banner"' not in html   # na barra só a sigla; topo sem o nome
@@ -1382,3 +1384,68 @@ def test_sistema_deletado_com_sgs_aberto_nao_quebra(ctx):
     assert r_ls["ok"] and "voltei para a raiz" in textos(r_ls) and r_ls["prompt"]["cwd"] == "~"
     # 3) sgs listar continua funcionando sem o sistema apagado
     assert rodar(ctx, "sgs listar")["ok"] is True
+
+
+def test_modo_wysiwyg_rotas_conflitos_e_comando(ctx):
+    """Modo WYSIWYG: /wysiwyg, /wysiwyg/estado, /wysiwyg/projeto, exclusões mútuas e comando sgs wysiwyg."""
+    import json
+    import sgs_wysiwyg
+
+    # 1) Exclusão mútua entre padrões de mesmo papel arquitetural
+    conf = sgs_wysiwyg.conflitos_padroes(["strategy", "factory_method", "adapter"])
+    assert "template_method" in conf and conf["template_method"]["bloqueado_por"] == ["strategy"]
+    assert "abstract_factory" in conf and "builder" in conf
+    assert "proxy" in conf and "facade" in conf
+    assert "strategy" not in conf and "encapsulamento" not in conf
+
+    # 2) Comando sgs wysiwyg no CMD
+    r_cmd = rodar(ctx, "sgs wysiwyg")
+    assert r_cmd["ok"] and r_cmd.get("abrir") == "/wysiwyg"
+
+    # 3) Gera um sistema e verifica /wysiwyg, /wysiwyg/estado e /wysiwyg/projeto
+    rodar(ctx, "sgs gerar hotel strategy", testar=False)
+    r_cmd_proj = rodar(ctx, "sgs wysiwyg 01")
+    assert r_cmd_proj["ok"] and r_cmd_proj.get("abrir") == "/wysiwyg?projeto=01"
+
+    cab = {"Host": "127.0.0.1:6100", "Accept-Encoding": ""}
+    # WYSIWYG vem ANTES do CMD na inicialização (/) e também em /wysiwyg; CMD fica em /cmd
+    resp_root = tela.atender(ctx, "GET", "/", cab, lambda _n: b"")
+    assert resp_root.status == 200 and b"WYSIWYG" in resp_root.corpo and b'href="/cmd"' in resp_root.corpo
+    assert b"/wysiwyg/estado" in resp_root.corpo and b"setChildren(" in resp_root.corpo
+
+    resp_html = tela.atender(ctx, "GET", "/wysiwyg", cab, lambda _n: b"")
+    assert resp_html.status == 200 and resp_html.corpo == resp_root.corpo
+
+    resp_cmd_html = tela.atender(ctx, "GET", "/cmd", cab, lambda _n: b"")
+    assert resp_cmd_html.status == 200 and b'href="/"' in resp_cmd_html.corpo and b'id="principais"' in resp_cmd_html.corpo
+
+    resp_estado = tela.atender(ctx, "GET", "/wysiwyg/estado", cab, lambda _n: b"")
+    assert resp_estado.status == 200
+    estado = json.loads(resp_estado.corpo.decode("utf-8"))
+    assert estado["ok"] is True
+    assert len(estado["dominios"]) == 300
+    assert len(estado["padroes"]) == 28
+    assert len(estado["temas"]) == 10 and len(estado["tons"]) == 6 and len(estado["temas_resolvidos"]) == 180
+    assert estado["temas_resolvidos"]["T10:escuro:P01"]["--c-dom"] != estado["temas_resolvidos"]["T10:escuro:P07"]["--c-dom"]
+    assert estado["temas_resolvidos"]["T10:tom5:P02"]["--bg"] != estado["temas_resolvidos"]["T10:tom5:P07"]["--bg"]
+    assert [c["id"] for c in estado["categorias_campo"]] == ["primitivos", "selecao", "negocio", "estruturados"]
+    for item in estado["regras_campo"]:
+        if not item.get("acao"):
+            assert gs.ler_regra(item["regra"]), item
+    assert len(estado["grupos_excludentes"]) >= 5
+    assert len(estado["sistemas"]) == 1 and estado["sistemas"][0]["numero"] == "01"
+    assert estado["sistemas"][0]["classes"]
+
+    r_dt = rodar(ctx, "sgs incrementar 01 Reserva.agendado_em data-hora")
+    assert r_dt["ok"] is True and "data-hora" in textos(r_dt)
+
+    resp_tema = tela.atender(ctx, "GET", "/wysiwyg/tema?tema=T10&tom=tom3&paleta=P02", cab, lambda _n: b"")
+    assert resp_tema.status == 200
+    tema_d = json.loads(resp_tema.corpo.decode("utf-8"))
+    assert tema_d["ok"] and tema_d["tema"] == "T10" and tema_d["tom"] == "tom3" and tema_d["paleta"] == "P02"
+
+    resp_proj = tela.atender(ctx, "GET", "/wysiwyg/projeto?numero=01", cab, lambda _n: b"")
+    assert resp_proj.status == 200
+    proj = json.loads(resp_proj.corpo.decode("utf-8"))
+    assert proj["ok"] is True and proj["projeto"]["numero"] == "01"
+    assert tela.atender(ctx, "GET", "/wysiwyg/projeto?numero=99", cab, lambda _n: b"").status == 404

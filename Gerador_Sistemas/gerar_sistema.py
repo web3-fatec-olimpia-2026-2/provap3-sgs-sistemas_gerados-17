@@ -1233,9 +1233,24 @@ RESERVADOS_DJANGO = {"save", "delete", "clean", "full_clean", "clean_fields", "c
                      "validate_unique", "validate_constraints", "get_deferred_fields", "serializable_value",
                      "from_db", "asave", "adelete", "arefresh_from_db", "prepare_database_save", "DoesNotExist",
                      "MultipleObjectsReturned", "TIPOS", "id_interno_formatado"}
-# str/int/float desde o início; bool (sim/não) e data (AAAA-MM-DD) chegaram com o identificador de tipos.
-TIPOS_ATRIBUTO = ("str", "int", "float", "bool", "data")
+# Primitivos e estruturados suportados no núcleo (@property) e no Django (Model/Form/API).
+TIPOS_ATRIBUTO = ("str", "int", "float", "bool", "data", "data_hora", "json")
 DATAS_EXEMPLO = ["2026-01-10", "2026-02-15", "2026-03-20", "2026-04-25"]
+DATAS_HORAS_EXEMPLO = ["2026-01-10T09:30", "2026-02-15T14:00", "2026-03-20T18:45", "2026-04-25T08:15"]
+CPFS_EXEMPLO = ["123.456.789-09", "987.654.321-00", "111.444.777-35", "529.982.247-25"]
+CNPJS_EXEMPLO = ["11.222.333/0001-81", "11.444.777/0001-61", "45.997.418/0001-53", "27.865.757/0001-02"]
+CEPS_EXEMPLO = ["01310-100", "20040-020", "30130-110", "80020-310"]
+EMAILS_EXEMPLO = ["contato@exemplo.com.br", "financeiro@exemplo.com.br", "suporte@exemplo.com.br", "vendas@exemplo.com.br"]
+TELEFONES_EXEMPLO = ["(11) 99999-1111", "(21) 98888-2222", "(31) 3333-4444", "(41) 97777-3333"]
+URLS_EXEMPLO = ["https://exemplo.com.br/item-1", "https://exemplo.com.br/item-2",
+                "https://exemplo.com.br/item-3", "https://exemplo.com.br/item-4"]
+ARQUIVOS_EXEMPLO = ["documentos/anexo_1.pdf", "documentos/planilha_2.xlsx",
+                    "documentos/contrato_3.docx", "documentos/relatorio_4.pdf"]
+IMAGENS_EXEMPLO = ["imagens/foto_1.png", "imagens/banner_2.jpg", "imagens/avatar_3.webp", "imagens/icone_4.svg"]
+GEOS_EXEMPLO = ["-23.5505,-46.6333", "-22.9068,-43.1729", "-19.9167,-43.9345", "-25.4284,-49.2733"]
+REGRAS_TEXTO_ESPECIAIS = ("texto_longo", "email", "telefone", "url", "cpf", "cnpj", "cep",
+                          "arquivo", "imagem", "geolocalizacao")
+REGRAS_VALIDAS = ("obrigatorio", "minimo", "faixa", "livre", "lista", "multipla", "moeda") + REGRAS_TEXTO_ESPECIAIS
 PROIBIDO_EM_TEXTO = re.compile(r'["{}\\]')
 
 
@@ -1331,8 +1346,8 @@ class Spec:
                 erros.append(f"atributo {n!r} é reservado pelo gerador")
             if a["tipo"] not in TIPOS_ATRIBUTO:
                 erros.append(f"atributo {n!r}: tipo deve ser {', '.join(TIPOS_ATRIBUTO)}")
-            if a["regra"] not in ("obrigatorio", "minimo", "faixa", "livre", "lista"):
-                erros.append(f"atributo {n!r}: regra deve ser obrigatorio, minimo, faixa, lista ou livre")
+            if a["regra"] not in REGRAS_VALIDAS:
+                erros.append(f"atributo {n!r}: regra inválida ({a['regra']!r})")
             if a["regra"] == "lista":
                 opcoes = a.get("opcoes") or []
                 if a["tipo"] not in ("str", "int") or len(opcoes) < 2 or len(set(opcoes)) != len(opcoes) or not all(
@@ -1340,10 +1355,20 @@ class Spec:
                         else (isinstance(o, int) and not isinstance(o, bool)) for o in opcoes):
                     erros.append(f"atributo {n!r}: lista precisa de 2+ valores diferentes, todos texto (str) ou todos "
                                  "inteiros (int)")
+            if a["regra"] == "multipla":
+                opcoes = a.get("opcoes") or []
+                if a["tipo"] != "str" or len(opcoes) < 2 or len(set(opcoes)) != len(opcoes) or not all(
+                        isinstance(o, str) and o.strip() and "," not in o and not PROIBIDO_EM_TEXTO.search(o)
+                        for o in opcoes):
+                    erros.append(f"atributo {n!r}: múltipla escolha precisa de 2+ textos diferentes (sem vírgula)")
             if a["regra"] == "livre" and a["tipo"] != "str":
                 erros.append(f"atributo {n!r}: a regra livre é para texto (str)")
-            if a["regra"] == "obrigatorio" and a["tipo"] not in ("str", "bool", "data"):
-                erros.append(f"atributo {n!r}: a regra obrigatorio é para str, bool ou data")
+            if a["regra"] in REGRAS_TEXTO_ESPECIAIS and a["tipo"] != "str":
+                erros.append(f"atributo {n!r}: a regra {a['regra']} é para texto (str)")
+            if a["regra"] == "obrigatorio" and a["tipo"] not in ("str", "bool", "data", "data_hora", "json"):
+                erros.append(f"atributo {n!r}: a regra obrigatorio é para str, bool, data, data_hora ou json")
+            if a["regra"] == "moeda" and a["tipo"] != "float":
+                erros.append(f"atributo {n!r}: moeda é para número decimal (float)")
             if a["regra"] in ("minimo", "faixa") and a["tipo"] not in ("int", "float"):
                 erros.append(f"atributo {n!r}: minimo/faixa são para números")
             if a["regra"] == "minimo" and a.get("min") is None:
@@ -1355,8 +1380,8 @@ class Spec:
             erros.append("'ident' deve apontar um atributo str com regra obrigatorio")
         if not q or q["tipo"] != "int" or q.get("min") != 1 or (q["regra"] == "faixa" and q["max"] < 4):
             erros.append("'quantidade' deve ser int com min 1 (e max >= 4, se faixa)")
-        if not p or p["tipo"] != "float" or p["regra"] != "minimo" or p.get("min") != 0:
-            erros.append("'preco' deve ser float com regra minimo e min 0")
+        if not p or p["tipo"] != "float" or p["regra"] not in ("minimo", "moeda") or p.get("min", 0) != 0:
+            erros.append("'preco' deve ser float com regra minimo/moeda e min 0")
         chaves = [x[3] for x in self.variantes] + [self.vnova[3]]
         if len(self.variantes) < 2 or len(set(chaves)) != len(chaves):
             erros.append("variantes: pelo menos 2, com nomes diferentes entre si e da 'nova'")
@@ -1399,17 +1424,46 @@ class Spec:
             return float(self.precos[i % 4])
         if a["regra"] == "lista":
             return a["opcoes"][i % len(a["opcoes"])]
+        if a["regra"] == "multipla":
+            qtd_op = 1 + (i % min(2, len(a["opcoes"])))
+            return ",".join(a["opcoes"][:qtd_op])
+        if a["regra"] == "texto_longo":
+            return f"Descrição detalhada de {n.replace('_', ' ')} {i + 1}."
+        if a["regra"] == "email":
+            return EMAILS_EXEMPLO[i % 4]
+        if a["regra"] == "telefone":
+            return TELEFONES_EXEMPLO[i % 4]
+        if a["regra"] == "url":
+            return URLS_EXEMPLO[i % 4]
+        if a["regra"] == "cpf":
+            return CPFS_EXEMPLO[i % 4]
+        if a["regra"] == "cnpj":
+            return CNPJS_EXEMPLO[i % 4]
+        if a["regra"] == "cep":
+            return CEPS_EXEMPLO[i % 4]
+        if a["regra"] == "arquivo":
+            return ARQUIVOS_EXEMPLO[i % 4]
+        if a["regra"] == "imagem":
+            return IMAGENS_EXEMPLO[i % 4]
+        if a["regra"] == "geolocalizacao":
+            return GEOS_EXEMPLO[i % 4]
         if a["tipo"] == "str" and a["regra"] == "obrigatorio":
             return f"{n.replace('_', ' ').capitalize()} {i + 1}"
         if a["tipo"] == "bool":
             return [True, False, True, False][i % 4]
         if a["tipo"] == "data":
             return DATAS_EXEMPLO[i % 4]
+        if a["tipo"] == "data_hora":
+            return DATAS_HORAS_EXEMPLO[i % 4]
+        if a["tipo"] == "json":
+            return {"chave": f"{n}_{i + 1}", "ativo": True}
         if a["tipo"] == "int":
             if a["regra"] == "faixa":
                 return a["min"] + (i % (a["max"] - a["min"] + 1))
             return a["min"] + 100 * (i + 1)
         if a["tipo"] == "float":
+            if a["regra"] == "moeda":
+                return round(10.5 * (i + 1), 2)
             if a["regra"] == "faixa":
                 return round(a["min"] + (a["max"] - a["min"]) * [0.5, 0.25, 0.75, 0.0][i % 4], 2)
             return round(a["min"] + 10.0 * (i + 1), 2)
@@ -1432,18 +1486,44 @@ class Spec:
             if a["tipo"] == "str":
                 return ["", "   ", "valor fora da lista", 123, None]
             return [max(a["opcoes"]) + 1, str(a["opcoes"][0]), True, 2.5, None]
+        if a["regra"] == "multipla":
+            return ["", "   ", "opcao_inexistente", f"{a['opcoes'][0]},opcao_inexistente", 123, None]
+        if a["regra"] == "email":
+            return ["", "sem-arroba.com", "usuario@", "@dominio.com", 123, None]
+        if a["regra"] == "telefone":
+            return ["", "12345", "abcdef", "11999999999999", 11999999999, None]
+        if a["regra"] == "url":
+            return ["", "exemplo.com", "ftp://exemplo.com", "http://", 123, None]
+        if a["regra"] == "cpf":
+            return ["", "111.111.111-11", "123.456.789-00", "12345", 12345678909, None]
+        if a["regra"] == "cnpj":
+            return ["", "11.111.111/1111-11", "11.222.333/0001-00", "12345", 11222333000181, None]
+        if a["regra"] == "cep":
+            return ["", "1234", "01310-10A", "013101000", 1310100, None]
+        if a["regra"] == "arquivo":
+            return ["", "   ", "sem_extensao", "arquivo.", 123, None]
+        if a["regra"] == "imagem":
+            return ["", "documento.pdf", "foto_sem_extensao", "planilha.xlsx", 123, None]
+        if a["regra"] == "geolocalizacao":
+            return ["", "abc,def", "95.0,-46.6", "-23.5,200.0", "-23.5", None]
         if a["tipo"] == "str":
             return ["", "   ", 123, None]
         if a["tipo"] == "bool":
             return [1, 0, "sim", None]                       # só True/False (1 e 0 NÃO valem)
         if a["tipo"] == "data":
             return ["10/01/2026", "2026-02-30", "", 20260110, None]
+        if a["tipo"] == "data_hora":
+            return ["2026-01-10", "2026-02-30T10:00", "10/01/2026 09:30", "", 20260110, None]
+        if a["tipo"] == "json":
+            return ["nao-json", 123, True, None]
         if a["tipo"] == "int":
             extra = [2.5, "3", True, None]
             if a["regra"] == "minimo":
                 return [a["min"] - 1, a["min"] - 10] + extra
             return [a["min"] - 1, a["max"] + 1] + extra
         extra = ["10", True, None]
+        if a["regra"] == "moeda":
+            return [-0.01, -10] + extra
         if a["regra"] == "minimo":
             return [round(a["min"] - 0.01, 2), a["min"] - 10] + extra
         return [round(a["min"] - 0.01, 2), round(a["max"] + 0.01, 2)] + extra
@@ -1452,14 +1532,40 @@ class Spec:
     def limites(a):
         if a["regra"] == "lista":
             return [a["opcoes"][0], a["opcoes"][-1]]
+        if a["regra"] == "multipla":
+            return [a["opcoes"][0], ",".join(a["opcoes"])]
+        if a["regra"] == "email":
+            return ["a@b.co", EMAILS_EXEMPLO[0]]
+        if a["regra"] == "telefone":
+            return ["1133334444", "(11) 99999-1111"]
+        if a["regra"] == "url":
+            return ["http://exemplo.com", "https://exemplo.com.br/recurso"]
+        if a["regra"] == "cpf":
+            return [CPFS_EXEMPLO[0], CPFS_EXEMPLO[1]]
+        if a["regra"] == "cnpj":
+            return [CNPJS_EXEMPLO[0], CNPJS_EXEMPLO[1]]
+        if a["regra"] == "cep":
+            return ["01310-100", "01310100"]
+        if a["regra"] == "arquivo":
+            return ["doc.pdf", "https://exemplo.com.br/anexo.xlsx"]
+        if a["regra"] == "imagem":
+            return ["foto.png", "https://exemplo.com.br/banner.webp"]
+        if a["regra"] == "geolocalizacao":
+            return ["-90,180", "90,-180", "-23.5505,-46.6333"]
         if a["tipo"] == "str":
             return ["X"]
         if a["tipo"] == "bool":
             return [True, False]
         if a["tipo"] == "data":
             return ["2000-01-01", "2099-12-31", "2028-02-29"]   # 2028 é bissexto
+        if a["tipo"] == "data_hora":
+            return ["2000-01-01T00:00", "2099-12-31T23:59", "2028-02-29T12:30"]
+        if a["tipo"] == "json":
+            return [{"ok": True}, [1, 2]]
         if a["tipo"] == "int":
             return [a["min"]] if a["regra"] == "minimo" else [a["min"], a["max"]]
+        if a["regra"] == "moeda":
+            return [0.0, 99.9]
         return [float(a["min"])] if a["regra"] == "minimo" else [float(a["min"]), float(a["max"])]
 
     def textos(self):
@@ -1486,19 +1592,49 @@ class Spec:
 
 
 def descrever_regra(a):
-    n, tipo = a["nome"], {"int": "inteiro", "float": "número", "str": "texto", "bool": "sim/não",
-                          "data": "data"}[a["tipo"]]
-    if a["regra"] == "lista":
+    n = a["nome"]
+    tipo = {"int": "inteiro", "float": "número", "str": "texto", "bool": "sim/não",
+            "data": "data", "data_hora": "data e hora", "json": "JSON"}.get(a["tipo"], a["tipo"])
+    r = a["regra"]
+    if r == "lista":
         return f"{n}: {tipo}, um destes valores — {', '.join(str(o) for o in a['opcoes'])}"
+    if r == "multipla":
+        return f"{n}: múltipla escolha (separada por vírgula) entre {', '.join(str(o) for o in a['opcoes'])}"
+    if r == "texto_longo":
+        return f"{n}: texto longo obrigatório (descrição/memo)"
+    if r == "moeda":
+        return f"{n}: valor monetário (BRL) maior ou igual a 0"
+    if r == "email":
+        return f"{n}: endereço de e-mail válido (ex.: nome@dominio.com)"
+    if r == "telefone":
+        return f"{n}: telefone válido com 10 ou 11 dígitos (ex.: (11) 99999-8888)"
+    if r == "url":
+        return f"{n}: URL válida começando com http:// ou https://"
+    if r == "cpf":
+        return f"{n}: CPF válido com 11 dígitos e dígitos verificadores"
+    if r == "cnpj":
+        return f"{n}: CNPJ válido com 14 dígitos e dígitos verificadores"
+    if r == "cep":
+        return f"{n}: CEP válido com 8 dígitos (00000-000)"
+    if r == "arquivo":
+        return f"{n}: caminho ou URL de arquivo/anexo com extensão (ex.: relatorio.pdf)"
+    if r == "imagem":
+        return f"{n}: caminho ou URL de imagem (.png, .jpg, .jpeg, .webp, .gif, .svg)"
+    if r == "geolocalizacao":
+        return f"{n}: coordenadas latitude,longitude (-90..90, -180..180)"
     if a["tipo"] == "bool":
         return f"{n}: sim/não (só True ou False — 1 e 0 não valem)"
     if a["tipo"] == "data":
         return f"{n}: data válida no formato AAAA-MM-DD (ex.: 2026-01-10)"
-    if a["regra"] == "obrigatorio":
+    if a["tipo"] == "data_hora":
+        return f"{n}: data e hora válidas no formato AAAA-MM-DDTHH:MM (ex.: 2026-01-10T09:30)"
+    if a["tipo"] == "json":
+        return f"{n}: objeto ou lista JSON estruturada (dict ou list)"
+    if r == "obrigatorio":
         return f"{n}: texto obrigatório (não pode ser vazio)"
-    if a["regra"] == "minimo":
+    if r == "minimo":
         return f"{n}: {tipo} maior ou igual a {a['min']}"
-    if a["regra"] == "faixa":
+    if r == "faixa":
         return f"{n}: {tipo} entre {a['min']} e {a['max']}"
     return f"{n}: texto livre, sem regra (atributo simples — proteger seria cerimônia)"
 
@@ -1514,6 +1650,7 @@ def subst(texto, valores):
 # =============================================================================
 def gerar_property(a):
     n = a["nome"]
+    r = a["regra"]
     chk = []
     if a["tipo"] == "str":
         chk += ["if not isinstance(valor, str) or not valor.strip():",
@@ -1531,6 +1668,18 @@ def gerar_property(a):
                 "    valida = False",
                 "if not valida:",
                 f'    raise ValueError("{n} deve ser uma data válida no formato AAAA-MM-DD")']
+    elif a["tipo"] == "data_hora":
+        chk += ["# Data e hora ISO (AAAA-MM-DDTHH:MM): o mesmo formato do <input type=\"datetime-local\"> e do DateTimeField.",
+                "try:",
+                '    valida = isinstance(valor, str) and ("T" in valor or " " in valor) and len(valor) >= 16 and bool(datetime.fromisoformat(valor))',
+                "except ValueError:",
+                "    valida = False",
+                "if not valida:",
+                f'    raise ValueError("{n} deve ser uma data e hora válida (AAAA-MM-DDTHH:MM)")']
+    elif a["tipo"] == "json":
+        chk += ["# Objeto ou lista estruturada (equivalente ao JSONField do Django).",
+                "if not isinstance(valor, (dict, list)):",
+                f'    raise ValueError("{n} deve ser um objeto JSON (dict ou list)")']
     elif a["tipo"] == "int":
         chk += ["# bool é subclasse de int em Python (True == 1): por isso é recusado explicitamente.",
                 "if isinstance(valor, bool) or not isinstance(valor, int):",
@@ -1538,16 +1687,75 @@ def gerar_property(a):
     else:
         chk += ["if isinstance(valor, bool) or not isinstance(valor, (int, float)):",
                 f'    raise ValueError("{n} deve ser um número")']
-    if a["regra"] == "minimo":
+    if r == "minimo":
         chk += [f"if valor < {a['min']!r}:", f'    raise ValueError("{n} deve ser no mínimo {a["min"]}")']
-    elif a["regra"] == "faixa":
+    elif r == "moeda":
+        chk += ["if valor < 0:",
+                f'    raise ValueError("{n} (moeda) deve ser maior ou igual a 0")',
+                "valor = round(float(valor), 2)"]
+    elif r == "faixa":
         chk += [f"if not {a['min']!r} <= valor <= {a['max']!r}:",
                 f'    raise ValueError("{n} deve estar entre {a["min"]} e {a["max"]}")']
-    elif a["regra"] == "lista":
+    elif r == "lista":
         valores = ", ".join(repr(o) for o in a["opcoes"])
         chk += ["# Lista fechada: só um dos valores definidos entra (qualquer outro é recusado).",
                 f"if valor not in ({valores},):",
                 f'    raise ValueError("{n} deve ser um destes: {", ".join(str(o) for o in a["opcoes"])}")']
+    elif r == "multipla":
+        valores = ", ".join(repr(o) for o in a["opcoes"])
+        chk += ["# Múltipla escolha: lista separada por vírgula apenas com opções permitidas.",
+                'itens = [p.strip() for p in valor.split(",") if p.strip()]',
+                f"permitidas = {{{valores}}}",
+                "if not itens or len(set(itens)) != len(itens) or any(p not in permitidas for p in itens):",
+                f'    raise ValueError("{n} aceita apenas combinações de: {", ".join(str(o) for o in a["opcoes"])}")',
+                'valor = ",".join(itens)']
+    elif r == "email":
+        chk += ['if not re.fullmatch(r"[^@\\s]+@[^@\\s]+\\.[^@\\s]+", valor):',
+                f'    raise ValueError("{n} deve ser um e-mail válido")']
+    elif r == "telefone":
+        chk += ['digitos = re.sub(r"\\D", "", valor)',
+                "if len(digitos) not in (10, 11):",
+                f'    raise ValueError("{n} deve ser um telefone válido (10 ou 11 dígitos)")']
+    elif r == "url":
+        chk += ['if not re.fullmatch(r"https?://[^\\s/$.?#].[^\\s]*", valor):',
+                f'    raise ValueError("{n} deve ser uma URL válida começando com http:// ou https://")']
+    elif r == "cpf":
+        chk += ['digitos = re.sub(r"\\D", "", valor)',
+                "if len(digitos) != 11 or len(set(digitos)) == 1:",
+                f'    raise ValueError("{n} deve ser um CPF válido")',
+                "nums = [int(d) for d in digitos]",
+                "dv1 = (sum(nums[i] * (10 - i) for i in range(9)) * 10 % 11) % 10",
+                "dv2 = (sum(nums[i] * (11 - i) for i in range(10)) * 10 % 11) % 10",
+                "if nums[9] != dv1 or nums[10] != dv2:",
+                f'    raise ValueError("{n} possui dígitos verificadores de CPF inválidos")']
+    elif r == "cnpj":
+        chk += ['digitos = re.sub(r"\\D", "", valor)',
+                "if len(digitos) != 14 or len(set(digitos)) == 1:",
+                f'    raise ValueError("{n} deve ser um CNPJ válido")',
+                "nums = [int(d) for d in digitos]",
+                "r1 = sum(nums[i] * p for i, p in enumerate((5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2))) % 11",
+                "dv1 = 0 if r1 < 2 else 11 - r1",
+                "r2 = sum(nums[i] * p for i, p in enumerate((6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2))) % 11",
+                "dv2 = 0 if r2 < 2 else 11 - r2",
+                "if nums[12] != dv1 or nums[13] != dv2:",
+                f'    raise ValueError("{n} possui dígitos verificadores de CNPJ inválidos")']
+    elif r == "cep":
+        chk += ['if not re.fullmatch(r"\\d{5}-?\\d{3}", valor):',
+                f'    raise ValueError("{n} deve ser um CEP válido (00000-000)")']
+    elif r == "arquivo":
+        chk += ['if not re.fullmatch(r"(?:https?://[^\\s]+|[\\w./-]+)\\.[A-Za-z0-9]{2,6}", valor):',
+                f'    raise ValueError("{n} deve ser um caminho ou URL de arquivo com extensão")']
+    elif r == "imagem":
+        chk += ['if not re.fullmatch(r"(?:https?://[^\\s]+|[\\w./-]+)\\.(?:png|jpe?g|webp|gif|svg)", valor, re.IGNORECASE):',
+                f'    raise ValueError("{n} deve ser um caminho ou URL de imagem (.png, .jpg, .webp, .gif, .svg)")']
+    elif r == "geolocalizacao":
+        chk += ['partes = [p.strip() for p in valor.split(",")]',
+                "try:",
+                "    lat, lng = (float(partes[0]), float(partes[1])) if len(partes) == 2 else (999.0, 999.0)",
+                "except ValueError:",
+                "    lat, lng = 999.0, 999.0",
+                "if not (-90.0 <= lat <= 90.0 and -180.0 <= lng <= 180.0):",
+                f'    raise ValueError("{n} deve ser latitude,longitude válida (-90..90, -180..180)")']
     return render(r'''
         @property
         def @@N@@(self):
@@ -1569,10 +1777,21 @@ def gerar_entidades(s):
     init = [f"self.{a['nome']} = {a['nome']}  # passa pelo setter → validado já na criação" for a in req]
     init += [f"self.{a['nome']} = {a['nome']}  # sem regra → atributo simples (antifachada)" for a in livres]
     codigo = _gerar_entidades(s, params, init, req)
-    if any(a["tipo"] == "data" for a in s.atributos):   # campo de data: o setter usa date.fromisoformat
-        codigo = codigo.replace(f'"""\n\n\nclass {s.ent}:', f'"""\nfrom datetime import date\n\n\nclass {s.ent}:', 1)
-        if "from datetime import date" not in codigo:  # pragma: no cover - bug do gerador
-            raise RuntimeError("entidades.py: não achei onde importar date")
+    imports = []
+    if any(a["regra"] in ("email", "telefone", "url", "cpf", "cnpj", "cep", "arquivo", "imagem") for a in s.atributos):
+        imports.append("import re")
+    dt_nomes = []
+    if any(a["tipo"] == "data" for a in s.atributos):
+        dt_nomes.append("date")
+    if any(a["tipo"] == "data_hora" for a in s.atributos):
+        dt_nomes.append("datetime")
+    if dt_nomes:
+        imports.append(f"from datetime import {', '.join(dt_nomes)}")
+    if imports:
+        bloco_imp = "\n".join(imports)
+        codigo = codigo.replace(f'"""\n\n\nclass {s.ent}:', f'"""\n{bloco_imp}\n\n\nclass {s.ent}:', 1)
+        if bloco_imp not in codigo:  # pragma: no cover - bug do gerador
+            raise RuntimeError("entidades.py: não achei onde inserir os imports")
     return codigo
 
 
@@ -5740,7 +5959,12 @@ def django_dados(s, i=0):
         if a["regra"] == "livre":
             continue
         v = s.valor_exemplo(a, i)
-        partes.append(f'"{a["nome"]}": ' + (f'Decimal("{v:.2f}")' if a["tipo"] == "float" else lit(v)))
+        if a["tipo"] == "float":
+            partes.append(f'"{a["nome"]}": Decimal("{v:.2f}")')
+        elif a["tipo"] == "data_hora":
+            partes.append(f'"{a["nome"]}": {lit(f"{v}:00+00:00")}')
+        else:
+            partes.append(f'"{a["nome"]}": {lit(v)}')
     partes.append(f'"tipo": "{s.variantes[0][3]}"')
     return "{" + ", ".join(partes) + "}"
 
@@ -5756,6 +5980,8 @@ def django_form(s, i=0):
         elif a["tipo"] == "bool":
             if v:                                   # checkbox: marcado envia "on"; desmarcado não envia nada
                 partes.append(f'"{a["nome"]}": "on"')
+        elif a["tipo"] == "json":
+            partes.append(f'"{a["nome"]}": {lit(json.dumps(v, ensure_ascii=False))}')
         else:
             partes.append(f'"{a["nome"]}": "{v}"')
     partes.append(f'"tipo": "{s.variantes[0][3]}"')
@@ -5766,22 +5992,50 @@ def django_invalidos(s):
     casos = []
     for a in s.atributos:
         n = a["nome"]
+        r = a["regra"]
         if a["tipo"] == "bool":
             casos.append(f'("{n}", "talvez")')               # nem True nem False
         elif a["tipo"] == "data":
             casos.append(f'("{n}", "2026-02-30")')           # dia que não existe
-        elif a["regra"] == "lista":                          # fora da lista fechada (choices)
+        elif a["tipo"] == "data_hora":
+            casos.append(f'("{n}", "2026-02-30T25:99")')     # data e hora inválidas
+        elif a["tipo"] == "json":
+            casos.append(f'("{n}", None)')                   # obrigatório (null=False)
+        elif r == "lista":                                   # fora da lista fechada (choices)
             casos.append(f'("{n}", "valor fora da lista")' if a["tipo"] == "str" else f'("{n}", {max(a["opcoes"]) + 1})')
-        elif a["regra"] == "obrigatorio":
+        elif r == "multipla":
+            casos.append(f'("{n}", "opcao_inexistente")')
+        elif r == "email":
+            casos.append(f'("{n}", "email-invalido")')
+        elif r == "telefone":
+            casos.append(f'("{n}", "12345")')
+        elif r == "url":
+            casos.append(f'("{n}", "nao-e-url")')
+        elif r == "cpf":
+            casos.append(f'("{n}", "111.111.111-11")')
+        elif r == "cnpj":
+            casos.append(f'("{n}", "11.111.111/1111-11")')
+        elif r == "cep":
+            casos.append(f'("{n}", "1234")')
+        elif r == "arquivo":
+            casos.append(f'("{n}", "sem_extensao")')
+        elif r == "imagem":
+            casos.append(f'("{n}", "documento.pdf")')
+        elif r == "geolocalizacao":
+            casos.append(f'("{n}", "95.0,200.0")')
+        elif r in ("obrigatorio", "texto_longo"):
             casos.append(f'("{n}", "")')
         elif a["tipo"] == "int":
             casos.append(f'("{n}", {a["min"] - 1})')
-            if a["regra"] == "faixa":
+            if r == "faixa":
                 casos.append(f'("{n}", {a["max"] + 1})')
         elif a["tipo"] == "float":
-            casos.append(f'("{n}", Decimal("{a["min"] - 1:.2f}"))')
-            if a["regra"] == "faixa":
-                casos.append(f'("{n}", Decimal("{a["max"] + 1:.2f}"))')
+            if r == "moeda":
+                casos.append(f'("{n}", Decimal("-1.00"))')
+            else:
+                casos.append(f'("{n}", Decimal("{a["min"] - 1:.2f}"))')
+                if r == "faixa":
+                    casos.append(f'("{n}", Decimal("{a["max"] + 1:.2f}"))')
     return "[" + ", ".join(casos) + "]"
 
 
@@ -5797,6 +6051,8 @@ def django_json(s, i=0):
             partes.append(f'"{a["nome"]}": "{v:.2f}"')
         elif a["tipo"] in ("int", "bool"):
             partes.append(f'"{a["nome"]}": {v!r}')
+        elif a["tipo"] == "json":
+            partes.append(f'"{a["nome"]}": {lit(v)}')
         else:
             partes.append(f'"{a["nome"]}": "{v}"')
     partes.append(f'"tipo": "{s.variantes[0][3]}"')
@@ -6050,7 +6306,7 @@ def gerar_api_rest(s):
                                     "titulo": vm.titulo}[campo]
                 else:
                     valor = getattr(obj, obj._meta.get_field(campo).attname)
-                    dados[campo] = valor if valor is None or isinstance(valor, (bool, int, str)) else str(valor)
+                    dados[campo] = valor if valor is None or isinstance(valor, (bool, int, str, dict, list)) else str(valor)
             return dados
 
 
@@ -6086,6 +6342,9 @@ def gerar_api_rest(s):
                 if isinstance(valor, bool):
                     if valor:
                         convertidos[chave] = "on"
+                    continue
+                if isinstance(valor, (dict, list)):
+                    convertidos[chave] = json.dumps(valor, ensure_ascii=False)
                     continue
                 convertidos[chave] = "" if valor is None else str(valor)
             return convertidos
@@ -6273,9 +6532,17 @@ def gerar_web(s):
             pad = ""
         elif a["tipo"] == "float":
             pad = f', default=Decimal("{float(a["padrao"]):.2f}")'
+        elif a["tipo"] == "data_hora":
+            pv = str(a["padrao"])
+            if "+" not in pv and not pv.endswith("Z"):
+                pv = pv + (":00+00:00" if len(pv) == 16 else "+00:00")
+            pad = f", default={pv!r}"
+        elif a["tipo"] == "json":
+            pad = ""
         else:
             pad = f", default={a['padrao']!r}"
-        if a["regra"] == "lista":
+        r = a["regra"]
+        if r == "lista":
             escolhas = ", ".join(f"({o!r}, {str(o)!r})" for o in a["opcoes"])
             if a["tipo"] == "str":
                 tamanho = max(60, max(len(o) for o in a["opcoes"]))
@@ -6284,8 +6551,39 @@ def gerar_web(s):
             else:
                 campos.append(f'{n} = models.IntegerField("{rot}", choices=[{escolhas}]{pad})  # lista fechada')
             continue
+        if r == "multipla":
+            campos.append(f'{n} = models.CharField("{rot}", max_length=250, validators=[validar_multipla_{n}]{pad})  '
+                          "# múltipla escolha (valores separados por vírgula)")
+            continue
         if a["tipo"] == "str":
-            if a["regra"] == "obrigatorio":
+            if r == "texto_longo":
+                campos.append(f'{n} = models.TextField("{rot}"{pad})  # texto longo obrigatório')
+            elif r == "email":
+                campos.append(f'{n} = models.EmailField("{rot}", max_length=160{pad})  # e-mail validado')
+            elif r == "url":
+                campos.append(f'{n} = models.URLField("{rot}", max_length=250{pad})  # URL validada')
+            elif r == "telefone":
+                campos.append(f'{n} = models.CharField("{rot}", max_length=20, validators=[validar_telefone]{pad})  '
+                              "# telefone com 10 ou 11 dígitos")
+            elif r == "cpf":
+                campos.append(f'{n} = models.CharField("{rot}", max_length=14, validators=[validar_cpf]{pad})  '
+                              "# CPF com dígitos verificadores")
+            elif r == "cnpj":
+                campos.append(f'{n} = models.CharField("{rot}", max_length=18, validators=[validar_cnpj]{pad})  '
+                              "# CNPJ com dígitos verificadores")
+            elif r == "cep":
+                campos.append(f'{n} = models.CharField("{rot}", max_length=9, validators=[validar_cep]{pad})  '
+                              "# CEP (00000-000)")
+            elif r == "arquivo":
+                campos.append(f'{n} = models.CharField("{rot}", max_length=255, validators=[validar_arquivo]{pad})  '
+                              "# caminho ou URL de arquivo/anexo")
+            elif r == "imagem":
+                campos.append(f'{n} = models.CharField("{rot}", max_length=255, validators=[validar_imagem]{pad})  '
+                              "# caminho ou URL de imagem")
+            elif r == "geolocalizacao":
+                campos.append(f'{n} = models.CharField("{rot}", max_length=50, validators=[validar_geolocalizacao]{pad})  '
+                              "# coordenadas latitude,longitude")
+            elif r == "obrigatorio":
                 campos.append(f'{n} = models.CharField("{rot}", max_length=120{pad})  # obrigatório: blank=False é o padrão')
             else:
                 campos.append(f'{n} = models.CharField("{rot}", max_length=200, blank=True, default="")  # sem regra')
@@ -6296,15 +6594,24 @@ def gerar_web(s):
         if a["tipo"] == "data":
             campos.append(f'{n} = models.DateField("{rot}"{pad})  # data válida (o form aceita AAAA-MM-DD)')
             continue
+        if a["tipo"] == "data_hora":
+            campos.append(f'{n} = models.DateTimeField("{rot}"{pad})  # data e hora válidas (AAAA-MM-DDTHH:MM)')
+            continue
+        if a["tipo"] == "json":
+            campos.append(f'{n} = models.JSONField("{rot}", default=dict)  # objeto ou lista JSON dinâmica')
+            continue
         val = []
         if a["tipo"] == "int":
             val.append(f"MinValueValidator({a['min']})")
-            if a["regra"] == "faixa":
+            if r == "faixa":
                 val.append(f"MaxValueValidator({a['max']})")
             campos.append(f'{n} = models.IntegerField("{rot}", validators=[{", ".join(val)}]{pad})')
+        elif r == "moeda":
+            campos.append(f'{n} = models.DecimalField("{rot}", max_digits=12, decimal_places=2, '
+                          f'validators=[MinValueValidator(Decimal("0"))]{pad})  # valor monetário (BRL)')
         else:
             val.append(f'MinValueValidator(Decimal("{a["min"]}"))')
-            if a["regra"] == "faixa":
+            if r == "faixa":
                 val.append(f'MaxValueValidator(Decimal("{a["max"]}"))')
             campos.append(f'{n} = models.DecimalField("{rot}", max_digits=10, decimal_places=2, '
                           f'validators=[{", ".join(val)}]{pad})')
@@ -6570,10 +6877,100 @@ def gerar_web(s):
         ''', C=app_camel, APP=app)
     w = s.web
     importacoes = ["from decimal import Decimal", ""]
+    regras_usadas = {a["regra"] for a in s.atributos}
+    precisa_re = bool(regras_usadas & {"telefone", "cpf", "cnpj", "cep", "arquivo", "imagem"})
+    precisa_val_err = bool(regras_usadas & {"telefone", "cpf", "cnpj", "cep", "arquivo", "imagem",
+                                            "geolocalizacao", "multipla"})
+    if precisa_re:
+        importacoes.insert(0, "import re")
     if w["id_publico"] == "uuid":
         importacoes.insert(0, "import uuid")
+    if precisa_val_err and not w["id_interno"]:
+        importacoes.append("from django.core.exceptions import ValidationError")
     importacoes += ["from django.core.validators import MaxValueValidator, MinValueValidator", "from django.db import models"]
     antes_classe, campos_id, metodos = "", [], ""
+    blocos_val = []
+    if "telefone" in regras_usadas:
+        blocos_val.append(render(r'''
+            def validar_telefone(valor):
+                """Validator: exige telefone com 10 ou 11 dígitos."""
+                if len(re.sub(r"\D", "", str(valor))) not in (10, 11):
+                    raise ValidationError("Informe um telefone válido com 10 ou 11 dígitos.")
+            '''))
+    if "cpf" in regras_usadas:
+        blocos_val.append(render(r'''
+            def validar_cpf(valor):
+                """Validator: valida CPF com 11 dígitos e dígitos verificadores."""
+                dig = re.sub(r"\D", "", str(valor))
+                if len(dig) != 11 or len(set(dig)) == 1:
+                    raise ValidationError("CPF inválido.")
+                nums = [int(d) for d in dig]
+                dv1 = (sum(nums[i] * (10 - i) for i in range(9)) * 10 % 11) % 10
+                dv2 = (sum(nums[i] * (11 - i) for i in range(10)) * 10 % 11) % 10
+                if nums[9] != dv1 or nums[10] != dv2:
+                    raise ValidationError("CPF com dígitos verificadores inválidos.")
+            '''))
+    if "cnpj" in regras_usadas:
+        blocos_val.append(render(r'''
+            def validar_cnpj(valor):
+                """Validator: valida CNPJ com 14 dígitos e dígitos verificadores."""
+                dig = re.sub(r"\D", "", str(valor))
+                if len(dig) != 14 or len(set(dig)) == 1:
+                    raise ValidationError("CNPJ inválido.")
+                nums = [int(d) for d in dig]
+                r1 = sum(nums[i] * p for i, p in enumerate((5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2))) % 11
+                dv1 = 0 if r1 < 2 else 11 - r1
+                r2 = sum(nums[i] * p for i, p in enumerate((6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2))) % 11
+                dv2 = 0 if r2 < 2 else 11 - r2
+                if nums[12] != dv1 or nums[13] != dv2:
+                    raise ValidationError("CNPJ com dígitos verificadores inválidos.")
+            '''))
+    if "cep" in regras_usadas:
+        blocos_val.append(render(r'''
+            def validar_cep(valor):
+                """Validator: valida CEP brasileiro (00000-000 ou 8 dígitos)."""
+                if not re.fullmatch(r"\d{5}-?\d{3}", str(valor).strip()):
+                    raise ValidationError("Informe um CEP válido (00000-000).")
+            '''))
+    if "arquivo" in regras_usadas:
+        blocos_val.append(render(r'''
+            def validar_arquivo(valor):
+                """Validator: valida caminho ou URL de arquivo com extensão."""
+                if not re.fullmatch(r"(?:https?://[^\s]+|[\w./-]+)\.[A-Za-z0-9]{2,6}", str(valor).strip()):
+                    raise ValidationError("Informe um caminho ou URL de arquivo com extensão (ex.: anexo.pdf).")
+            '''))
+    if "imagem" in regras_usadas:
+        blocos_val.append(render(r'''
+            def validar_imagem(valor):
+                """Validator: valida caminho ou URL de imagem (.png, .jpg, .webp, .gif, .svg)."""
+                if not re.fullmatch(r"(?:https?://[^\s]+|[\w./-]+)\.(?:png|jpe?g|webp|gif|svg)", str(valor).strip(), re.IGNORECASE):
+                    raise ValidationError("Informe um caminho ou URL de imagem válida (.png, .jpg, .webp, .gif, .svg).")
+            '''))
+    if "geolocalizacao" in regras_usadas:
+        blocos_val.append(render(r'''
+            def validar_geolocalizacao(valor):
+                """Validator: valida coordenadas latitude,longitude (-90..90, -180..180)."""
+                partes = [p.strip() for p in str(valor).split(",")]
+                try:
+                    lat, lng = (float(partes[0]), float(partes[1])) if len(partes) == 2 else (999.0, 999.0)
+                except ValueError:
+                    lat, lng = 999.0, 999.0
+                if not (-90.0 <= lat <= 90.0 and -180.0 <= lng <= 180.0):
+                    raise ValidationError("Informe coordenadas válidas: latitude,longitude (-90..90, -180..180).")
+            '''))
+    for a in s.atributos:
+        if a["regra"] == "multipla":
+            opcoes_lit = ", ".join(repr(o) for o in a["opcoes"])
+            blocos_val.append(render(r'''
+                def validar_multipla_@@N@@(valor):
+                    """Validator: múltipla escolha entre as opções permitidas."""
+                    itens = [p.strip() for p in str(valor).split(",") if p.strip()]
+                    permitidas = {@@OPS@@}
+                    if not itens or len(set(itens)) != len(itens) or any(p not in permitidas for p in itens):
+                        raise ValidationError("Escolha uma ou mais opções válidas separadas por vírgula.")
+                ''', N=a["nome"], OPS=opcoes_lit))
+    if blocos_val:
+        antes_classe = "\n\n".join(b.rstrip("\n") for b in blocos_val) + "\n\n"
     if w["id_publico"] == "uuid":
         campos_id.append("# Instruções §10.4: chave UUIDv4 — o próximo registro não dá para adivinhar (anti-enumeração).")
         campos_id.append("id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)")
@@ -6581,7 +6978,7 @@ def gerar_web(s):
         importacoes[-2:] = ["from django.core.exceptions import ValidationError",
                             "from django.core.validators import MaxValueValidator, MinValueValidator",
                             "from django.db import IntegrityError, models, transaction", "", "from . import lnnl"]
-        antes_classe = render(r'''
+        antes_classe += render(r'''
             # ID interno LNNL (motor-id-interno): legível por pessoas, NÃO substitui a chave primária.
             TIPO_LNNL = "@@TIPO@@"  # código de tipo desta entidade (11–99, sem zero; 93 é reservado)
 
@@ -6652,6 +7049,31 @@ def gerar_web(s):
         if not MOTOR_LNNL.exists():
             raise ErroGerador(f"motor-id-interno não encontrado: {MOTOR_LNNL}")
         arq[f"web/{app}/lnnl.py"] = MOTOR_LNNL.read_text(encoding="utf-8")   # cópia fiel da referência
+    widgets_form = []
+    for a in s.atributos:
+        n, r = a["nome"], a["regra"]
+        if a["tipo"] == "data":
+            widgets_form.append(f'"{n}": forms.DateInput(attrs={{"type": "date"}}, format="%Y-%m-%d")')
+        elif a["tipo"] == "data_hora":
+            widgets_form.append(f'"{n}": forms.DateTimeInput(attrs={{"type": "datetime-local"}}, format="%Y-%m-%dT%H:%M")')
+        elif a["tipo"] == "json":
+            widgets_form.append(f'"{n}": forms.Textarea(attrs={{"rows": 3, "placeholder": \'{{"chave": "valor"}}\'}})')
+        elif r == "texto_longo":
+            widgets_form.append(f'"{n}": forms.Textarea(attrs={{"rows": 3}})')
+        elif r == "moeda":
+            widgets_form.append(f'"{n}": forms.NumberInput(attrs={{"step": "0.01", "min": "0"}})')
+        elif r == "telefone":
+            widgets_form.append(f'"{n}": forms.TextInput(attrs={{"type": "tel", "placeholder": "(11) 99999-8888"}})')
+        elif r == "cpf":
+            widgets_form.append(f'"{n}": forms.TextInput(attrs={{"placeholder": "000.000.000-00"}})')
+        elif r == "cnpj":
+            widgets_form.append(f'"{n}": forms.TextInput(attrs={{"placeholder": "00.000.000/0001-00"}})')
+        elif r == "cep":
+            widgets_form.append(f'"{n}": forms.TextInput(attrs={{"placeholder": "00000-000"}})')
+        elif r == "geolocalizacao":
+            widgets_form.append(f'"{n}": forms.TextInput(attrs={{"placeholder": "-23.5505,-46.6333"}})')
+        elif r == "multipla":
+            widgets_form.append(f'"{n}": forms.TextInput(attrs={{"placeholder": "{",".join(a["opcoes"])}"}})')
     arq[f"web/{app}/forms.py"] = render(r'''
         """ModelForm: reaproveita os validators do model (a regra mora num lugar só)."""
         from django import forms
@@ -6664,10 +7086,8 @@ def gerar_web(s):
                 @@META@@
             @@BOOTSTRAP@@
         ''', ENT=ent, META=f"model = {ent}\nfields = [{campos_form}]" + (
-            "\n# Data: <input type=\"date\"> mostra o calendário do navegador (o valor vai como AAAA-MM-DD).\n"
-            "widgets = {" + ", ".join(f'"{a["nome"]}": forms.DateInput(attrs={{"type": "date"}}, format="%Y-%m-%d")'
-                                      for a in s.atributos if a["tipo"] == "data") + "}"
-            if any(a["tipo"] == "data" for a in s.atributos) else ""), BOOTSTRAP="\n" + render(r'''
+            "\nwidgets = {" + ", ".join(widgets_form) + "}"
+            if widgets_form else ""), BOOTSTRAP="\n" + render(r'''
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
                 # Bootstrap: cada campo ganha a classe do componente (o HTML continua vindo do Django).
@@ -9234,22 +9654,40 @@ def _escrever_ligacao(projeto, lig, comentarios=True):
 # 7d. INCREMENTAR: acrescentar ou modificar UM campo de uma classe, com a regra (o padrão) dele
 # =============================================================================
 ARQ_INCREMENTOS = "incrementos.json"   # na raiz do sistema: os campos acrescentados/modificados (sgs incrementar)
-REGRAS_DE_CAMPO = [   # (exemplo, o que faz) — o catálogo que a tela mostra
-    ("texto", "texto obrigatório (vazio é recusado)"),
-    ("texto-livre", "texto opcional, sem regra (atributo simples)"),
-    ("inteiro>=0", "inteiro com mínimo: negativo e letras são recusados (troque o 0)"),
-    ("inteiro:1..30", "inteiro numa faixa (mínimo..máximo)"),
-    ("decimal>=0", "número decimal com mínimo"),
-    ("decimal:0..100", "número decimal numa faixa"),
-    ("lista:janela,meio,corredor", "LISTA fechada: só um desses valores (inteiros também: lista:1,2,3)"),
-    ("simnao", "sim/não (só True ou False)"),
-    ("data", "data válida AAAA-MM-DD"),
+REGRAS_DE_CAMPO = [   # (exemplo, o que faz) — o catálogo categorizado que a tela mostra
+    # 1. Primitivos (Básicos)
+    ("texto", "[Primitivo] texto curto obrigatório (até 120 chars; vazio é recusado)"),
+    ("texto-livre", "[Primitivo] texto curto opcional, sem regra (atributo simples)"),
+    ("texto-longo", "[Primitivo] texto longo / memo obrigatório (TextField)"),
+    ("inteiro>=0", "[Primitivo] número inteiro com mínimo (troque o 0)"),
+    ("inteiro:1..30", "[Primitivo] número inteiro numa faixa (mínimo..máximo)"),
+    ("decimal>=0", "[Primitivo] número decimal com mínimo"),
+    ("decimal:0..100", "[Primitivo] número decimal numa faixa"),
+    ("simnao", "[Primitivo] booleano sim/não (só True ou False)"),
+    ("data", "[Primitivo] data válida AAAA-MM-DD"),
+    ("data-hora", "[Primitivo] data e hora válidas AAAA-MM-DDTHH:MM (DateTimeField)"),
+    # 2. Seleção e Relação
+    ("lista:janela,meio,corredor", "[Seleção] lista de seleção única (enum/choices; inteiros: lista:1,2,3)"),
+    ("multipla:urgente,vip,recorrente", "[Seleção] múltipla escolha / tags separadas por vírgula"),
+    # 3. Formatados e de Negócio
+    ("moeda", "[Negócio] valor monetário BRL >= 0 (Decimal 12,2)"),
+    ("email", "[Negócio] endereço de e-mail validado (EmailField)"),
+    ("telefone", "[Negócio] telefone com 10 ou 11 dígitos"),
+    ("url", "[Negócio] URL válida começando com http:// ou https:// (URLField)"),
+    ("cpf", "[Negócio] CPF com 11 dígitos e validação de dígitos verificadores"),
+    ("cnpj", "[Negócio] CNPJ com 14 dígitos e validação de dígitos verificadores"),
+    ("cep", "[Negócio] CEP brasileiro com 8 dígitos (00000-000)"),
+    # 4. Estruturados e Mídia
+    ("arquivo", "[Estruturado] caminho ou URL de arquivo/anexo com extensão"),
+    ("imagem", "[Estruturado] caminho ou URL de imagem (.png, .jpg, .webp, .gif, .svg)"),
+    ("geolocalizacao", "[Estruturado] coordenadas latitude,longitude (-90..90, -180..180)"),
+    ("json", "[Estruturado] objeto ou lista JSON dinâmica (JSONField)"),
 ]
 
 
 def ler_regra(texto):
-    """"inteiro>=0", "inteiro:1..30", "decimal>=0", "lista:a,b,c", "texto", "texto-livre", "simnao", "data"
-    → {"tipo", "regra", "min", "max"[, "opcoes"]}. Erro (ErroGerador) com o catálogo se não entender."""
+    """Lê a regra textual do sgs incrementar → {"tipo", "regra", "min", "max"[, "opcoes"]}.
+    Erro (ErroGerador) com o catálogo se não entender."""
     t = normalizar(texto or "").replace(" ", "")
     numero = r"-?\d+(?:[.,]\d+)?"
 
@@ -9280,10 +9718,40 @@ def ler_regra(texto):
         if not inteiros and any(PROIBIDO_EM_TEXTO.search(v) for v in opcoes):
             raise ErroGerador("lista: os valores não podem ter aspas, chaves ou barra invertida")
         return {"tipo": "int" if inteiros else "str", "regra": "lista", "min": None, "max": None, "opcoes": opcoes}
-    simples = {"texto": ("str", "obrigatorio"), "obrigatorio": ("str", "obrigatorio"), "str": ("str", "obrigatorio"),
-               "texto-livre": ("str", "livre"), "textolivre": ("str", "livre"), "livre": ("str", "livre"),
-               "simnao": ("bool", "obrigatorio"), "sim/nao": ("bool", "obrigatorio"), "bool": ("bool", "obrigatorio"),
-               "data": ("data", "obrigatorio")}
+    m = re.fullmatch(r"(?:multipla|multi|tags):(.+)", normalizar(texto or "").strip())
+    if m:
+        opcoes = [v.strip() for v in re.split(r"[,;|]", (texto or "").split(":", 1)[1]) if v.strip()]
+        if len(opcoes) < 2 or len(set(opcoes)) != len(opcoes):
+            raise ErroGerador("multipla: pelo menos 2 opções diferentes (ex.: multipla:urgente,vip,recorrente)")
+        if any("," in v or PROIBIDO_EM_TEXTO.search(v) for v in opcoes):
+            raise ErroGerador("multipla: as opções não podem ter vírgula, aspas, chaves ou barra invertida")
+        return {"tipo": "str", "regra": "multipla", "min": None, "max": None, "opcoes": opcoes}
+    if t in ("moeda", "currency", "dinheiro", "brl"):
+        return {"tipo": "float", "regra": "moeda", "min": 0, "max": None}
+    simples = {
+        "texto": ("str", "obrigatorio"), "obrigatorio": ("str", "obrigatorio"), "str": ("str", "obrigatorio"),
+        "texto-curto": ("str", "obrigatorio"), "textocurto": ("str", "obrigatorio"),
+        "texto-livre": ("str", "livre"), "texto_livre": ("str", "livre"), "textolivre": ("str", "livre"), "livre": ("str", "livre"),
+        "texto-longo": ("str", "texto_longo"), "texto_longo": ("str", "texto_longo"), "textolongo": ("str", "texto_longo"),
+        "memo": ("str", "texto_longo"), "text": ("str", "texto_longo"),
+        "simnao": ("bool", "obrigatorio"), "sim/nao": ("bool", "obrigatorio"),
+        "bool": ("bool", "obrigatorio"), "booleano": ("bool", "obrigatorio"),
+        "data": ("data", "obrigatorio"), "date": ("data", "obrigatorio"),
+        "data-hora": ("data_hora", "obrigatorio"), "data_hora": ("data_hora", "obrigatorio"),
+        "datahora": ("data_hora", "obrigatorio"), "datetime": ("data_hora", "obrigatorio"),
+        "timestamp": ("data_hora", "obrigatorio"),
+        "email": ("str", "email"), "e-mail": ("str", "email"),
+        "telefone": ("str", "telefone"), "fone": ("str", "telefone"), "celular": ("str", "telefone"), "whatsapp": ("str", "telefone"),
+        "url": ("str", "url"), "link": ("str", "url"), "site": ("str", "url"),
+        "cpf": ("str", "cpf"),
+        "cnpj": ("str", "cnpj"),
+        "cep": ("str", "cep"),
+        "arquivo": ("str", "arquivo"), "anexo": ("str", "arquivo"), "file": ("str", "arquivo"), "blob": ("str", "arquivo"),
+        "imagem": ("str", "imagem"), "foto": ("str", "imagem"), "image": ("str", "imagem"), "avatar": ("str", "imagem"),
+        "geolocalizacao": ("str", "geolocalizacao"), "geo": ("str", "geolocalizacao"),
+        "coordenadas": ("str", "geolocalizacao"), "geopoint": ("str", "geolocalizacao"),
+        "json": ("json", "obrigatorio"), "objeto": ("json", "obrigatorio"), "metadados": ("json", "obrigatorio"),
+    }
     if t in simples:
         tipo, regra = simples[t]
         return {"tipo": tipo, "regra": regra, "min": None, "max": None}
@@ -9292,12 +9760,22 @@ def ler_regra(texto):
 
 def regra_em_texto(a):
     """A regra de um atributo no formato do sgs incrementar (o inverso do ler_regra)."""
-    if a["regra"] == "lista":
+    r = a["regra"]
+    if r == "lista":
         return "lista:" + ",".join(str(o) for o in a["opcoes"])
+    if r == "multipla":
+        return "multipla:" + ",".join(str(o) for o in a["opcoes"])
+    if r == "moeda":
+        return "moeda"
+    if r == "texto_longo":
+        return "texto-longo"
+    if r in ("email", "telefone", "url", "cpf", "cnpj", "cep", "arquivo", "imagem", "geolocalizacao"):
+        return r
     if a["tipo"] in ("int", "float"):
         nome = "inteiro" if a["tipo"] == "int" else "decimal"
-        return f"{nome}>={a['min']}" if a["regra"] == "minimo" else f"{nome}:{a['min']}..{a['max']}"
-    return {"bool": "simnao", "data": "data"}.get(a["tipo"], "texto-livre" if a["regra"] == "livre" else "texto")
+        return f"{nome}>={a['min']}" if r == "minimo" else f"{nome}:{a['min']}..{a['max']}"
+    return {"bool": "simnao", "data": "data", "data_hora": "data-hora", "json": "json"}.get(
+        a["tipo"], "texto-livre" if r == "livre" else "texto")
 
 
 def classes_do_projeto(projeto):
@@ -9328,11 +9806,33 @@ def classes_do_projeto(projeto):
 
 def valor_padrao(a):
     """O valor que as linhas que JÁ estão no banco recebem quando o campo é novo (vai para o default do model)."""
-    if a["regra"] == "lista":
+    r = a["regra"]
+    if r in ("lista", "multipla"):
         return a["opcoes"][0]
+    if r == "moeda":
+        return 0
+    if r == "email":
+        return EMAILS_EXEMPLO[0]
+    if r == "telefone":
+        return TELEFONES_EXEMPLO[0]
+    if r == "url":
+        return URLS_EXEMPLO[0]
+    if r == "cpf":
+        return CPFS_EXEMPLO[0]
+    if r == "cnpj":
+        return CNPJS_EXEMPLO[0]
+    if r == "cep":
+        return CEPS_EXEMPLO[0]
+    if r == "arquivo":
+        return ARQUIVOS_EXEMPLO[0]
+    if r == "imagem":
+        return IMAGENS_EXEMPLO[0]
+    if r == "geolocalizacao":
+        return GEOS_EXEMPLO[0]
     if a["tipo"] in ("int", "float"):
         return a["min"]
-    return {"bool": False, "data": DATAS_EXEMPLO[0]}.get(a["tipo"], "")
+    return {"bool": False, "data": DATAS_EXEMPLO[0], "data_hora": DATAS_HORAS_EXEMPLO[0],
+            "json": {}}.get(a["tipo"], "")
 
 
 def planejar_incremento(projeto, classe, campo, regra):
@@ -9358,7 +9858,7 @@ def planejar_incremento(projeto, classe, campo, regra):
     if atual is not None:
         acao = "modificado"
         atual.update({k: nova.get(k) for k in ("tipo", "regra", "min", "max")})
-        if nova["regra"] == "lista":
+        if nova["regra"] in ("lista", "multipla"):
             atual["opcoes"] = nova["opcoes"]
         else:
             atual.pop("opcoes", None)
@@ -9367,7 +9867,7 @@ def planejar_incremento(projeto, classe, campo, regra):
     else:
         acao = "novo"
         novo = {"nome": campo, **{k: nova.get(k) for k in ("tipo", "regra", "min", "max")}}
-        if nova["regra"] == "lista":
+        if nova["regra"] in ("lista", "multipla"):
             novo["opcoes"] = nova["opcoes"]
         if novo["regra"] != "livre":
             novo["padrao"] = valor_padrao(novo)

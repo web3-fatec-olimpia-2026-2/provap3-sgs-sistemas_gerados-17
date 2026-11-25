@@ -463,7 +463,24 @@ def test_ligar_classes_poe_a_referencia_no_form_na_api_e_nos_testes(tmp_path):
     ("decimal>=0", {"tipo": "float", "regra": "minimo", "min": 0.0}),
     ("lista:Janela, Meio, Corredor", {"tipo": "str", "regra": "lista", "opcoes": ["Janela", "Meio", "Corredor"]}),
     ("lista:1,2,3", {"tipo": "int", "regra": "lista", "opcoes": [1, 2, 3]}),
-    ("texto", {"tipo": "str", "regra": "obrigatorio"}), ("simnão", {"tipo": "bool"}), ("data", {"tipo": "data"}),
+    ("multipla:urgente,vip,recorrente", {"tipo": "str", "regra": "multipla", "opcoes": ["urgente", "vip", "recorrente"]}),
+    ("texto", {"tipo": "str", "regra": "obrigatorio"}),
+    ("texto-livre", {"tipo": "str", "regra": "livre"}),
+    ("texto-longo", {"tipo": "str", "regra": "texto_longo"}),
+    ("simnão", {"tipo": "bool"}), ("booleano", {"tipo": "bool"}),
+    ("data", {"tipo": "data"}),
+    ("data-hora", {"tipo": "data_hora", "regra": "obrigatorio"}),
+    ("moeda", {"tipo": "float", "regra": "moeda", "min": 0}),
+    ("email", {"tipo": "str", "regra": "email"}),
+    ("telefone", {"tipo": "str", "regra": "telefone"}),
+    ("url", {"tipo": "str", "regra": "url"}),
+    ("cpf", {"tipo": "str", "regra": "cpf"}),
+    ("cnpj", {"tipo": "str", "regra": "cnpj"}),
+    ("cep", {"tipo": "str", "regra": "cep"}),
+    ("arquivo", {"tipo": "str", "regra": "arquivo"}),
+    ("imagem", {"tipo": "str", "regra": "imagem"}),
+    ("geolocalizacao", {"tipo": "str", "regra": "geolocalizacao"}),
+    ("json", {"tipo": "json", "regra": "obrigatorio"}),
 ])
 def test_ler_regra_do_campo(texto, esperado):
     regra = g.ler_regra(texto)
@@ -471,10 +488,46 @@ def test_ler_regra_do_campo(texto, esperado):
     assert g.ler_regra(g.regra_em_texto({"nome": "x", **regra})) == regra       # ida e volta
 
 
-@pytest.mark.parametrize("texto", ["qualquer", "inteiro:5..1", "lista:so_um", "lista:a,a"])
+@pytest.mark.parametrize("texto", ["qualquer", "inteiro:5..1", "lista:so_um", "lista:a,a", "multipla:unico", "multipla:a,a"])
 def test_regra_do_campo_invalida_explica(texto):
     with pytest.raises(g.ErroGerador):
         g.ler_regra(texto)
+
+
+def test_incrementar_todos_novos_tipos_categorizados_e_tudo_passa(tmp_path):
+    """Todos os tipos categorizados (Primitivos, Seleção, Negócio e Estruturados) funcionam fim a fim no núcleo e Django."""
+    pytest.importorskip("django")
+    destino, s = g.gerar(dominio="hotel", padroes=["strategy"], django=True, saida=tmp_path)
+    novos_campos = [
+        ("descricao_longa", "texto-longo"),
+        ("agendado_em", "data-hora"),
+        ("etiquetas", "multipla:urgente,vip,recorrente"),
+        ("taxa_servico", "moeda"),
+        ("email_contato", "email"),
+        ("telefone_contato", "telefone"),
+        ("site_referencia", "url"),
+        ("cpf_hospede", "cpf"),
+        ("cnpj_empresa", "cnpj"),
+        ("cep_endereco", "cep"),
+        ("comprovante", "arquivo"),
+        ("foto_quarto", "imagem"),
+        ("coordenadas", "geolocalizacao"),
+        ("metadados", "json"),
+    ]
+    for campo, regra in novos_campos:
+        res = g.incrementar_campo(destino, "Reserva", campo, regra)
+        assert res["acao"] == "novo", (campo, regra)
+    modelo = (destino / "web" / s.app / "models.py").read_text(encoding="utf-8")
+    for trecho in ("models.TextField", "models.DateTimeField", "models.EmailField", "models.URLField",
+                   "models.JSONField", "validar_cpf", "validar_cnpj", "validar_cep", "validar_telefone",
+                   "validar_arquivo", "validar_imagem", "validar_geolocalizacao", "validar_multipla_etiquetas"):
+        assert trecho in modelo, trecho
+    forms_txt = (destino / "web" / s.app / "forms.py").read_text(encoding="utf-8")
+    assert 'datetime-local' in forms_txt and 'Textarea' in forms_txt
+    cod_nucleo, out_nucleo = rodar_pytest(destino)
+    assert cod_nucleo == 0, out_nucleo
+    cod_web, out_web = rodar_pytest(destino / "web")
+    assert cod_web == 0, out_web
 
 
 def test_incrementar_modifica_e_acrescenta_campos_e_tudo_passa(tmp_path):

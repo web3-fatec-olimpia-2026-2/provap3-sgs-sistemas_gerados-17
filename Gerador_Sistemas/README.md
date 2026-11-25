@@ -166,7 +166,8 @@ Principais comandos `sgs`:
 | `sgs estilo [simples\|cmd\|bootstrap\|web]` · `sgs tema [T01…T10] [tom] [P01…P20]` | formatação das páginas geradas |
 | `sgs tipos <campos>` | mostra o tipo que cada campo recebe pelo nome e quais viram pergunta (ex.: `sgs tipos nome, idade, status`) |
 | `sgs cancelar` | desiste das perguntas em andamento |
-| `sgs dominios [termo \| novo \| remover]` | os 101 domínios (100 palavras cada nos `001`–`100`; 101 = Prova P3: `citricultura`) + cadastro de novos domínios (`sgs dominios novo`, guiado ou direto) e remoção de personalizados (`sgs dominios remover <chave>`) |
+| `sgs dominios [termo \| novo \| remover]` | os 300 domínios (100 palavras cada nos `001`–`100` e `102`–`300`; 101 = Prova P3: `citricultura`) + cadastro de novos domínios (`sgs dominios novo`, guiado ou direto) e remoção de personalizados (`sgs dominios remover <chave>`) |
+| `sgs wysiwyg [NN]` | **Modo WYSIWYG** (tela inicial em `/` e `/wysiwyg`, alternância `WYSIWYG ↔ CMD` com `/cmd` no topo): bancada de blocos para Domínio, Classes, Campos (arrastar-e-soltar), Ligações FK, API REST, Padrões de Projeto com exclusão mútua e os **10 temas × 6 tons** (`T01`–`T10`, `Claro`–`Escuro`, `P01`–`P20` no `T10`) |
 | `sgs padroes` · `sgs config` · `sgs pwa=false` · `clear` | catálogo, configuração, PWA, limpar |
 | `sgs tutorial` · `sgs wiki` · `sgs hub` | tutorial prático · Wikipédia (padrões GoF) · Django Study Hub, lado a lado |
 | `sgs cmd` · `sgs cmd sgs` (ou `cmd` · `cmd sgs`) | estilo da tela: Prompt de Comando (padrão ao abrir) · cores do SGS |
