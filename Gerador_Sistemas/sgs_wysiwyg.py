@@ -738,6 +738,15 @@ _HTML_WYSIWYG = r"""<!doctype html>
   .theme-bar .sep { color: var(--border-strong); font-size: 11px; user-select: none; }
 
   .tb-actions { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; overflow-x: auto; }
+  .tb-row2-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .btn-tutorial-nav {
+    width: 112px; justify-content: center; flex-shrink: 0; font-family: var(--mono);
+    border: 1px solid var(--border-strong); background: var(--card); color: var(--title);
+    padding: 2px 8px; border-radius: 4px; cursor: pointer; font-weight: 700; font-size: 11px;
+    line-height: 1.45; display: inline-flex; align-items: center;
+  }
+  .btn-tutorial-nav:hover { border-color: var(--c-dom); background: var(--c-dom-bg); color: var(--title); }
+  .tb-sep { width: 1px; height: 18px; background: var(--border); flex-shrink: 0; }
   .tb-status {
     font-family: var(--mono); font-size: 11px; color: var(--muted);
     white-space: nowrap; flex-shrink: 0;
@@ -1133,6 +1142,52 @@ _HTML_WYSIWYG = r"""<!doctype html>
   .toast.ok { border-color: var(--c-cls); color: var(--c-cls); }
   .toast.erro { border-color: var(--c-err); color: var(--c-err); }
 
+  /* ---- TOUR INTERATIVO (TUTORIAL DE APRESENTAÇÃO) ---- */
+  .tour-layer[hidden] { display: none; }
+  .tour-backdrop { position: fixed; inset: 0; z-index: 90; background: transparent; }
+  .tour-ring {
+    position: fixed; z-index: 91; pointer-events: none;
+    border: 2px solid var(--c-dom); border-radius: 6px;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, .62);
+    transition: left .18s ease, top .18s ease, width .18s ease, height .18s ease;
+  }
+  .tour-card {
+    position: fixed; z-index: 95; width: 390px; max-width: calc(100vw - 24px);
+    background: var(--bg-col); border: 1px solid var(--c-dom); border-radius: var(--radius);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .55); overflow: hidden;
+  }
+  .tour-head {
+    padding: 9px 12px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    background: var(--card);
+  }
+  .tour-title { font-weight: 700; color: var(--title); font-size: 12.5px; }
+  .tour-step-badge {
+    font-family: var(--mono); font-size: 10.5px; color: var(--c-dom);
+    border: 1px solid var(--c-dom); background: var(--c-dom-bg);
+    padding: 1px 6px; border-radius: 4px; flex-shrink: 0;
+  }
+  .tour-body { padding: 10px 12px; display: flex; flex-direction: column; gap: 7px; }
+  .tour-text { font-size: 12px; color: var(--text); line-height: 1.48; margin: 0; }
+  .tour-tip {
+    font-family: var(--mono); font-size: 11px; color: var(--title);
+    background: var(--input-bg); border: 1px solid var(--border); border-left: 3px solid var(--c-dom);
+    padding: 6px 8px; border-radius: 4px; white-space: pre-wrap;
+  }
+  .tour-foot {
+    padding: 8px 12px; border-top: 1px solid var(--border); background: var(--card);
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  }
+  .tour-dots { display: flex; align-items: center; gap: 4px; }
+  .tour-dot {
+    width: 7px; height: 7px; border-radius: 50%; border: 0; padding: 0; cursor: pointer;
+    background: var(--border-strong);
+  }
+  .tour-dot.on { background: var(--c-dom); width: 16px; border-radius: 4px; }
+  .tour-nav { display: flex; align-items: center; gap: 6px; }
+  .tour-link { font-size: 11px; color: var(--muted); text-decoration: none; }
+  .tour-link:hover { color: var(--title); text-decoration: underline; }
+
   @media (max-width: 1200px) {
     .board { grid-template-columns: repeat(2, minmax(300px, 1fr)); overflow-y: auto; }
   }
@@ -1163,7 +1218,11 @@ _HTML_WYSIWYG = r"""<!doctype html>
       </div>
     </div>
     <div class="topbar-row topbar-row-2">
-      <div class="tb-actions" id="tb-actions"></div>
+      <div class="tb-row2-left">
+        <button class="btn-tutorial-nav" id="btn-tutorial-tour" type="button" title="Iniciar tour interativo do Modo WYSIWYG">Tutorial</button>
+        <span class="tb-sep" aria-hidden="true"></span>
+        <div class="tb-actions" id="tb-actions"></div>
+      </div>
       <span class="tb-status" id="tb-status">Novo projeto · Montagem de blocos</span>
     </div>
   </header>
@@ -1242,6 +1301,30 @@ _HTML_WYSIWYG = r"""<!doctype html>
     </div>
   </div>
   <div id="toast-box"></div>
+
+  <div class="tour-layer" id="tour-layer" hidden role="dialog" aria-modal="true" aria-label="Tutorial interativo do Modo WYSIWYG">
+    <div class="tour-backdrop" id="tour-backdrop"></div>
+    <div class="tour-ring" id="tour-ring"></div>
+    <div class="tour-card" id="tour-card">
+      <div class="tour-head">
+        <span class="tour-step-badge" id="tour-badge">1 / 8</span>
+        <span class="tour-title" id="tour-title"></span>
+        <button class="btn btn-sm" id="tour-close" type="button" title="Fechar tutorial (Esc)">Fechar</button>
+      </div>
+      <div class="tour-body">
+        <p class="tour-text" id="tour-text"></p>
+        <div class="tour-tip" id="tour-tip"></div>
+        <a class="tour-link" href="/tutorial" target="_blank" rel="noopener">Abrir guia completo em nova aba (/tutorial)</a>
+      </div>
+      <div class="tour-foot">
+        <div class="tour-dots" id="tour-dots"></div>
+        <div class="tour-nav">
+          <button class="btn btn-sm" id="tour-prev" type="button">&lt; Voltar</button>
+          <button class="btn btn-sm btn-primary" id="tour-next" type="button">Avançar &gt;</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
 <script>
 const $ = (id) => document.getElementById(id);
@@ -2967,6 +3050,135 @@ $("tab-code").onclick = () => {
   if (proj && !state.arquivoAberto && proj.arquivos.length) abrirArquivoProjeto(proj, proj.arquivos[0]);
   renderDrawer();
 };
+
+/* ---- TOUR INTERATIVO DE APRESENTAÇÃO (WYSIWYG) ---- */
+const TOUR_WYSIWYG = [
+  {
+    alvo: ".tb-left",
+    titulo: "Alternador WYSIWYG / CMD e Seletor de Projeto",
+    texto: "Alterne a qualquer momento entre a bancada visual (WYSIWYG) e o terminal (CMD) sem perder seus projetos. Escolha '+ Novo Projeto' para montar do zero ou selecione um sistema já gerado para editar diretamente.",
+    dica: "Use a faixa de projetos logo abaixo para trocar rapidamente entre sistemas gerados (01, 02...).",
+  },
+  {
+    alvo: ".theme-bar",
+    titulo: "Aparência: 10 Temas × 6 Tons + 20 Paletas",
+    texto: "Personalize a interface com os 10 temas (T01 a T10) e os 6 tons (Claro até Escuro preto CMD). Ao escolher T10 · Personalizado, o seletor de 20 paletas (P01–P20) é liberado na mesma posição fixa.",
+    dica: "Sua escolha fica salva automaticamente no navegador.",
+  },
+  {
+    alvo: ".col-1",
+    titulo: "Passo 1 · Projeto & Domínio (300 domínios)",
+    texto: "Pesquise nos 300 domínios nativos por setor ou palavra-chave, cadastre novos domínios em '+ Novo Domínio' ou descreva em texto livre. Defina se o sistema terá Django, qual o estilo/tema e o modo de qualidade.",
+    dica: "Em projetos já gerados, esta coluna reúne Info, Comandos CLI, Duplicar versão e Usar como base.",
+  },
+  {
+    alvo: ".col-2",
+    titulo: "Passo 2 · Infra, Segurança & Bibliotecas",
+    texto: "Configure antes de gerar: Estrutura (web/ vs apps/), Chave Pública (Inteiro vs UUIDv4), motor-id-interno (LNNL), Banco (SQLite3/PostgreSQL/MongoDB), Redis, Baseline (§12–14), Argon2id, Fernet, 2FA com expiração, Recuperação de Senha, RBAC, Anti-Bot e bibliotecas (ratelimit, anymail, tinymce).",
+    dica: "Dependências como Rate Limit -> Redis exibem atalho de 1 clique para ativação.",
+  },
+  {
+    alvo: ".col-3",
+    titulo: "Passo 3 · Padrões da Classe e Exclusão Mútua",
+    texto: "Selecione os padrões de projeto vinculados à classe alvo, filtrando por escopo (Arquitetura, Classe, Campo, Ligação / FK). Com Exclusão Mútua ativa, padrões concorrentes ficam bloqueados com opção 'Trocar'.",
+    dica: "Em projetos existentes, clique em qualquer classe para ver os padrões dela ou crie uma nova com padrões próprios.",
+  },
+  {
+    alvo: ".col-4",
+    titulo: "Passo 4 · Classes & Campos Categorizados",
+    texto: "Arraste blocos da paleta categorizada (Primitivos, Seleção/Relação, Negócio e Estruturados/Mídia) para qualquer classe, ou clique em um campo existente para alterar sua regra (@property + Django).",
+    dica: "Inclui Data e Hora, Moeda, E-mail, CPF, CNPJ, CEP, Múltipla Escolha, Geolocalização e JSON.",
+  },
+  {
+    alvo: ".col-5",
+    titulo: "Passo 5 · Ligações (FK) & API REST",
+    texto: "Arraste uma classe sobre outra para criar relacionamentos ForeignKey (sgs ligar), consulte padrões de colaboração aplicáveis (Adapter, Observer, Proxy, Mediator) e ligue/desligue campos expostos na API REST.",
+    dica: "Cada clique nos campos da API grava direto em config/settings.py do projeto selecionado.",
+  },
+  {
+    alvo: ".bottom-bar",
+    titulo: "Comando SGS ao Vivo, Console & Código",
+    texto: "Toda montagem visual gera aqui o comando equivalente do SGS. Clique em 'Executar', copie para o CMD ou abra 'Console & Código' para acompanhar a saída e inspecionar cada arquivo gerado com sua função.",
+    dica: "Atalhos no tutorial: <- Voltar · -> Avançar · Esc para sair.",
+  },
+];
+
+let tourIdx = -1;
+function posicionarTour() {
+  if (tourIdx < 0) return;
+  const passo = TOUR_WYSIWYG[tourIdx];
+  const alvo = document.querySelector(passo.alvo);
+  const ring = $("tour-ring"), card = $("tour-card");
+  if (!alvo) {
+    ring.style.left = "-9999px"; ring.style.top = "-9999px";
+    ring.style.width = "0px"; ring.style.height = "0px";
+    card.style.left = Math.max(12, (window.innerWidth - card.offsetWidth) / 2) + "px";
+    card.style.top = Math.max(12, (window.innerHeight - card.offsetHeight) / 2) + "px";
+    return;
+  }
+  const r = alvo.getBoundingClientRect();
+  const pad = 4;
+  ring.style.left = Math.max(2, r.left - pad) + "px";
+  ring.style.top = Math.max(2, r.top - pad) + "px";
+  ring.style.width = Math.min(window.innerWidth - 4, r.width + pad * 2) + "px";
+  ring.style.height = Math.min(window.innerHeight - 4, r.height + pad * 2) + "px";
+
+  const cw = card.offsetWidth || 390, ch = card.offsetHeight || 220;
+  let left = r.left;
+  let top = r.bottom + 12;
+  if (top + ch > window.innerHeight - 12) top = r.top - ch - 12;
+  if (top < 12) {
+    top = Math.max(12, Math.min(window.innerHeight - ch - 12, r.top + 20));
+    left = r.right + 14 + cw <= window.innerWidth - 12 ? r.right + 14 : Math.max(12, r.left - cw - 14);
+  }
+  left = Math.max(12, Math.min(window.innerWidth - cw - 12, left));
+  card.style.left = left + "px";
+  card.style.top = top + "px";
+}
+
+function renderTour() {
+  const layer = $("tour-layer");
+  if (tourIdx < 0 || tourIdx >= TOUR_WYSIWYG.length) {
+    layer.hidden = true;
+    return;
+  }
+  const passo = TOUR_WYSIWYG[tourIdx];
+  layer.hidden = false;
+  $("tour-badge").textContent = `${tourIdx + 1} / ${TOUR_WYSIWYG.length}`;
+  $("tour-title").textContent = passo.titulo;
+  $("tour-text").textContent = passo.texto;
+  $("tour-tip").textContent = passo.dica;
+  $("tour-prev").disabled = tourIdx === 0;
+  $("tour-next").textContent = tourIdx === TOUR_WYSIWYG.length - 1 ? "Concluir" : "Avançar >";
+  setChildren($("tour-dots"), ...TOUR_WYSIWYG.map((_, i) =>
+    el("button", {
+      class: "tour-dot" + (i === tourIdx ? " on" : ""),
+      type: "button",
+      title: `Passo ${i + 1}`,
+      onclick: () => { tourIdx = i; renderTour(); },
+    })
+  ));
+  requestAnimationFrame(posicionarTour);
+}
+
+function abrirTour(inicio = 0) { tourIdx = inicio; renderTour(); }
+function fecharTour() { tourIdx = -1; $("tour-layer").hidden = true; }
+
+$("btn-tutorial-tour").onclick = () => abrirTour(0);
+$("tour-close").onclick = fecharTour;
+$("tour-backdrop").onclick = fecharTour;
+$("tour-prev").onclick = () => { if (tourIdx > 0) { tourIdx -= 1; renderTour(); } };
+$("tour-next").onclick = () => {
+  if (tourIdx < TOUR_WYSIWYG.length - 1) { tourIdx += 1; renderTour(); }
+  else fecharTour();
+};
+window.addEventListener("resize", posicionarTour);
+window.addEventListener("keydown", (e) => {
+  if (tourIdx < 0) return;
+  if (e.key === "Escape") fecharTour();
+  else if (e.key === "ArrowRight") $("tour-next").click();
+  else if (e.key === "ArrowLeft") $("tour-prev").click();
+});
 
 (function init() {
   const params = new URLSearchParams(location.search);

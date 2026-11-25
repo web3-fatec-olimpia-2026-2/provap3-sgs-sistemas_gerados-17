@@ -1414,12 +1414,14 @@ def test_modo_wysiwyg_rotas_conflitos_e_comando(ctx):
     assert resp_root.status == 200 and b"WYSIWYG" in resp_root.corpo and b'href="/cmd"' in resp_root.corpo
     assert b"/wysiwyg/estado" in resp_root.corpo and b"setChildren(" in resp_root.corpo
     assert b"Prova P3" not in resp_root.corpo
+    assert b'id="btn-tutorial-tour"' in resp_root.corpo and b"TOUR_WYSIWYG" in resp_root.corpo
 
     resp_html = tela.atender(ctx, "GET", "/wysiwyg", cab, lambda _n: b"")
     assert resp_html.status == 200 and resp_html.corpo == resp_root.corpo
 
     resp_cmd_html = tela.atender(ctx, "GET", "/cmd", cab, lambda _n: b"")
     assert resp_cmd_html.status == 200 and b'href="/"' in resp_cmd_html.corpo and b'id="principais"' in resp_cmd_html.corpo
+    assert b'id="btn-tutorial-cmd"' in resp_cmd_html.corpo and b"TOUR_CMD" in resp_cmd_html.corpo
 
     resp_estado = tela.atender(ctx, "GET", "/wysiwyg/estado", cab, lambda _n: b"")
     assert resp_estado.status == 200

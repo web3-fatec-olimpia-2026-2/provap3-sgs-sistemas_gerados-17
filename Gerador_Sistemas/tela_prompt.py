@@ -2729,7 +2729,7 @@ MANIFEST = json.dumps({
 }, ensure_ascii=False)
 SERVICE_WORKER = """
 // Service worker do SGS: a página principal funciona como app (PWA); os comandos sempre vão ao servidor.
-const CACHE = "sgs-v12";
+const CACHE = "sgs-v13";
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(["/"]))); self.skipWaiting(); });
 self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
 self.addEventListener("fetch", (e) => {
@@ -3033,6 +3033,7 @@ PAGINA = r"""<!doctype html>
   .barra-modo { position: sticky; top: 0; z-index: 10; display: flex; align-items: flex-start; gap: 12px;
                 padding: 5px 14px; min-height: 34px; background: var(--painel);
                 border-bottom: 1px solid var(--borda); }
+  .modo-stack { display: flex; flex-direction: column; gap: 4px; flex: none; }
   .switch-modo { display: inline-flex; flex: none; background: var(--fundo); border: 1px solid var(--borda);
                  border-radius: 5px; padding: 2px; gap: 2px; font-family: var(--mono); }
   .switch-modo span, .switch-modo a { padding: 2px 9px; border-radius: 3px; text-decoration: none;
@@ -3040,6 +3041,12 @@ PAGINA = r"""<!doctype html>
   .switch-modo .on { background: #1c1c1c; color: var(--forte); border: 1px solid #3e3e3e; }
   .switch-modo a { color: var(--suave); border: 1px solid transparent; }
   .switch-modo a:hover { background: #181818; color: #ffffff; }
+  .btn-tutorial-cmd {
+    width: 100%; background: #161616; color: var(--forte); border: 1px solid #3e3e3e;
+    border-radius: 4px; padding: 2px 8px; font: 700 11px/1.45 var(--mono); cursor: pointer;
+    text-align: center;
+  }
+  .btn-tutorial-cmd:hover { border-color: var(--azul); color: #ffffff; background: #1c2430; }
   /* os comandos principais (sem o "sgs" na frente): fonte menor, separados por "|", até o fim da tela */
   .principais { margin: 2px 0 0; flex: 1; font-size: 12px; line-height: 1.5; color: var(--suave); overflow-wrap: anywhere; }
   .principais .cmd { color: var(--topo); text-decoration: none; white-space: nowrap; }   /* "api config" não parte */
@@ -3115,14 +3122,68 @@ PAGINA = r"""<!doctype html>
                   border: 1px solid var(--marca); border-radius: 1px; background: var(--fundo); }
   .opcoes input:checked { background: var(--marca); box-shadow: inset 0 0 0 2px var(--fundo); }
   .opcoes input:focus-visible { outline: 1px solid #ffffff; outline-offset: 1px; }
+  /* ---- TOUR INTERATIVO DO MODO CMD ---- */
+  .tour-layer[hidden] { display: none; }
+  .tour-backdrop { position: fixed; inset: 0; z-index: 90; background: transparent; }
+  .tour-ring {
+    position: fixed; z-index: 91; pointer-events: none;
+    border: 2px solid var(--azul); border-radius: 6px;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, .65);
+    transition: left .18s ease, top .18s ease, width .18s ease, height .18s ease;
+  }
+  .tour-card {
+    position: fixed; z-index: 95; width: 410px; max-width: calc(100vw - 24px);
+    background: #121212; border: 1px solid var(--azul); border-radius: 6px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .65); overflow: hidden;
+    font: 12.5px/1.45 "Segoe UI", system-ui, sans-serif; color: var(--texto);
+  }
+  .tour-head {
+    padding: 9px 12px; border-bottom: 1px solid var(--borda); background: #181818;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  }
+  .tour-badge {
+    font: 700 10.5px var(--mono); color: var(--azul);
+    border: 1px solid var(--azul); padding: 1px 6px; border-radius: 4px; flex-shrink: 0;
+  }
+  .tour-title { font-weight: 700; color: #f2f2f2; font-size: 12.5px; }
+  .tour-body { padding: 10px 12px; display: flex; flex-direction: column; gap: 7px; }
+  .tour-text { margin: 0; font-size: 12px; color: #d4d4d4; line-height: 1.48; }
+  .tour-tip {
+    font: 11px/1.45 var(--mono); color: #f2f2f2; background: #0a0a0a;
+    border: 1px solid var(--borda); border-left: 3px solid var(--azul);
+    padding: 6px 8px; border-radius: 4px; white-space: pre-wrap;
+  }
+  .tour-foot {
+    padding: 8px 12px; border-top: 1px solid var(--borda); background: #181818;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  }
+  .tour-dots { display: flex; align-items: center; gap: 4px; }
+  .tour-dot {
+    width: 7px; height: 7px; border-radius: 50%; border: 0; padding: 0;
+    background: #444; cursor: pointer;
+  }
+  .tour-dot.on { background: var(--azul); width: 16px; border-radius: 4px; }
+  .tour-nav { display: flex; align-items: center; gap: 6px; }
+  .tour-btn {
+    border: 1px solid #3e3e3e; background: #1c1c1c; color: #f2f2f2;
+    padding: 3px 9px; border-radius: 4px; cursor: pointer; font: 600 11.5px var(--mono);
+  }
+  .tour-btn:hover:not(:disabled) { border-color: var(--azul); background: #1c2430; }
+  .tour-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .tour-btn.prim { border-color: var(--azul); background: rgba(58, 150, 221, .2); }
+  .tour-link { font-size: 11px; color: var(--suave); text-decoration: none; }
+  .tour-link:hover { color: #ffffff; text-decoration: underline; }
 </style>
 </head>
 <body>
 <header class="barra-modo">
-  <nav class="switch-modo" aria-label="Alternar WYSIWYG e CMD">
-    <a href="/" title="Abrir bancada visual WYSIWYG (tela inicial)">WYSIWYG</a>
-    <span class="on">CMD</span>
-  </nav>
+  <div class="modo-stack">
+    <nav class="switch-modo" aria-label="Alternar WYSIWYG e CMD">
+      <a href="/" title="Abrir bancada visual WYSIWYG (tela inicial)">WYSIWYG</a>
+      <span class="on">CMD</span>
+    </nav>
+    <button class="btn-tutorial-cmd" id="btn-tutorial-cmd" type="button" title="Iniciar tour interativo do Modo CMD">Tutorial</button>
+  </div>
   <p class="principais" id="principais"></p>
 </header>
 <main>
@@ -3149,6 +3210,29 @@ PAGINA = r"""<!doctype html>
       <label><input type="checkbox" data-opcao="comentarios"> Comentários no código</label>
       <label><input type="checkbox" data-opcao="comentarios_web"> Notas na web</label>
       <label><input type="checkbox" data-opcao="perguntar"> Perguntar antes de gerar</label>
+    </div>
+  </div>
+</div>
+<div class="tour-layer" id="tour-cmd-layer" hidden role="dialog" aria-modal="true" aria-label="Tutorial interativo do Modo CMD">
+  <div class="tour-backdrop" id="tour-cmd-backdrop"></div>
+  <div class="tour-ring" id="tour-cmd-ring"></div>
+  <div class="tour-card" id="tour-cmd-card">
+    <div class="tour-head">
+      <span class="tour-badge" id="tour-cmd-badge">1 / 7</span>
+      <span class="tour-title" id="tour-cmd-title"></span>
+      <button class="tour-btn" id="tour-cmd-close" type="button" title="Fechar tutorial (Esc)">Fechar</button>
+    </div>
+    <div class="tour-body">
+      <p class="tour-text" id="tour-cmd-text"></p>
+      <div class="tour-tip" id="tour-cmd-tip"></div>
+      <a class="tour-link" href="/tutorial" target="_blank" rel="noopener">Abrir guia completo em nova aba (/tutorial)</a>
+    </div>
+    <div class="tour-foot">
+      <div class="tour-dots" id="tour-cmd-dots"></div>
+      <div class="tour-nav">
+        <button class="tour-btn" id="tour-cmd-prev" type="button">&lt; Voltar</button>
+        <button class="tour-btn prim" id="tour-cmd-next" type="button">Avançar &gt;</button>
+      </div>
     </div>
   </div>
 </div>
@@ -3582,6 +3666,126 @@ async function executar(forcado) {
   rolar();
   carregarSugestoes();                  // pasta, sistemas e histórico podem ter mudado: o intellisense acompanha
 }
+
+/* ---------- tour interativo de apresentação do Modo CMD ---------- */
+const TOUR_CMD = [
+  {
+    alvo: ".modo-stack",
+    titulo: "Alternador WYSIWYG / CMD e Tutorial",
+    texto: "Você está no terminal CMD do SGS. Clique em 'WYSIWYG' para abrir a bancada visual de 5 colunas na mesma posição do canto esquerdo, ou clique em 'Tutorial' sempre que quiser rever este passo a passo.",
+    dica: "Atalhos no tutorial: <- Voltar · -> Avançar · Esc para fechar.",
+  },
+  {
+    alvo: "#principais",
+    titulo: "Barra de Comandos Principais",
+    texto: "Todos os comandos essenciais do SGS aparecem aqui como atalhos clicáveis (sem precisar digitar 'sgs'). Comandos diretos executam na hora; comandos que pedem argumentos são preenchidos no prompt.",
+    dica: "Use 'sgs topo' para ocultar/mostrar esta barra · 'sgs comand' abre o guia numerado.",
+  },
+  {
+    alvo: "#principais",
+    titulo: "Passo 2 · Infra, Segurança & Bibliotecas (sgs infra)",
+    texto: "O comando 'sgs infra' (ou 'sgs seguranca') exibe o painel completo de arquitetura: estrutura apps/, UUIDv4, motor-id-interno (LNNL), banco (SQLite3/PostgreSQL/MongoDB), Redis, Baseline (§12–14), Argon2id, Fernet, 2FA com expiração, Recuperação de Senha, RBAC, Anti-Bot, ratelimit, anymail e tinymce.",
+    dica: "Ex.: sgs infra\n     sgs config banco=postgresql redis=sim fernet=sim rbac=sim",
+  },
+  {
+    alvo: "#saida",
+    titulo: "300 Domínios e 28 Padrões por Escopo",
+    texto: "Explore os 300 domínios nativos (+ cadastro próprio em 'sgs dominios novo') e filtre os 28 padrões de projeto por categoria GoF ou por escopo arquitetural (arquitetura, classe, campo, relacao).",
+    dica: "Ex.: sgs dominios saude\n     sgs padroes relacao  (mostra padrões de colaboração/FK)",
+  },
+  {
+    alvo: "#saida",
+    titulo: "Gerar, Criar Classes, Ligar e Incrementar Campos",
+    texto: "Gere o sistema com 'sgs gerar', adicione novas classes com padrões próprios em 'sgs app', conecte ForeignKeys em 'sgs ligar' e incremente campos categorizados (Primitivos, Seleção, Negócio e Estruturados) em 'sgs incrementar'.",
+    dica: "Ex.: sgs gerar -sp hotel strategy\n     sgs incrementar 01 Reserva.agendado_em data-hora\n     sgs incrementar 01 Reserva.cpf_hospede cpf",
+  },
+  {
+    alvo: "#caixa",
+    titulo: "Prompt com Intellisense e Histórico Persistente",
+    texto: "Digite qualquer comando 'sgs ...' ou comando de terminal (ls, cd 01, python manage.py check, pytest). O Intellisense sugere comandos e chaves de configuração; TAB completa e as setas ↑/↓ navegam pelo histórico salvo.",
+    dica: "Texto livre sem 'sgs' é apenas anotado na tela. Use 'sgs info 01' para ver infra e arquivos.",
+  },
+  {
+    alvo: ".opcoes",
+    titulo: "Caixas Rápidas de Geração",
+    texto: "Marque '+ Django', 'Modo exercício', 'Rodar testes', 'Para estudo', 'Comentários' ou 'Perguntar antes de gerar' (que conduz o questionário completo incluindo Infra & Segurança). As escolhas ficam salvas automaticamente.",
+    dica: "Use 'sgs foot' para ocultar/mostrar estas caixas · 'sgs rodar 01' sobe o site gerado.",
+  },
+];
+
+let tourCmdIdx = -1;
+function posicionarTourCmd() {
+  if (tourCmdIdx < 0) return;
+  const passo = TOUR_CMD[tourCmdIdx];
+  const alvo = document.querySelector(passo.alvo);
+  const ring = $("tour-cmd-ring"), card = $("tour-cmd-card");
+  const r = alvo ? alvo.getBoundingClientRect() : null;
+  const valido = r && r.width > 10 && r.height > 10;
+  if (!valido) {
+    ring.style.left = "-9999px"; ring.style.top = "-9999px";
+    ring.style.width = "0px"; ring.style.height = "0px";
+    card.style.left = Math.max(12, (window.innerWidth - card.offsetWidth) / 2) + "px";
+    card.style.top = Math.max(12, (window.innerHeight - card.offsetHeight) / 2) + "px";
+    return;
+  }
+  const pad = 4;
+  ring.style.left = Math.max(2, r.left - pad) + "px";
+  ring.style.top = Math.max(2, r.top - pad) + "px";
+  ring.style.width = Math.min(window.innerWidth - 4, r.width + pad * 2) + "px";
+  ring.style.height = Math.min(window.innerHeight - 4, r.height + pad * 2) + "px";
+  const cw = card.offsetWidth || 410, ch = card.offsetHeight || 220;
+  let left = r.left;
+  let top = r.bottom + 12;
+  if (top + ch > window.innerHeight - 12) top = r.top - ch - 12;
+  top = Math.max(12, Math.min(window.innerHeight - ch - 12, top));
+  left = Math.max(12, Math.min(window.innerWidth - cw - 12, left));
+  card.style.left = left + "px";
+  card.style.top = top + "px";
+}
+
+function renderTourCmd() {
+  const layer = $("tour-cmd-layer");
+  if (tourCmdIdx < 0 || tourCmdIdx >= TOUR_CMD.length) {
+    layer.hidden = true;
+    ta.focus();
+    return;
+  }
+  const passo = TOUR_CMD[tourCmdIdx];
+  layer.hidden = false;
+  $("tour-cmd-badge").textContent = `${tourCmdIdx + 1} / ${TOUR_CMD.length}`;
+  $("tour-cmd-title").textContent = passo.titulo;
+  $("tour-cmd-text").textContent = passo.texto;
+  $("tour-cmd-tip").textContent = passo.dica;
+  $("tour-cmd-prev").disabled = tourCmdIdx === 0;
+  $("tour-cmd-next").textContent = tourCmdIdx === TOUR_CMD.length - 1 ? "Concluir" : "Avançar >";
+  $("tour-cmd-dots").replaceChildren(...TOUR_CMD.map((_, i) =>
+    el("button", {
+      class: "tour-dot" + (i === tourCmdIdx ? " on" : ""),
+      type: "button", title: `Passo ${i + 1}`,
+      onclick: () => { tourCmdIdx = i; renderTourCmd(); },
+    })
+  ));
+  requestAnimationFrame(posicionarTourCmd);
+}
+
+function abrirTourCmd(i = 0) { tourCmdIdx = i; ta.blur(); renderTourCmd(); }
+function fecharTourCmd() { tourCmdIdx = -1; renderTourCmd(); }
+
+$("btn-tutorial-cmd").onclick = () => abrirTourCmd(0);
+$("tour-cmd-close").onclick = fecharTourCmd;
+$("tour-cmd-backdrop").onclick = fecharTourCmd;
+$("tour-cmd-prev").onclick = () => { if (tourCmdIdx > 0) { tourCmdIdx -= 1; renderTourCmd(); } };
+$("tour-cmd-next").onclick = () => {
+  if (tourCmdIdx < TOUR_CMD.length - 1) { tourCmdIdx += 1; renderTourCmd(); }
+  else fecharTourCmd();
+};
+window.addEventListener("resize", posicionarTourCmd);
+window.addEventListener("keydown", (e) => {
+  if (tourCmdIdx < 0) return;
+  if (e.key === "Escape") { e.preventDefault(); fecharTourCmd(); }
+  else if (e.key === "ArrowRight") { e.preventDefault(); $("tour-cmd-next").click(); }
+  else if (e.key === "ArrowLeft") { e.preventDefault(); $("tour-cmd-prev").click(); }
+});
 
 /* ---------- início: só as duas linhas do topo ---------- */
 fetch("/config").then((r) => r.json()).then((d) => {
