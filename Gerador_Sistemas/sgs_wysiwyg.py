@@ -1360,6 +1360,7 @@ const state = {
   buscaDominio: "",
   buscaPadrao: "",
   padroesAtivos: ["encapsulamento", "strategy"],
+  camposNovos: [],
   modoExcludente: true,
   uiTema: localStorage.getItem("sgs.wysiwyg.uiTema") || "T09",
   uiTom: localStorage.getItem("sgs.wysiwyg.uiTom") || "escuro",
@@ -1601,6 +1602,35 @@ async function executarComando(linha, opcoesExtra = {}) {
   }
 }
 
+async function gerarProjetoNovo() {
+  const extras = [...state.camposNovos];
+  const d = await executarComando(comandoEquivalente(), extras.length ? { testar: false } : {});
+  if (!d || !d.ok || !d.cartao || !d.cartao.numero || !extras.length) return d;
+  const num = d.cartao.numero;
+  const ent = d.cartao.entidade;
+  let aplicados = 0;
+  const falhas = [];
+  for (let i = 0; i < extras.length; i++) {
+    const item = extras[i];
+    const ultimo = i === extras.length - 1;
+    const r = await executarComando(
+      `sgs incrementar ${num} ${ent}.${item.nome} ${item.regra}`,
+      { testar: ultimo ? state.opcoes.testar : false }
+    );
+    if (r && r.ok) aplicados += 1;
+    else falhas.push(item.nome);
+  }
+  state.camposNovos = [];
+  state.projetoAtual = num;
+  renderAll();
+  if (!falhas.length) {
+    toast(`OK: ${d.cartao.sistema} (${num}) gerado com ${aplicados} campo(s) extra(s)!`, "ok");
+  } else {
+    toast(`Sistema ${num} gerado; erro ao aplicar campo(s): ${falhas.join(", ")}`, "erro");
+  }
+  return d;
+}
+
 async function carregarEstado(selecionarNumero = null) {
   const primeiro = !state.data;
   const r = await fetch("/wysiwyg/estado");
@@ -1659,8 +1689,11 @@ function modalCampoCalculado(proj, classeNome) {
 
 function aplicarBlocoCampo(proj, classeNome, rc) {
   if (!proj) {
-    if (rc.acao === "calculado") return modalCampoCalculado(null, "Entidade");
-    return toast("Gere ou selecione um projeto para encaixar novos campos.", "erro");
+    if (rc.acao === "calculado") return modalCampoCalculado(null, classeNome || "Entidade");
+    if (rc.acao === "ligar") {
+      return toast("Relacionamento ForeignKey (FK): gere o projeto primeiro para criar uma 2ª classe e ligar.", "erro");
+    }
+    return modalIncrementarCampo(null, classeNome || "Entidade", "", rc.regra);
   }
   if (rc.acao === "ligar") {
     if (!proj.django) return toast("Relacionamento ForeignKey (sgs ligar) requer projeto com Django.", "erro");
@@ -1697,10 +1730,16 @@ function modalIncrementarCampo(proj, classeNome, campoInicial = "", regraInicial
       );
     })
   );
+  const tituloModal = proj
+    ? `Incrementar campo em ${classeNome} (sistema ${proj.numero})`
+    : `Adicionar campo na prévia de ${classeNome} (Novo Projeto)`;
+  const descModal = proj
+    ? "Cria um campo novo ou altera a regra de validação (@property + Django) diretamente no sistema."
+    : "Adiciona (ou personaliza) o campo na prévia do Novo Projeto. Todos os campos extras serão criados automaticamente ao clicar em Gerar projeto.";
   abrirModal(
-    `Incrementar campo em ${classeNome} (sistema ${proj.numero})`,
+    tituloModal,
     [
-      el("div", { class: "card-sub" }, "Cria um campo novo ou altera a regra de validação (@property + Django) diretamente no sistema."),
+      el("div", { class: "card-sub" }, descModal),
       el("label", { class: "lbl" }, "Nome do campo"),
       inpCampo,
       el("label", { class: "lbl" }, "Regra / Tipo do campo"),
@@ -1713,13 +1752,26 @@ function modalIncrementarCampo(proj, classeNome, campoInicial = "", regraInicial
       el("button", {
         class: "btn btn-green",
         onclick: async () => {
-          const c = inpCampo.value.trim();
+          const c = inpCampo.value.trim().toLowerCase().replace(/\s+/g, "_");
           const rg = inpRegra.value.trim();
           if (!c || !rg) return toast("Informe o nome do campo e a regra.", "erro");
+          if (!proj) {
+            if (!/^[a-z][a-z0-9_]*$/.test(c)) {
+              return toast("Nome de campo inválido: use letras minúsculas, números e _ (ex.: cpf, data_entrega).", "erro");
+            }
+            const idx = state.camposNovos.findIndex((x) => x.nome === c);
+            if (idx >= 0) state.camposNovos[idx].regra = rg;
+            else state.camposNovos.push({ nome: c, regra: rg });
+            fecharModal();
+            renderColClasses();
+            renderTopbar();
+            toast(`Campo '${c}' (${rg}) adicionado à prévia — será criado ao gerar o projeto.`, "ok");
+            return;
+          }
           fecharModal();
           await executarComando(`sgs incrementar ${proj.numero} ${classeNome}.${c} ${rg}`);
         },
-      }, "Aplicar campo"),
+      }, proj ? "Aplicar campo" : "Adicionar à prévia"),
     ]
   );
   setTimeout(() => (campoInicial ? inpRegra : inpCampo).focus(), 30);
@@ -1888,11 +1940,14 @@ function renderTopbar() {
 
   const acts = $("tb-actions");
   if (!proj) {
+    const rotuloGerar = state.camposNovos.length
+      ? `Gerar projeto (+${state.camposNovos.length} campo${state.camposNovos.length > 1 ? "s" : ""})`
+      : "Gerar projeto";
     setChildren(acts,
       el("button", {
         class: "btn btn-primary", disabled: state.ocupado,
-        onclick: () => executarComando(comandoEquivalente()),
-      }, "Gerar projeto")
+        onclick: () => gerarProjetoNovo(),
+      }, rotuloGerar)
     );
   } else {
     setChildren(acts,
@@ -2391,7 +2446,8 @@ function renderColClasses() {
               title: `${rc.rotulo} (${rc.exemplo}) — ${rc.desc}`,
               ondragstart: (e) => { e.dataTransfer.setData("text/sgs-field", JSON.stringify(rc)); },
               onclick: () => {
-                const alvoCls = (classeSelecionada(proj) || {}).nome || "Entidade";
+                const domAtual = state.data.dominios.find((d) => d.chave === state.dominio) || state.data.dominios[0];
+                const alvoCls = (classeSelecionada(proj) || {}).nome || (domAtual && domAtual.entidade) || "Entidade";
                 aplicarBlocoCampo(proj, alvoCls, rc);
               },
             }, ":: ", rc.rotulo)
@@ -2411,37 +2467,93 @@ function renderColClasses() {
       if (state.opcoes.fernet) infraTags.push("Fernet");
       if (state.opcoes.tinymce) infraTags.push("TinyMCE");
     }
-    $("c-classes").textContent = "1 (prévia)";
-    setChildren(box,
-      paletaCard,
-      el("div", { class: "cls-card selecionada" },
-        el("div", { class: "card-title" },
-          `class ${domSel.entidade}`,
-          el("span", { class: "col-count" }, "principal · prévia")
-        ),
-        el("div", { class: "card-sub" }, `Domínio: ${domSel.id} · ${domSel.sistema}`),
-        el("div", { class: "cls-pats" },
-          ...infraTags.map((t) => el("span", { class: "scope-tag es-arquitetura" }, t)),
-          ...(state.padroesAtivos.length
-            ? state.padroesAtivos.slice(0, 6).map((ch) => el("span", { class: "cls-pat-tag" }, nomePadrao(ch)))
-            : [el("span", { class: "card-sub" }, "Sem padrões selecionados na Coluna 3")]),
-          state.padroesAtivos.length > 6
-            ? el("span", { class: "cls-pat-tag" }, `+${state.padroesAtivos.length - 6}`)
-            : null
-        ),
-        el("div", { class: "field-list" },
-          ...domSel.atributos.map((a) =>
-            el("div", { class: "field-chip" },
-              el("span", { class: "fname" }, a.nome),
-              el("span", { class: "ftype" }, a.tipo),
-              el("span", { class: "frule" }, encapAtivo && a.regra !== "livre" ? `${a.regra} · @property` : a.regra)
-            )
+    const mapaExtras = new Map(state.camposNovos.map((x) => [x.nome, x]));
+    const nomesBase = new Set(domSel.atributos.map((a) => a.nome));
+    const extrasPuros = state.camposNovos.filter((x) => !nomesBase.has(x.nome));
+    $("c-classes").textContent = state.camposNovos.length
+      ? `1 (prévia · +${state.camposNovos.length})`
+      : "1 (prévia)";
+    const previaCard = el("div", {
+      class: "cls-card selecionada",
+      ondragover: (e) => {
+        if (e.dataTransfer.types.includes("text/sgs-field")) {
+          e.preventDefault(); previaCard.classList.add("drop-over");
+        }
+      },
+      ondragleave: () => previaCard.classList.remove("drop-over"),
+      ondrop: (e) => {
+        previaCard.classList.remove("drop-over");
+        const raw = e.dataTransfer.getData("text/sgs-field");
+        if (!raw) return;
+        e.preventDefault();
+        try {
+          const rc = JSON.parse(raw);
+          aplicarBlocoCampo(null, domSel.entidade, rc);
+        } catch {}
+      },
+    },
+      el("div", { class: "card-title" },
+        `class ${domSel.entidade}`,
+        el("div", { class: "row" },
+          el("span", { class: "col-count" }, "principal · prévia"),
+          el("button", { class: "btn btn-sm", onclick: () => modalIncrementarCampo(null, domSel.entidade) }, "+ Campo")
+        )
+      ),
+      el("div", { class: "card-sub" }, `Domínio: ${domSel.id} · ${domSel.sistema}`),
+      el("div", { class: "cls-pats" },
+        ...infraTags.map((t) => el("span", { class: "scope-tag es-arquitetura" }, t)),
+        ...(state.padroesAtivos.length
+          ? state.padroesAtivos.slice(0, 6).map((ch) => el("span", { class: "cls-pat-tag" }, nomePadrao(ch)))
+          : [el("span", { class: "card-sub" }, "Sem padrões selecionados na Coluna 3")]),
+        state.padroesAtivos.length > 6
+          ? el("span", { class: "cls-pat-tag" }, `+${state.padroesAtivos.length - 6}`)
+          : null
+      ),
+      el("div", { class: "field-list" },
+        ...domSel.atributos.map((a) => {
+          const ov = mapaExtras.get(a.nome);
+          const regraTxt = ov ? ov.regra : (encapAtivo && a.regra !== "livre" ? `${a.regra} · @property` : a.regra);
+          return el("button", {
+            class: "field-chip" + (ov ? " is-fk" : ""),
+            type: "button",
+            title: "Clique para alterar a regra deste campo na prévia do Novo Projeto",
+            onclick: () => modalIncrementarCampo(null, domSel.entidade, a.nome, ov ? ov.regra : "texto"),
+          },
+            el("span", { class: "fname" }, a.nome),
+            el("span", { class: "ftype" }, ov ? "alterado" : a.tipo),
+            el("span", { class: "frule" }, regraTxt)
+          );
+        }),
+        ...extrasPuros.map((ex) =>
+          el("div", {
+            class: "field-chip is-fk",
+            title: "Campo extra na prévia — clique para editar ou no 'x' para remover",
+            onclick: () => modalIncrementarCampo(null, domSel.entidade, ex.nome, ex.regra),
+          },
+            el("span", { class: "fname" }, ex.nome),
+            el("span", { class: "ftype" }, "novo"),
+            el("span", { class: "frule" }, ex.regra),
+            el("button", {
+              class: "btn btn-sm",
+              type: "button",
+              style: "padding:1px 6px; margin-left:4px; line-height:1.1",
+              title: "Remover campo da prévia",
+              onclick: (e) => {
+                e.stopPropagation();
+                state.camposNovos = state.camposNovos.filter((x) => x.nome !== ex.nome);
+                renderColClasses();
+                renderTopbar();
+              },
+            }, "x")
           )
-        ),
-        el("div", { class: "card-sub", style: "margin-top:8px" },
-          "Configure Infra/Segurança (Coluna 2) e Padrões (Coluna 3), depois clique em Gerar projeto no topo para liberar edição direta.")
-      )
+        )
+      ),
+      el("div", { class: "card-sub", style: "margin-top:8px" },
+        state.camposNovos.length
+          ? `${state.camposNovos.length} campo(s) extra(s) pronto(s) na prévia. Clique em Gerar projeto no topo para criar tudo junto.`
+          : "Arraste ou clique em um campo na paleta acima (ou em '+ Campo') para adicionar já na prévia, depois clique em Gerar projeto.")
     );
+    setChildren(box, paletaCard, previaCard);
     return;
   }
 
@@ -3040,7 +3152,7 @@ function renderAll() {
 $("btn-copiar").onclick = () => {
   navigator.clipboard?.writeText(comandoEquivalente()).then(() => toast("Comando copiado.", "ok")).catch(() => {});
 };
-$("btn-exec-cmd").onclick = () => executarComando(comandoEquivalente());
+$("btn-exec-cmd").onclick = () => (projetoSelecionado() ? executarComando(comandoEquivalente()) : gerarProjetoNovo());
 $("btn-drawer").onclick = () => { state.drawerAberto = !state.drawerAberto; renderDrawer(); };
 $("btn-fechar-drawer").onclick = () => { state.drawerAberto = false; renderDrawer(); };
 $("tab-log").onclick = () => { state.drawerAba = "log"; renderDrawer(); };
