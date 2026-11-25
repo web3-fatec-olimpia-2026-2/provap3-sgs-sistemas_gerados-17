@@ -530,6 +530,44 @@ def test_incrementar_todos_novos_tipos_categorizados_e_tudo_passa(tmp_path):
     assert cod_web == 0, out_web
 
 
+def test_gerar_com_infra_seguranca_e_bibliotecas_tudo_passa(tmp_path):
+    """Passo 2 completo: UUIDv4, LNNL, apps/, baseline, PostgreSQL, Redis, Argon2id, Fernet, 2FA, RBAC, Anti-Bot, Rate Limit, Anymail, TinyMCE."""
+    pytest.importorskip("django")
+    web_opts = {
+        "estilo": "web", "tema": "T03", "tom": "tom3",
+        "id_publico": "uuid", "id_interno": True, "lnnl_tipo": "24",
+        "estrutura": "apps", "seguranca": "baseline",
+        "banco": "postgresql", "redis": True, "argon2": True, "fernet": True,
+        "two_factor": True, "two_factor_expiracao": 15, "recuperacao_senha": True,
+        "rbac": True, "antibot": True, "ratelimit": True, "anymail": True, "tinymce": True,
+    }
+    destino, s = g.gerar(dominio="hotel", padroes=["strategy"], django=True, web=web_opts, saida=tmp_path)
+    reqs = (destino / "requirements.txt").read_text(encoding="utf-8")
+    for pct in ("psycopg[binary]", "django-redis", "argon2-cffi", "cryptography", "pyotp",
+                "django-ratelimit", "django-anymail", "django-tinymce"):
+        assert pct in reqs, pct
+    env_ex = (destino / "web" / ".env.example").read_text(encoding="utf-8")
+    for var in ("DB_HOST=", "REDIS_URL=", "FERNET_KEY=", "TWO_FACTOR_EXPIRACAO_MIN=15",
+                "ANYMAIL_API_KEY=", "ANTIBOT_PROVIDER=", "RATELIMIT_ENABLE="):
+        assert var in env_ex, var
+    for mod in ("crypto.py", "twofactor.py", "rbac.py", "antibot.py", "ratelimit.py"):
+        assert (destino / "web" / "config" / mod).is_file(), mod
+    assert (destino / "web" / "apps" / s.app / "tests" / "test_infra_seguranca.py").is_file()
+    cod_nucleo, out_nucleo = rodar_pytest(destino)
+    assert cod_nucleo == 0, out_nucleo
+    cod_web, out_web = rodar_pytest(destino / "web")
+    assert cod_web == 0, out_web
+
+    # MongoDB + validações de erro
+    destino_m, _ = g.gerar(dominio="cinema", padroes=["strategy"], django=True,
+                           web={"banco": "mongodb"}, saida=tmp_path)
+    assert "django-mongodb-backend" in (destino_m / "requirements.txt").read_text(encoding="utf-8")
+    with pytest.raises(g.ErroGerador):
+        g.normalizar_web({"banco": "oracle"})
+    with pytest.raises(g.ErroGerador):
+        g.normalizar_web({"two_factor_expiracao": 99})
+
+
 def test_incrementar_modifica_e_acrescenta_campos_e_tudo_passa(tmp_path):
     pytest.importorskip("django")
     destino, s = g.gerar(dominio="hotel", padroes=["strategy", "state"], django=True, saida=tmp_path)

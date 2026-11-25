@@ -5,7 +5,7 @@ sgs_wysiwyg.py — Modo WYSIWYG (bancada em colunas de encaixe de blocos) para o
 Tela inicial padrão do SGS (`/` e `/wysiwyg`), com alternância direta `WYSIWYG <-> CMD` (`/cmd`):
   - Expõe os dados estruturados do catálogo (300 domínios, 28 padrões, grupos mutuamente excludentes,
     10 temas x 6 tons de temas_web.py e projetos já gerados com classes, campos, ligações FK e API).
-  - Toda ação de criação/edição (Gerar, Prova P3, Editar, Nova Classe/App, Incrementar Campo,
+  - Toda ação de criação/edição (Gerar, Editar, Nova Classe/App, Incrementar Campo,
     Ligar Classes, Configurar API, Duplicar, Testar, Rodar, Parar, Novo Domínio) executa o MESMO
     motor `tela_prompt.executar_linha()` por baixo — garantindo 100% de consistência com o CMD e
     exibindo ao vivo o comando `sgs ...` equivalente.
@@ -77,6 +77,29 @@ GRUPOS_EXCLUDENTES = [
         "membros": ["singleton", "prototype"],
     },
 ]
+
+# Escopo arquitetural de cada um dos 28 padrões (Arquitetura / Classe / Campo / Ligação FK)
+ESCOPOS_PADRAO = [
+    {"id": "arquitetura", "nome": "Arquitetura", "desc": "Camadas transversais do projeto (Service, MVVM, SRP)."},
+    {"id": "classe", "nome": "Classe", "desc": "Criação e comportamento interno de uma entidade/classe."},
+    {"id": "campo", "nome": "Campo", "desc": "Proteção, validação e compartilhamento no nível do atributo."},
+    {"id": "relacao", "nome": "Ligação / FK", "desc": "Colaboração, adaptação e comunicação entre classes ligadas."},
+]
+
+ESCOPO_DO_PADRAO = {
+    "srp": "arquitetura", "service": "arquitetura", "mvvm": "arquitetura",
+    "encapsulamento": "campo", "flyweight": "campo",
+    "polimorfismo": "classe", "singleton": "classe", "factory_method": "classe",
+    "abstract_factory": "classe", "builder": "classe", "prototype": "classe",
+    "decorator": "classe", "interpreter": "classe", "iterator": "classe",
+    "memento": "classe", "state": "classe", "strategy": "classe",
+    "template_method": "classe", "visitor": "classe",
+    "adapter": "relacao", "bridge": "relacao", "composite": "relacao",
+    "facade": "relacao", "proxy": "relacao", "chain": "relacao",
+    "command": "relacao", "mediator": "relacao", "observer": "relacao",
+}
+_NOMES_ESCOPO = {e["id"]: e["nome"] for e in ESCOPOS_PADRAO}
+
 
 CATEGORIAS_CAMPO_PALETA = [
     {
@@ -314,10 +337,12 @@ def resolver_tema_wysiwyg(tema="T09", tom="escuro", paleta="P01"):
     sobre = "#FFFFFF" if temas_web.contraste("#FFFFFF", dest) >= temas_web.contraste("#000000", dest) else "#000000"
     r, g, b = temas_web._rgb(dest)
 
+    c_inf = temas_web.ajustar_contraste("#5E9EA0" if escuro else "#246B6E", card, 3.6)
     c_cls = temas_web.ajustar_contraste("#6CA672" if escuro else "#2E6936", card, 3.6)
     c_lnk = temas_web.ajustar_contraste("#9B86BA" if escuro else "#5E487D", card, 3.6)
     c_pat = temas_web.ajustar_contraste("#C7A05A" if escuro else "#825F22", card, 3.6)
     c_err = temas_web.ajustar_contraste("#C96464" if escuro else "#993232", card, 3.8)
+    ir, ig, ib = temas_web._rgb(c_inf)
     cr, cg, cb = temas_web._rgb(c_cls)
     lr, lg, lb = temas_web._rgb(c_lnk)
     pr, pg, pb = temas_web._rgb(c_pat)
@@ -344,6 +369,8 @@ def resolver_tema_wysiwyg(tema="T09", tom="escuro", paleta="P01"):
             "--c-dom": dest,
             "--c-dom-bg": f"rgba({r}, {g}, {b}, 0.16)",
             "--c-dom-sobre": sobre,
+            "--c-inf": c_inf,
+            "--c-inf-bg": f"rgba({ir}, {ig}, {ib}, 0.15)",
             "--c-cls": c_cls,
             "--c-cls-bg": f"rgba({cr}, {cg}, {cb}, 0.15)",
             "--c-lnk": c_lnk,
@@ -427,6 +454,9 @@ def _resumo_projeto(ctx, num, pasta, servidores_por_pasta):
             "nome": nome,
             "app": dados.get("app", ""),
             "principal": bool(dados.get("principal")),
+            "padroes": list(info.get("padroes", []))
+            if dados.get("principal")
+            else list((dados.get("modulo") or {}).get("padroes") or []),
             "atributos": [
                 {
                     **a,
@@ -526,11 +556,14 @@ def estado_completo(ctx):
         for p in membros:
             pd = gs.PADROES[p]
             grp = grupo_do_padrao(p)
+            escopo_id = ESCOPO_DO_PADRAO.get(p, "classe")
             padroes_lista.append({
                 "chave": p,
                 "titulo": pd["titulo"],
                 "categoria": cat_chave,
                 "categoria_nome": cat_nome,
+                "escopo": escopo_id,
+                "escopo_nome": _NOMES_ESCOPO.get(escopo_id, "Classe"),
                 "familia": pd["familia"],
                 "modulo": pd["modulo"],
                 "problema": _limpar_placeholders(pd["problema"]),
@@ -560,6 +593,7 @@ def estado_completo(ctx):
         "dominios": dominios_lista,
         "setores": setores,
         "padroes": padroes_lista,
+        "escopos_padrao": ESCOPOS_PADRAO,
         "grupos_excludentes": GRUPOS_EXCLUDENTES,
         "presets": {k: list(v) for k, v in gs.GRUPOS.items()},
         "estilos": [{"chave": k, "desc": v} for k, v in gs.ESTILOS.items()],
@@ -620,6 +654,8 @@ _HTML_WYSIWYG = r"""<!doctype html>
     --c-dom: #5b8cb5;
     --c-dom-bg: rgba(91, 140, 181, .14);
     --c-dom-sobre: #ffffff;
+    --c-inf: #5e9ea0;
+    --c-inf-bg: rgba(94, 158, 160, .14);
     --c-cls: #6a9a6e;
     --c-cls-bg: rgba(106, 154, 110, .13);
     --c-lnk: #8f7ea8;
@@ -660,8 +696,8 @@ _HTML_WYSIWYG = r"""<!doctype html>
     border-radius: 5px; padding: 2px; gap: 2px; font-family: var(--mono); flex-shrink: 0;
   }
   .mode-switch a, .mode-switch span {
-    text-decoration: none; font-size: 11px; font-weight: 700;
-    padding: 2px 9px; border-radius: 3px; color: var(--muted);
+    text-decoration: none; font-size: 11px; line-height: 1.45; font-weight: 700;
+    padding: 2px 9px; border-radius: 3px; color: var(--muted); border: 1px solid transparent;
   }
   .mode-switch a:hover { color: var(--title); background: var(--card); }
   .mode-switch .ativo {
@@ -739,49 +775,67 @@ _HTML_WYSIWYG = r"""<!doctype html>
   .proj-pill.ativo { background: var(--c-dom-bg); border-color: var(--c-dom); color: var(--title); }
   .proj-pill .num { font-family: var(--mono); font-size: 11px; color: var(--c-dom); }
 
-  /* ---- QUADRO DE 4 COLUNAS ENCAIXÁVEIS ---- */
+  /* ---- QUADRO DE 5 COLUNAS ENCAIXÁVEIS (Opção A — sem rolagem horizontal) ---- */
   .board {
     flex: 1; min-height: 0; display: grid;
-    grid-template-columns: repeat(4, minmax(290px, 1fr));
-    gap: 10px; padding: 10px 14px; overflow-x: auto; overflow-y: hidden;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px; padding: 8px 12px; overflow: hidden;
   }
   .col {
     background: var(--bg-col); border: 1px solid var(--border);
     border-radius: var(--radius); display: flex; flex-direction: column;
-    min-height: 0; overflow: hidden;
+    min-width: 0; min-height: 0; overflow: hidden;
   }
   .col-head {
-    padding: 8px 11px; border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between; gap: 8px;
-    border-top: 2px solid var(--border-strong); flex-shrink: 0;
+    padding: 7px 10px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    border-top: 2px solid var(--border-strong); flex-shrink: 0; min-width: 0;
   }
   .col-1 .col-head { border-top-color: var(--c-dom); }
-  .col-2 .col-head { border-top-color: var(--c-cls); }
-  .col-3 .col-head { border-top-color: var(--c-lnk); }
-  .col-4 .col-head { border-top-color: var(--c-pat); }
-  .col-title { font-weight: 700; color: var(--title); font-size: 12.5px; letter-spacing: .2px; }
+  .col-2 .col-head { border-top-color: var(--c-inf); }
+  .col-3 .col-head { border-top-color: var(--c-pat); }
+  .col-4 .col-head { border-top-color: var(--c-cls); }
+  .col-5 .col-head { border-top-color: var(--c-lnk); }
+  .pill.on-inf { background: var(--c-inf-bg); border-color: var(--c-inf); color: var(--title); }
+  .infra-warn {
+    margin-top: 6px; padding: 5px 7px; border-radius: 4px; font-size: 11px;
+    background: var(--c-pat-bg); border: 1px solid var(--c-pat); color: var(--c-pat);
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px;
+  }
+  .infra-inline {
+    display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    margin-top: 6px; font-size: 11px; color: var(--muted);
+  }
+  .infra-inline input {
+    width: 60px; text-align: center; font-family: var(--mono); padding: 3px 5px; flex-shrink: 0;
+  }
+  .col-title {
+    font-weight: 700; color: var(--title); font-size: 12px; letter-spacing: .2px;
+    min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
   .col-count {
-    font-size: 11px; font-family: var(--mono); padding: 1px 7px; border-radius: 4px;
+    font-size: 10.5px; font-family: var(--mono); padding: 1px 6px; border-radius: 4px;
     background: var(--card); border: 1px solid var(--border); color: var(--muted);
+    white-space: nowrap; flex-shrink: 0;
   }
   .col-body {
-    flex: 1; min-height: 0; overflow-y: auto; padding: 9px;
-    display: flex; flex-direction: column; gap: 9px;
+    flex: 1; min-width: 0; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 8px;
+    display: flex; flex-direction: column; gap: 8px;
     scrollbar-width: thin;
   }
-  .col-body > * { flex-shrink: 0; }
+  .col-body > * { flex-shrink: 0; min-width: 0; max-width: 100%; }
 
   /* ---- CARTÕES E CAMPOS ---- */
   .card {
     background: var(--card); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 9px 10px;
+    border-radius: var(--radius); padding: 8px 9px; min-width: 0; max-width: 100%;
   }
   .card-title {
-    font-weight: 700; color: var(--title); font-size: 12.5px;
-    display: flex; align-items: center; justify-content: space-between; gap: 6px;
-    margin-bottom: 5px;
+    font-weight: 700; color: var(--title); font-size: 12px;
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 5px;
+    margin-bottom: 5px; min-width: 0;
   }
-  .card-sub { font-size: 11.5px; color: var(--muted); line-height: 1.4; }
+  .card-sub { font-size: 11px; color: var(--muted); line-height: 1.4; overflow-wrap: anywhere; }
   .inp, .sel {
     width: 100%; background: var(--input-bg); border: 1px solid var(--border);
     border-radius: 4px; padding: 5px 8px; color: var(--title); outline: none;
@@ -812,7 +866,7 @@ _HTML_WYSIWYG = r"""<!doctype html>
   .dom-item {
     display: flex; align-items: center; justify-content: space-between; gap: 6px;
     padding: 5px 8px; border-radius: 4px; border: 1px solid var(--border);
-    background: var(--input-bg); cursor: pointer; text-align: left;
+    background: var(--input-bg); cursor: pointer; text-align: left; flex-shrink: 0;
   }
   .dom-item:hover { border-color: var(--c-dom); background: var(--card-hover); }
   .dom-item.ativo { border-color: var(--c-dom); background: var(--c-dom-bg); }
@@ -854,13 +908,37 @@ _HTML_WYSIWYG = r"""<!doctype html>
     background: var(--card); border: 1px solid var(--border);
     border-left: 3px solid var(--c-cls); border-radius: var(--radius); padding: 9px 10px;
   }
+  .cls-card.selecionada { border-color: var(--c-pat); box-shadow: inset 0 0 0 1px var(--c-pat-bg); }
   .cls-card.drop-over { border-color: var(--c-cls); background: var(--c-cls-bg); }
+  .cls-head-btn {
+    background: transparent; border: 0; padding: 0; color: var(--title);
+    font-weight: 700; font-size: 12.5px; cursor: pointer; text-align: left;
+  }
+  .cls-head-btn:hover { color: var(--c-pat); }
+  .cls-pats { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .cls-pat-tag {
+    font-family: var(--mono); font-size: 10px; padding: 1px 6px; border-radius: 3px;
+    background: var(--c-pat-bg); border: 1px solid var(--c-pat); color: var(--c-pat);
+  }
+  .scope-tag {
+    font-family: var(--mono); font-size: 9px; padding: 1px 5px; border-radius: 3px;
+    border: 1px solid var(--border-strong); color: var(--muted); background: var(--input-bg);
+    text-transform: uppercase; letter-spacing: .2px; white-space: nowrap; flex-shrink: 0;
+  }
+  .scope-tag.es-arquitetura { border-color: var(--c-dom); color: var(--c-dom); }
+  .scope-tag.es-classe { border-color: var(--c-pat); color: var(--c-pat); }
+  .scope-tag.es-campo { border-color: var(--c-cls); color: var(--c-cls); }
+  .scope-tag.es-relacao { border-color: var(--c-lnk); color: var(--c-lnk); }
+  .modal-pat-list {
+    max-height: 150px; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 4px;
+    padding: 6px; border: 1px solid var(--border); border-radius: 5px; background: var(--input-bg);
+  }
   .field-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
   .field-chip {
-    display: inline-flex; align-items: center; gap: 5px;
-    padding: 3px 7px; border-radius: 4px; font-size: 11.5px;
+    display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px;
+    padding: 3px 6px; border-radius: 4px; font-size: 11px; max-width: 100%;
     background: var(--input-bg); border: 1px solid var(--border);
-    cursor: pointer;
+    cursor: pointer; overflow-wrap: anywhere;
   }
   .field-chip:hover { border-color: var(--c-cls); color: var(--title); }
   .field-chip .fname { font-weight: 700; color: var(--title); font-family: var(--mono); }
@@ -919,9 +997,9 @@ _HTML_WYSIWYG = r"""<!doctype html>
   }
   .pat-grid { display: flex; flex-direction: column; gap: 5px; }
   .pat-block {
-    padding: 7px 9px; border-radius: 5px; border: 1px solid var(--border);
+    padding: 7px 8px; border-radius: 5px; border: 1px solid var(--border);
     background: var(--card); display: flex; flex-direction: column; gap: 3px;
-    cursor: pointer;
+    cursor: pointer; min-width: 0; max-width: 100%; overflow: hidden;
   }
   .pat-block:hover:not(.bloqueado) { border-color: var(--c-pat); background: var(--card-hover); }
   .pat-block.ativo {
@@ -933,22 +1011,29 @@ _HTML_WYSIWYG = r"""<!doctype html>
     cursor: not-allowed;
   }
   .pat-block.bloqueado .pat-name { color: var(--muted); }
-  .pat-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-  .pat-name { font-weight: 700; color: var(--title); font-size: 12px; display: flex; align-items: center; gap: 6px; }
+  .pat-top { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; max-width: 100%; }
+  .pat-name {
+    font-weight: 700; color: var(--title); font-size: 11.5px;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
+    min-width: 0; max-width: 100%; overflow-wrap: anywhere;
+  }
   .pat-badge {
-    font-family: var(--mono); font-size: 10px; font-weight: 700;
+    font-family: var(--mono); font-size: 9.5px; font-weight: 700;
     padding: 1px 5px; border-radius: 3px; border: 1px solid var(--border);
-    color: var(--muted);
+    color: var(--muted); white-space: nowrap; flex-shrink: 0;
   }
   .pat-badge.on { border-color: var(--c-pat); color: var(--c-pat); }
   .pat-badge.bloq { border-color: var(--c-err); color: var(--c-err); }
-  .pat-mod { font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
-  .pat-desc { font-size: 11.5px; color: var(--muted); line-height: 1.38; }
+  .pat-mod {
+    font-family: var(--mono); font-size: 10px; color: var(--muted);
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .pat-desc { font-size: 11px; color: var(--muted); line-height: 1.38; overflow-wrap: anywhere; }
   .pat-lock {
-    display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 5px;
     margin-top: 3px; padding: 4px 6px; border-radius: 4px;
     background: var(--c-err-bg); border: 1px solid var(--c-err);
-    color: var(--c-err); font-size: 11px; font-weight: 600;
+    color: var(--c-err); font-size: 10.5px; font-weight: 600; overflow-wrap: anywhere;
   }
   .btn-swap {
     border: 1px solid var(--c-pat); background: var(--card); color: var(--c-pat);
@@ -978,6 +1063,8 @@ _HTML_WYSIWYG = r"""<!doctype html>
     border-top: 1px solid var(--border); background: var(--bg);
     height: 240px; display: flex; flex-direction: column;
   }
+  .drawer.compacto { height: auto; }
+  .drawer.compacto .drawer-body { display: none; }
   .drawer[hidden] { display: none; }
   .drawer-tabs {
     display: flex; align-items: center; gap: 6px; padding: 5px 14px;
@@ -988,17 +1075,30 @@ _HTML_WYSIWYG = r"""<!doctype html>
     flex: 1; overflow-y: auto; padding: 10px 14px; font-family: var(--mono); font-size: 12px;
     white-space: pre-wrap; color: var(--text);
   }
-  .code-split { flex: 1; display: grid; grid-template-columns: 260px 1fr; min-height: 0; }
+  .code-split { flex: 1; display: grid; grid-template-columns: 310px 1fr; min-height: 0; height: 100%; }
   .file-tree {
-    border-right: 1px solid var(--border); overflow-y: auto; padding: 6px;
-    display: flex; flex-direction: column; gap: 2px;
+    border-right: 1px solid var(--border); overflow-y: auto; min-height: 0; padding: 6px;
+    display: flex; flex-direction: column; gap: 3px; background: var(--bg-col);
   }
   .file-btn {
-    text-align: left; background: transparent; border: 0; padding: 4px 8px;
-    border-radius: 4px; font-family: var(--mono); font-size: 11.5px; color: var(--muted);
-    cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
+    flex-shrink: 0; width: 100%; min-height: 26px;
+    text-align: left; background: transparent; border: 1px solid transparent; padding: 5px 8px;
+    border-radius: 4px; font-family: var(--mono); font-size: 11.5px; line-height: 1.35;
+    color: var(--text); cursor: pointer;
   }
-  .file-btn:hover, .file-btn.ativo { background: var(--c-dom-bg); color: var(--title); }
+  .file-btn .file-path {
+    width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    color: var(--text); font-weight: 600;
+  }
+  .file-btn .file-role {
+    width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    font-family: var(--sans); font-size: 10.5px; color: var(--muted);
+  }
+  .file-btn:hover { background: var(--card-hover); border-color: var(--border); }
+  .file-btn.ativo { background: var(--c-dom-bg); border-color: var(--c-dom); }
+  .file-btn.ativo .file-path { color: var(--title); }
+  .file-btn.ativo .file-role { color: var(--text); }
   .code-view {
     margin: 0; padding: 10px 14px; overflow: auto; font-family: var(--mono);
     font-size: 12px; line-height: 1.5; color: var(--text);
@@ -1081,26 +1181,34 @@ _HTML_WYSIWYG = r"""<!doctype html>
 
     <section class="col col-2">
       <div class="col-head">
-        <div class="col-title">2 · Classes &amp; Campos</div>
+        <div class="col-title">2 · Infra, Segurança &amp; Libs</div>
+        <span class="col-count" id="c-infra">SQLite3</span>
+      </div>
+      <div class="col-body" id="col-infra"></div>
+    </section>
+
+    <section class="col col-3">
+      <div class="col-head">
+        <div class="col-title">3 · Padrões da Classe</div>
+        <span class="col-count" id="c-padroes">0 / 28</span>
+      </div>
+      <div class="col-body" id="col-padroes"></div>
+    </section>
+
+    <section class="col col-4">
+      <div class="col-head">
+        <div class="col-title">4 · Classes &amp; Campos</div>
         <span class="col-count" id="c-classes">0</span>
       </div>
       <div class="col-body" id="col-classes"></div>
     </section>
 
-    <section class="col col-3">
+    <section class="col col-5">
       <div class="col-head">
-        <div class="col-title">3 · Ligações &amp; API</div>
+        <div class="col-title">5 · Ligações &amp; API</div>
         <span class="col-count" id="c-ligacoes">0</span>
       </div>
       <div class="col-body" id="col-ligacoes"></div>
-    </section>
-
-    <section class="col col-4">
-      <div class="col-head">
-        <div class="col-title">4 · Padrões de Projeto</div>
-        <span class="col-count" id="c-padroes">0 / 28</span>
-      </div>
-      <div class="col-body" id="col-padroes"></div>
     </section>
   </main>
 
@@ -1160,10 +1268,12 @@ function setChildren(node, ...items) {
 const state = {
   data: null,
   projetoAtual: "__novo__",
+  classeAtiva: null,
   dominio: "hotel",
   assuntoLivre: "",
   filtroSetor: "",
   filtroCatCampo: "",
+  filtroEscopoPadrao: "",
   buscaDominio: "",
   buscaPadrao: "",
   padroesAtivos: ["encapsulamento", "strategy"],
@@ -1182,7 +1292,21 @@ const state = {
     paleta: "P01",
     id_publico: "inteiro",
     id_interno: false,
+    lnnl_tipo: "21",
     estrutura: "plana",
+    seguranca: "basica",
+    banco: "sqlite3",
+    redis: false,
+    argon2: false,
+    fernet: false,
+    two_factor: false,
+    two_factor_expiracao: 10,
+    recuperacao_senha: false,
+    rbac: false,
+    antibot: false,
+    ratelimit: false,
+    anymail: false,
+    tinymce: false,
   },
   ocupado: false,
   drawerAberto: false,
@@ -1205,6 +1329,15 @@ function toast(msg, tipo = "ok") {
 function projetoSelecionado() {
   if (!state.data || state.projetoAtual === "__novo__") return null;
   return state.data.sistemas.find((s) => s.numero === state.projetoAtual) || null;
+}
+
+function classeSelecionada(proj) {
+  if (!proj || !proj.classes.length) return null;
+  if (state.classeAtiva) {
+    const achada = proj.classes.find((c) => c.nome === state.classeAtiva);
+    if (achada) return achada;
+  }
+  return proj.classes[0];
 }
 
 /* ---- 10 TEMAS x 6 TONS NO WYSIWYG ---- */
@@ -1307,6 +1440,23 @@ async function salvarOpcoesServidor() {
     estilo: state.opcoes.estilo,
     tema: state.opcoes.tema,
     paleta: state.opcoes.paleta,
+    id_publico: state.opcoes.id_publico,
+    id_interno: state.opcoes.id_interno,
+    lnnl_tipo: state.opcoes.lnnl_tipo,
+    estrutura: state.opcoes.estrutura,
+    seguranca: state.opcoes.seguranca,
+    banco: state.opcoes.banco,
+    redis: state.opcoes.redis,
+    argon2: state.opcoes.argon2,
+    fernet: state.opcoes.fernet,
+    two_factor: state.opcoes.two_factor,
+    two_factor_expiracao: state.opcoes.two_factor_expiracao,
+    recuperacao_senha: state.opcoes.recuperacao_senha,
+    rbac: state.opcoes.rbac,
+    antibot: state.opcoes.antibot,
+    ratelimit: state.opcoes.ratelimit,
+    anymail: state.opcoes.anymail,
+    tinymce: state.opcoes.tinymce,
   };
   await fetch("/config", {
     method: "POST",
@@ -1375,14 +1525,15 @@ async function carregarEstado(selecionarNumero = null) {
   if (!d.ok) return;
   state.data = d;
   if (d.config) {
-    state.opcoes.django = !!d.config.django;
-    state.opcoes.exercicio = !!d.config.exercicio;
-    state.opcoes.estudo = !!d.config.estudo;
-    state.opcoes.comentarios = !!d.config.comentarios;
-    state.opcoes.testar = !!d.config.testar;
-    if (d.config.estilo) state.opcoes.estilo = d.config.estilo;
-    if (d.config.tema) state.opcoes.tema = d.config.tema;
-    if (d.config.paleta) state.opcoes.paleta = d.config.paleta;
+    for (const k of ["django", "exercicio", "estudo", "comentarios", "testar",
+                     "id_interno", "redis", "argon2", "fernet", "two_factor",
+                     "recuperacao_senha", "rbac", "antibot", "ratelimit", "anymail", "tinymce"]) {
+      if (k in d.config) state.opcoes[k] = !!d.config[k];
+    }
+    for (const k of ["estilo", "tema", "paleta", "id_publico", "lnnl_tipo", "estrutura", "seguranca", "banco"]) {
+      if (d.config[k]) state.opcoes[k] = d.config[k];
+    }
+    if (d.config.two_factor_expiracao) state.opcoes.two_factor_expiracao = Number(d.config.two_factor_expiracao) || 10;
   }
   if (selecionarNumero && d.sistemas.some((s) => s.numero === selecionarNumero)) {
     state.projetoAtual = selecionarNumero;
@@ -1417,7 +1568,7 @@ function modalCampoCalculado(proj, classeNome) {
         el("div", { class: "card-sub", style: "font-family:var(--mono); margin-top:4px" },
           "• total -> quantidade * preco (somente leitura)\n• valor_final -> calculado pelo Service + Strategy\n• codigo / titulo / valor -> formatados no ViewModel / API")),
       el("div", { class: "card-sub" },
-        "Você pode ligar ou desligar a exposição de total e valor_final na API REST na Coluna 3 (Ligações & API)."),
+        "Você pode ligar ou desligar a exposição de total e valor_final na API REST na Coluna 5 (Ligações & API)."),
     ],
     [el("button", { class: "btn btn-primary", onclick: fecharModal }, "Entendi")]
   );
@@ -1498,14 +1649,38 @@ function modalNovaClasse(proj) {
     el("option", { value: "" }, "Não ligar automaticamente"),
     ...proj.classes.map((c) => el("option", { value: c.nome }, `Ligar a partir de ${c.nome}`))
   );
+  const patsNova = ["encapsulamento", "strategy"];
+  const patListBox = el("div", { class: "modal-pat-list" });
+  function renderPatsModal() {
+    const conf = conflitosAtuais(patsNova);
+    setChildren(patListBox, ...state.data.padroes.map((p) => {
+      const on = patsNova.includes(p.chave);
+      const bl = conf[p.chave];
+      return el("button", {
+        class: "pill" + (on ? " on" : ""),
+        type: "button",
+        disabled: !!bl,
+        title: bl ? `Excludente com ${bl.bloqueado_por.map(nomePadrao).join(", ")}` : `${p.escopo_nome} · ${p.problema}`,
+        onclick: () => {
+          const idx = patsNova.indexOf(p.chave);
+          if (idx >= 0) patsNova.splice(idx, 1);
+          else patsNova.push(p.chave);
+          renderPatsModal();
+        },
+      }, p.titulo.split(" (")[0]);
+    }));
+  }
+  renderPatsModal();
   abrirModal(
     `Nova Classe / App no sistema ${proj.numero}`,
     [
-      el("div", { class: "card-sub" }, "Cria model, form, CRUD, API REST e testes diretamente no sistema selecionado."),
+      el("div", { class: "card-sub" }, "Escolha os padrões da nova classe, descreva os campos e opcionalmente já ligue via ForeignKey."),
       el("label", { class: "lbl" }, "Descrição da nova funcionalidade / campos"),
       inpPedido,
       el("label", { class: "lbl" }, "Nome da Classe (opcional)"),
       inpEnt,
+      el("label", { class: "lbl" }, "Padrões de Projeto desta classe (respeita exclusão mútua)"),
+      patListBox,
       el("label", { class: "lbl" }, "Ligação automática (opcional)"),
       selLigar,
     ],
@@ -1518,6 +1693,7 @@ function modalNovaClasse(proj) {
           if (!ped) return toast("Descreva a nova classe/funcionalidade.", "erro");
           const partes = [`sgs app ${proj.numero} -sp`, ped];
           if (inpEnt.value.trim()) partes.push(`entidade=${inpEnt.value.trim()}`);
+          if (patsNova.length) partes.push(`padroes=${patsNova.join(",")}`);
           if (selLigar.value) {
             const campoFk = (inpEnt.value.trim() || ped.split(/\s+/)[0]).toLowerCase().replace(/[^a-z0-9_]/g, "");
             partes.push(`ligar=${selLigar.value}.${campoFk || "item"}`);
@@ -1595,6 +1771,17 @@ function modalNovoDominio() {
   setTimeout(() => inpChave.focus(), 30);
 }
 
+function selecionarProjeto(id) {
+  state.projetoAtual = id;
+  state.classeAtiva = null;
+  state.arquivoAberto = null;
+  state.conteudoArquivo = "";
+  if (id === "__novo__") {
+    state.drawerAberto = false;
+  }
+  renderAll();
+}
+
 /* ---- RENDER: TOPBAR & FAIXA DE PROJETOS ---- */
 function renderTopbar() {
   if (!state.data) return;
@@ -1607,12 +1794,7 @@ function renderTopbar() {
         `${s.no_ar ? "[NO AR] " : ""}${s.numero} · ${s.sistema} (${s.entidade})`)
     )
   );
-  sel.onchange = () => {
-    state.projetoAtual = sel.value;
-    state.arquivoAberto = null;
-    state.conteudoArquivo = "";
-    renderAll();
-  };
+  sel.onchange = () => selecionarProjeto(sel.value);
   $("proj-dot").className = "status-dot" + (proj?.no_ar ? " on" : "");
   const stEl = $("tb-status");
   if (stEl) {
@@ -1627,11 +1809,7 @@ function renderTopbar() {
       el("button", {
         class: "btn btn-primary", disabled: state.ocupado,
         onclick: () => executarComando(comandoEquivalente()),
-      }, "Gerar projeto"),
-      el("button", {
-        class: "btn btn-amber", disabled: state.ocupado,
-        onclick: () => executarComando("sgs provap3"),
-      }, "Prova P3 (101)")
+      }, "Gerar projeto")
     );
   } else {
     setChildren(acts,
@@ -1654,7 +1832,7 @@ function renderTopbar() {
           renderDrawer();
         },
       }, "Código"),
-      el("button", { class: "btn btn-primary", onclick: () => { state.projetoAtual = "__novo__"; renderAll(); } }, "+ Novo")
+      el("button", { class: "btn btn-primary", onclick: () => selecionarProjeto("__novo__") }, "+ Novo")
     );
   }
 
@@ -1662,12 +1840,12 @@ function renderTopbar() {
   setChildren(strip,
     el("button", {
       class: "proj-pill" + (!proj ? " ativo" : ""),
-      onclick: () => { state.projetoAtual = "__novo__"; renderAll(); },
+      onclick: () => selecionarProjeto("__novo__"),
     }, "+ Novo Projeto"),
     ...state.data.sistemas.map((s) =>
       el("button", {
         class: "proj-pill" + (s.numero === state.projetoAtual ? " ativo" : ""),
-        onclick: () => { state.projetoAtual = s.numero; state.arquivoAberto = null; renderAll(); },
+        onclick: () => selecionarProjeto(s.numero),
       },
         el("span", { class: "status-dot" + (s.no_ar ? " on" : "") }),
         el("span", { class: "num" }, s.numero),
@@ -1700,6 +1878,7 @@ function atualizarListaDominios() {
           const inpA = $("inp-assunto-livre");
           if (inpA) inpA.value = "";
           atualizarListaDominios();
+          atualizarConteudoPadroes();
           renderColClasses();
           renderCmdPreview();
         },
@@ -1723,8 +1902,8 @@ function atualizarOpcoesGerador() {
     el("div", { class: "card-title" }, "Opções Excludentes do Gerador"),
     el("label", { class: "lbl" }, "Camada Web"),
     el("div", { class: "pill-group" },
-      el("button", { class: "pill" + (webAtivo ? " on" : ""), onclick: () => { state.opcoes.django = true; atualizarOpcoesGerador(); } }, "Com Django"),
-      el("button", { class: "pill" + (!webAtivo ? " on" : ""), onclick: () => { state.opcoes.django = false; atualizarOpcoesGerador(); } }, "Só Python (núcleo)")
+      el("button", { class: "pill" + (webAtivo ? " on" : ""), onclick: () => { state.opcoes.django = true; atualizarOpcoesGerador(); renderColInfra(); } }, "Com Django"),
+      el("button", { class: "pill" + (!webAtivo ? " on" : ""), onclick: () => { state.opcoes.django = false; atualizarOpcoesGerador(); renderColInfra(); } }, "Só Python (núcleo)")
     ),
     el("label", { class: "lbl" }, "Estilo Web (requer Django)"),
     el("div", { class: "pill-group" },
@@ -1789,11 +1968,10 @@ function renderColDominio() {
           el("button", {
             class: "btn btn-sm",
             onclick: () => {
-              state.projetoAtual = "__novo__";
               state.padroesAtivos = [...proj.padroes];
               state.opcoes.django = proj.django;
               state.opcoes.exercicio = proj.exercicio;
-              renderAll();
+              selecionarProjeto("__novo__");
               toast("Padrões copiados para um Novo Projeto.", "ok");
             },
           }, "Usar como base")
@@ -1802,7 +1980,7 @@ function renderColDominio() {
       el("div", { class: "card" },
         el("div", { class: "card-title" }, "Edição direta ativa"),
         el("div", { class: "card-sub" },
-          `Alterações nas colunas 2 (Classes/Campos) e 3 (Ligações/API) modificam diretamente o sistema ${proj.numero}, sem criar cópias acidentais. Use Duplicar para versionar.`)
+          `Alterações nas colunas 4 (Classes/Campos) e 5 (Ligações/API) modificam diretamente o sistema ${proj.numero}, sem criar cópias acidentais. Use Duplicar para versionar.`)
       )
     );
     return;
@@ -1849,7 +2027,239 @@ function renderColDominio() {
   atualizarOpcoesGerador();
 }
 
-/* ---- COLUNA 2: CLASSES & CAMPOS ---- */
+/* ---- COLUNA 2: INFRAESTRUTURA, SEGURANÇA & BIBLIOTECAS ---- */
+function renderColInfra() {
+  const box = $("col-infra");
+  const proj = projetoSelecionado();
+  const bancosRotulo = { sqlite3: "SQLite3", postgresql: "PostgreSQL", mongodb: "MongoDB" };
+
+  if (proj) {
+    const w = proj.web || {};
+    if (!proj.django) {
+      $("c-infra").textContent = "Só Python";
+      setChildren(box,
+        el("div", { class: "card" },
+          el("div", { class: "card-title" }, "Núcleo Python Puro"),
+          el("div", { class: "card-sub" }, "Este projeto foi gerado sem camada Django. Opções de banco, segurança web e bibliotecas não se aplicam."))
+      );
+      return;
+    }
+    const ativas = [];
+    if (w.estrutura === "apps") ativas.push("apps/");
+    if (w.id_publico === "uuid") ativas.push("UUIDv4");
+    if (w.id_interno) ativas.push(`LNNL (${w.lnnl_tipo || "21"})`);
+    if (w.redis) ativas.push("Redis");
+    if (w.seguranca === "baseline") ativas.push("Baseline §12-14");
+    if (w.argon2 || w.seguranca === "baseline") ativas.push("Argon2id");
+    if (w.fernet) ativas.push("Fernet");
+    if (w.two_factor) ativas.push(`2FA (${w.two_factor_expiracao || 10}m)`);
+    if (w.recuperacao_senha) ativas.push("Recup. Senha");
+    if (w.rbac) ativas.push("RBAC");
+    if (w.antibot) ativas.push("Anti-Bot");
+    if (w.ratelimit) ativas.push("Rate Limit");
+    if (w.anymail) ativas.push("Anymail");
+    if (w.tinymce) ativas.push("TinyMCE");
+    $("c-infra").textContent = `${bancosRotulo[w.banco || "sqlite3"]} · ${ativas.length}`;
+    setChildren(box,
+      el("div", { class: "card" },
+        el("div", { class: "card-title" }, "Infra & Segurança Aplicadas"),
+        el("div", { class: "card-sub" }, `Banco: ${bancosRotulo[w.banco || "sqlite3"]} · Estrutura: ${w.estrutura || "plana"} · Chave: ${w.id_publico || "inteiro"}`),
+        el("div", { class: "pill-group", style: "margin-top:8px" },
+          ...(ativas.length
+            ? ativas.map((t) => el("span", { class: "pill on-inf" }, t))
+            : [el("span", { class: "pill" }, "Padrão básico (SQLite3 + Inteiro)")])
+        ),
+        el("button", {
+          class: "btn btn-sm", style: "margin-top:9px",
+          onclick: () => {
+            for (const k of ["id_publico", "id_interno", "lnnl_tipo", "estrutura", "seguranca", "banco",
+                             "redis", "argon2", "fernet", "two_factor", "two_factor_expiracao",
+                             "recuperacao_senha", "rbac", "antibot", "ratelimit", "anymail", "tinymce"]) {
+              if (k in w) state.opcoes[k] = w[k];
+            }
+            state.opcoes.django = true;
+            selecionarProjeto("__novo__");
+            toast("Configuração de Infra & Segurança copiada para Novo Projeto.", "ok");
+          },
+        }, "Copiar infra para Novo Projeto")
+      )
+    );
+    return;
+  }
+
+  const o = state.opcoes;
+  const webAtivo = o.django;
+  const argonEfetivo = o.argon2 || o.seguranca === "baseline";
+  const ativosCount = [
+    o.estrutura === "apps", o.id_publico === "uuid", o.id_interno, o.redis,
+    o.seguranca === "baseline", argonEfetivo, o.fernet, o.two_factor,
+    o.recuperacao_senha, o.rbac, o.antibot, o.ratelimit, o.anymail, o.tinymce,
+  ].filter(Boolean).length;
+  $("c-infra").textContent = webAtivo ? `${bancosRotulo[o.banco]} · ${ativosCount}` : "Só Python";
+
+  const upd = () => { renderColInfra(); renderColClasses(); renderColLigacoes(); };
+  const toggleOpt = (k) => () => { o[k] = !o[k]; upd(); };
+
+  setChildren(box,
+    !webAtivo
+      ? el("div", { class: "card" },
+          el("div", { class: "card-title" }, "Camada Django desativada"),
+          el("div", { class: "card-sub" }, "Ative 'Com Django' na Coluna 1 para configurar Banco, Identificadores, Segurança e Bibliotecas."))
+      : null,
+    el("div", { class: "card" },
+      el("div", { class: "card-title" }, "Estrutura & Identificadores"),
+      el("label", { class: "lbl" }, "Estrutura de Apps (excludente)"),
+      el("div", { class: "pill-group" },
+        el("button", { class: "pill" + (o.estrutura === "plana" ? " on-inf" : ""), disabled: !webAtivo,
+          onclick: () => { o.estrutura = "plana"; upd(); } }, "Plana (web/)"),
+        el("button", { class: "pill" + (o.estrutura === "apps" ? " on-inf" : ""), disabled: !webAtivo,
+          onclick: () => { o.estrutura = "apps"; upd(); } }, "Modular (apps/)")
+      ),
+      el("label", { class: "lbl" }, "Chave Primária Pública (excludente)"),
+      el("div", { class: "pill-group" },
+        el("button", { class: "pill" + (o.id_publico === "inteiro" ? " on-inf" : ""), disabled: !webAtivo,
+          onclick: () => { o.id_publico = "inteiro"; upd(); } }, "Inteiro"),
+        el("button", { class: "pill" + (o.id_publico === "uuid" ? " on-inf" : ""), disabled: !webAtivo,
+          onclick: () => { o.id_publico = "uuid"; upd(); } }, "UUIDv4")
+      ),
+      el("label", { class: "lbl" }, "Identificador Legível"),
+      el("div", { class: "pill-group" },
+        el("button", { class: "pill" + (o.id_interno ? " on-inf" : ""), disabled: !webAtivo,
+          title: "Motor ID interno LNNL-LNNL-LNL-LNL (não substitui PK)",
+          onclick: toggleOpt("id_interno") }, "motor-id-interno (LNNL)")
+      ),
+      o.id_interno && webAtivo
+        ? el("div", { class: "infra-inline" },
+            el("span", {}, "Tipo LNNL (11–99, sem 0/93):"),
+            el("input", {
+              class: "inp", value: o.lnnl_tipo, maxlength: 2,
+              onchange: (e) => {
+                const v = e.target.value.trim();
+                if (/^[1-9]{2}$/.test(v) && v !== "93") { o.lnnl_tipo = v; }
+                else { toast("Tipo LNNL deve ter 2 dígitos de 1 a 9 (nunca 93).", "erro"); e.target.value = o.lnnl_tipo; }
+              },
+            })
+          )
+        : null
+    ),
+    el("div", { class: "card" },
+      el("div", { class: "card-title" }, "Banco de Dados & Cache"),
+      el("label", { class: "lbl" }, "Banco Principal (excludente)"),
+      el("div", { class: "pill-group" },
+        ...[["sqlite3", "SQLite3"], ["postgresql", "PostgreSQL"], ["mongodb", "MongoDB"]].map(([k, lbl]) =>
+          el("button", {
+            class: "pill" + (o.banco === k ? " on-inf" : ""), disabled: !webAtivo,
+            onclick: () => { o.banco = k; upd(); },
+          }, lbl)
+        )
+      ),
+      el("label", { class: "lbl" }, "Cache / Sessões"),
+      el("div", { class: "pill-group" },
+        el("button", {
+          class: "pill" + (o.redis ? " on-inf" : ""), disabled: !webAtivo,
+          title: "Cache distribuído Redis via django-redis (fallback LocMemCache nos testes)",
+          onclick: toggleOpt("redis"),
+        }, "Redis (cache/sessões)")
+      )
+    ),
+    el("div", { class: "card" },
+      el("div", { class: "card-title" }, "Segurança & Criptografia"),
+      el("label", { class: "lbl" }, "Hardening HTTP/CSP (excludente)"),
+      el("div", { class: "pill-group" },
+        el("button", { class: "pill" + (o.seguranca === "basica" ? " on-inf" : ""), disabled: !webAtivo,
+          onclick: () => { o.seguranca = "basica"; upd(); } }, "Básica"),
+        el("button", { class: "pill" + (o.seguranca === "baseline" ? " on-inf" : ""), disabled: !webAtivo,
+          title: "Instruções §12–14: CSP nativa Django 6, cookies HttpOnly/SameSite, X-Frame DENY, ADMIN_URL",
+          onclick: () => { o.seguranca = "baseline"; upd(); } }, "Baseline (§12–14)")
+      ),
+      el("label", { class: "lbl" }, "Proteções Adicionais"),
+      el("div", { class: "pill-group" },
+        el("button", {
+          class: "pill" + (argonEfetivo ? " on-inf" : ""), disabled: !webAtivo || o.seguranca === "baseline",
+          title: o.seguranca === "baseline" ? "Já incluído automaticamente no Baseline" : "Hash de senhas com Argon2id (§16.1)",
+          onclick: toggleOpt("argon2"),
+        }, o.seguranca === "baseline" ? "Argon2id (Baseline)" : "Argon2id"),
+        el("button", {
+          class: "pill" + (o.fernet ? " on-inf" : ""), disabled: !webAtivo,
+          title: "Criptografia simétrica Fernet para dados sensíveis em repouso (config/crypto.py)",
+          onclick: toggleOpt("fernet"),
+        }, "Fernet"),
+        el("button", {
+          class: "pill" + (o.antibot ? " on-inf" : ""), disabled: !webAtivo,
+          title: "Proteção Anti-Bot: honeypot + tempo mínimo + gancho de provedor",
+          onclick: toggleOpt("antibot"),
+        }, "Anti-Bot")
+      )
+    ),
+    el("div", { class: "card" },
+      el("div", { class: "card-title" }, "Acesso & Identidade"),
+      el("div", { class: "pill-group" },
+        el("button", {
+          class: "pill" + (o.rbac ? " on-inf" : ""), disabled: !webAtivo,
+          title: "Papéis admin/gestor/operador/leitor + decorator exigir_papel (§17.4)",
+          onclick: toggleOpt("rbac"),
+        }, "RBAC"),
+        el("button", {
+          class: "pill" + (o.recuperacao_senha ? " on-inf" : ""), disabled: !webAtivo,
+          title: "Rotas de recuperação de usuário e senha (/conta/password_reset/)",
+          onclick: toggleOpt("recuperacao_senha"),
+        }, "Recup. Usuário/Senha"),
+        el("button", {
+          class: "pill" + (o.two_factor ? " on-inf" : ""), disabled: !webAtivo,
+          title: "Autenticação em dois fatores (2FA) com expiração configurável",
+          onclick: toggleOpt("two_factor"),
+        }, "Two-Factor (2FA)")
+      ),
+      o.two_factor && webAtivo
+        ? el("div", { class: "infra-inline" },
+            el("span", {}, "Expiração 2FA (1–60 min):"),
+            el("input", {
+              class: "inp", type: "number", min: 1, max: 60, value: o.two_factor_expiracao,
+              onchange: (e) => {
+                const n = parseInt(e.target.value, 10);
+                if (n >= 1 && n <= 60) { o.two_factor_expiracao = n; }
+                else { toast("Expiração 2FA deve ficar entre 1 e 60 minutos.", "erro"); e.target.value = o.two_factor_expiracao; }
+              },
+            })
+          )
+        : null
+    ),
+    el("div", { class: "card" },
+      el("div", { class: "card-title" }, "Bibliotecas de Terceiros"),
+      el("div", { class: "pill-group" },
+        el("button", {
+          class: "pill" + (o.ratelimit ? " on-inf" : ""), disabled: !webAtivo,
+          title: "django-ratelimit: limitação de taxa por IP/usuário (§19)",
+          onclick: toggleOpt("ratelimit"),
+        }, "django-ratelimit"),
+        el("button", {
+          class: "pill" + (o.anymail ? " on-inf" : ""), disabled: !webAtivo,
+          title: "django-anymail: envio transacional de e-mails para recuperação/2FA",
+          onclick: toggleOpt("anymail"),
+        }, "django-anymail"),
+        el("button", {
+          class: "pill" + (o.tinymce ? " on-inf" : ""), disabled: !webAtivo,
+          title: "django-tinymce: editor rich-text para campos Texto Longo",
+          onclick: toggleOpt("tinymce"),
+        }, "django-tinymce")
+      ),
+      o.ratelimit && !o.redis && webAtivo
+        ? el("div", { class: "infra-warn" },
+            el("span", {}, "Rate Limit recomenda Redis em produção."),
+            el("button", { class: "btn-swap", onclick: () => { o.redis = true; upd(); } }, "Ativar Redis")
+          )
+        : null,
+      (o.recuperacao_senha || o.two_factor) && !o.anymail && webAtivo
+        ? el("div", { class: "infra-warn" },
+            el("span", {}, "E-mail transacional: considere django-anymail."),
+            el("button", { class: "btn-swap", onclick: () => { o.anymail = true; upd(); } }, "Ativar Anymail")
+          )
+        : null
+    )
+  );
+}
+
+/* ---- COLUNA 4: CLASSES & CAMPOS ---- */
 function renderColClasses() {
   const box = $("col-classes");
   const proj = projetoSelecionado();
@@ -1898,7 +2308,7 @@ function renderColClasses() {
               title: `${rc.rotulo} (${rc.exemplo}) — ${rc.desc}`,
               ondragstart: (e) => { e.dataTransfer.setData("text/sgs-field", JSON.stringify(rc)); },
               onclick: () => {
-                const alvoCls = proj && proj.classes.length ? proj.classes[0].nome : "Entidade";
+                const alvoCls = (classeSelecionada(proj) || {}).nome || "Entidade";
                 aplicarBlocoCampo(proj, alvoCls, rc);
               },
             }, ":: ", rc.rotulo)
@@ -1910,35 +2320,56 @@ function renderColClasses() {
 
   if (!proj) {
     const domSel = state.data.dominios.find((d) => d.chave === state.dominio) || state.data.dominios[0];
+    const encapAtivo = state.padroesAtivos.includes("encapsulamento");
+    const infraTags = [];
+    if (state.opcoes.django) {
+      if (state.opcoes.id_publico === "uuid") infraTags.push("PK: UUIDv4");
+      if (state.opcoes.id_interno) infraTags.push(`LNNL ${state.opcoes.lnnl_tipo}`);
+      if (state.opcoes.fernet) infraTags.push("Fernet");
+      if (state.opcoes.tinymce) infraTags.push("TinyMCE");
+    }
     $("c-classes").textContent = "1 (prévia)";
     setChildren(box,
       paletaCard,
-      el("div", { class: "cls-card" },
+      el("div", { class: "cls-card selecionada" },
         el("div", { class: "card-title" },
           `class ${domSel.entidade}`,
           el("span", { class: "col-count" }, "principal · prévia")
         ),
         el("div", { class: "card-sub" }, `Domínio: ${domSel.id} · ${domSel.sistema}`),
+        el("div", { class: "cls-pats" },
+          ...infraTags.map((t) => el("span", { class: "scope-tag es-arquitetura" }, t)),
+          ...(state.padroesAtivos.length
+            ? state.padroesAtivos.slice(0, 6).map((ch) => el("span", { class: "cls-pat-tag" }, nomePadrao(ch)))
+            : [el("span", { class: "card-sub" }, "Sem padrões selecionados na Coluna 3")]),
+          state.padroesAtivos.length > 6
+            ? el("span", { class: "cls-pat-tag" }, `+${state.padroesAtivos.length - 6}`)
+            : null
+        ),
         el("div", { class: "field-list" },
           ...domSel.atributos.map((a) =>
             el("div", { class: "field-chip" },
               el("span", { class: "fname" }, a.nome),
               el("span", { class: "ftype" }, a.tipo),
-              el("span", { class: "frule" }, a.regra)
+              el("span", { class: "frule" }, encapAtivo && a.regra !== "livre" ? `${a.regra} · @property` : a.regra)
             )
           )
         ),
         el("div", { class: "card-sub", style: "margin-top:8px" },
-          "Clique em Gerar projeto no topo para criar este sistema e liberar edição direta de campos, novas classes e ligações.")
+          "Configure Infra/Segurança (Coluna 2) e Padrões (Coluna 3), depois clique em Gerar projeto no topo para liberar edição direta.")
       )
     );
     return;
   }
 
+  const clsFoco = classeSelecionada(proj);
   $("c-classes").textContent = String(proj.classes.length);
   const cards = proj.classes.map((cls) => {
+    const isSel = clsFoco && clsFoco.nome === cls.nome;
+    const patsCls = cls.padroes || [];
+    const encapCls = patsCls.includes("encapsulamento");
     const card = el("div", {
-      class: "cls-card",
+      class: "cls-card" + (isSel ? " selecionada" : ""),
       ondragover: (e) => {
         if (e.dataTransfer.types.includes("text/sgs-field")) {
           e.preventDefault(); card.classList.add("drop-over");
@@ -1957,25 +2388,42 @@ function renderColClasses() {
       },
     },
       el("div", { class: "card-title" },
-        `class ${cls.nome}`,
+        el("button", {
+          class: "cls-head-btn",
+          title: "Selecionar esta classe para ver os padrões dela na Coluna 3",
+          onclick: () => {
+            state.classeAtiva = cls.nome;
+            atualizarConteudoPadroes();
+            renderColClasses();
+          },
+        }, `class ${cls.nome}`),
         el("div", { class: "row" },
           el("span", { class: "col-count" }, cls.principal ? "principal" : cls.app),
           el("button", { class: "btn btn-sm", onclick: () => modalIncrementarCampo(proj, cls.nome) }, "+ Campo")
         )
       ),
+      patsCls.length
+        ? el("div", { class: "cls-pats" },
+            ...patsCls.slice(0, 5).map((ch) => el("span", { class: "cls-pat-tag" }, nomePadrao(ch))),
+            patsCls.length > 5 ? el("span", { class: "cls-pat-tag" }, `+${patsCls.length - 5}`) : null
+          )
+        : null,
       el("div", { class: "field-list" },
         ...cls.atributos.map((a) => {
           const isFk = a.tipo === "fk" || !!a.alvo;
+          const regraTxt = a.regra_texto || a.regra;
           return el("button", {
             class: "field-chip" + (isFk ? " is-fk" : ""),
-            title: "Clique para incrementar/alterar a regra deste campo",
+            title: isFk
+              ? `Relacionamento ForeignKey -> ${a.alvo || "Classe"} (clique para ajustar ligação)`
+              : "Clique para incrementar/alterar a regra (@property + Django) deste campo",
             onclick: () => isFk
               ? modalLigarClasses(proj, cls.nome, a.alvo || "")
-              : modalIncrementarCampo(proj, cls.nome, a.nome, a.regra_texto || a.regra || "texto"),
+              : modalIncrementarCampo(proj, cls.nome, a.nome, regraTxt || "texto"),
           },
             el("span", { class: "fname" }, a.nome),
             el("span", { class: "ftype" }, isFk ? `-> ${a.alvo || "FK"}` : a.tipo),
-            el("span", { class: "frule" }, a.regra_texto || a.regra)
+            el("span", { class: "frule" }, isFk ? "FK" : (encapCls && a.regra !== "livre" ? `${regraTxt} · @prop` : regraTxt))
           );
         })
       )
@@ -1986,19 +2434,62 @@ function renderColClasses() {
   setChildren(box, paletaCard, ...cards);
 }
 
-/* ---- COLUNA 3: LIGAÇÕES (FK) & API REST ---- */
+/* ---- COLUNA 4: LIGAÇÕES (FK) & API REST ---- */
 function renderColLigacoes() {
   const box = $("col-ligacoes");
   const proj = projetoSelecionado();
+  const patsRel = (state.data?.padroes || []).filter((p) => p.escopo === "relacao");
+  const ativosRel = proj
+    ? (classeSelecionada(proj)?.padroes || proj.padroes)
+    : state.padroesAtivos;
+
+  const colabCard = el("div", { class: "card" },
+    el("div", { class: "card-title" }, "Padrões de Colaboração (FK)"),
+    el("div", { class: "card-sub", style: "margin-bottom:6px" },
+      proj
+        ? "Padrões de relação/comunicação ativos na classe em foco (aplicáveis ao ligar classes ou criar novas classes)."
+        : "Campos relacionais (FK) costumam demandar padrões de comunicação/adaptação entre classes. Clique para ativar na Coluna 3:"),
+    el("div", { class: "pill-group" },
+      ...patsRel.map((p) => {
+        const on = ativosRel.includes(p.chave);
+        return el("button", {
+          class: "pill" + (on ? " on" : ""),
+          title: `${p.titulo} — ${p.problema}`,
+          onclick: () => {
+            if (proj) {
+              state.filtroEscopoPadrao = "relacao";
+              atualizarConteudoPadroes();
+              toast(`Filtro 'Ligação / FK' aplicado na Coluna 3 (${p.titulo.split(" (")[0]}).`, "ok");
+            } else {
+              togglePadrao(p.chave);
+            }
+          },
+        }, p.titulo.split(" (")[0]);
+      })
+    )
+  );
+
   if (!proj) {
-    $("c-ligacoes").textContent = "0";
+    const apiTags = [];
+    if (state.opcoes.django) {
+      if (state.opcoes.id_publico === "uuid") apiTags.push("/api/v1/<uuid:pk>/");
+      if (state.opcoes.rbac) apiTags.push("RBAC");
+      if (state.opcoes.ratelimit) apiTags.push("Rate Limit");
+      if (state.opcoes.seguranca === "baseline") apiTags.push("CSP/Baseline");
+    }
+    $("c-ligacoes").textContent = `${patsRel.filter((p) => ativosRel.includes(p.chave)).length} FK-pat`;
     setChildren(box,
       el("div", { class: "card" },
         el("div", { class: "card-title" }, "Ligações entre Classes (ForeignKey)"),
-        el("div", { class: "card-sub" }, "Após gerar o projeto, crie uma 2ª classe e arraste uma classe sobre a outra para conectar com ForeignKey (sgs ligar).")),
+        el("div", { class: "card-sub" }, "Após gerar o projeto, crie uma 2ª classe (já escolhendo os padrões dela) e arraste uma classe sobre a outra para conectar via ForeignKey.")),
+      colabCard,
       el("div", { class: "card" },
         el("div", { class: "card-title" }, "API REST"),
-        el("div", { class: "card-sub" }, "Projetos com Django expõem automaticamente endpoints JSON (/api/v1/...) com seleção de campos por clique."))
+        el("div", { class: "card-sub" }, "Projetos com Django expõem automaticamente endpoints JSON (/api/v1/...) com seleção de campos por clique."),
+        apiTags.length
+          ? el("div", { class: "pill-group", style: "margin-top:6px" },
+              ...apiTags.map((t) => el("span", { class: "pill on-inf" }, t)))
+          : null)
     );
     return;
   }
@@ -2010,7 +2501,7 @@ function renderColLigacoes() {
     ligNodes.push(
       el("div", { class: "card" },
         el("div", { class: "card-title" }, "Conectar Classes"),
-        el("div", { class: "card-sub" }, "Este projeto tem apenas 1 classe. Crie uma 2ª classe para ligar relacionamentos ForeignKey."),
+        el("div", { class: "card-sub" }, "Este projeto tem apenas 1 classe. Crie uma 2ª classe (com os padrões desejados) para ligar relacionamentos ForeignKey."),
         proj.django
           ? el("button", { class: "btn btn-sm btn-purple", style: "margin-top:8px", onclick: () => modalNovaClasse(proj) }, "+ Criar 2ª Classe / App")
           : null
@@ -2059,6 +2550,8 @@ function renderColLigacoes() {
     );
   }
 
+  ligNodes.push(colabCard);
+
   if (proj.endpoints.length) {
     ligNodes.push(
       el("div", { class: "card" },
@@ -2086,11 +2579,11 @@ function renderColLigacoes() {
   setChildren(box, ...ligNodes);
 }
 
-/* ---- COLUNA 4: PADRÕES DE PROJETO (input de filtro persistente — nunca perde foco!) ---- */
+/* ---- COLUNA 2: PADRÕES DA CLASSE (escopo + exclusão mútua + input persistente) ---- */
 function togglePadrao(chave) {
   const proj = projetoSelecionado();
   if (proj) {
-    toast("Padrões de um projeto já gerado são somente leitura aqui. Clique em 'Usar como base' para gerar uma nova montagem.", "erro");
+    toast("Para aplicar novos padrões em uma nova classe deste projeto, clique em '+ Nova Classe'. Para alterar a principal, use 'Usar como base'.", "erro");
     return;
   }
   const idx = state.padroesAtivos.indexOf(chave);
@@ -2105,6 +2598,8 @@ function togglePadrao(chave) {
     state.padroesAtivos.push(chave);
   }
   atualizarConteudoPadroes();
+  renderColClasses();
+  renderColLigacoes();
   renderCmdPreview();
 }
 
@@ -2113,6 +2608,8 @@ function trocarPadrao(novoChave, bloqueadores) {
   if (!state.padroesAtivos.includes(novoChave)) state.padroesAtivos.push(novoChave);
   toast(`Substituído: ${bloqueadores.map(nomePadrao).join(", ")} -> ${nomePadrao(novoChave)}`, "ok");
   atualizarConteudoPadroes();
+  renderColClasses();
+  renderColLigacoes();
   renderCmdPreview();
 }
 
@@ -2131,12 +2628,16 @@ function aplicarPreset(nome) {
     state.padroesAtivos = escolhidos;
   }
   atualizarConteudoPadroes();
+  renderColClasses();
+  renderColLigacoes();
   renderCmdPreview();
 }
 
 function atualizarConteudoPadroes() {
   const proj = projetoSelecionado();
-  const ativos = proj ? proj.padroes : state.padroesAtivos;
+  const clsFoco = proj ? classeSelecionada(proj) : null;
+  const domSel = !proj ? (state.data.dominios.find((d) => d.chave === state.dominio) || state.data.dominios[0]) : null;
+  const ativos = proj ? (clsFoco ? clsFoco.padroes : proj.padroes) : state.padroesAtivos;
   const conflitos = conflitosAtuais(ativos);
   $("c-padroes").textContent = `${ativos.length} / ${state.data.padroes.length}`;
 
@@ -2144,27 +2645,64 @@ function atualizarConteudoPadroes() {
   if (hdr) {
     setChildren(hdr,
       el("div", { class: "card-title" },
-        state.modoExcludente ? "Exclusão Mútua: ATIVA" : "Modo Livre: ATIVO",
-        el("button", {
-          class: "btn btn-sm " + (state.modoExcludente ? "btn-amber" : ""),
-          onclick: () => {
-            state.modoExcludente = !state.modoExcludente;
-            if (state.modoExcludente && !proj) {
-              const limpos = [];
-              for (const p of state.padroesAtivos) {
-                if (!conflitosAtuais(limpos)[p]) limpos.push(p);
-              }
-              state.padroesAtivos = limpos;
-            }
-            atualizarConteudoPadroes();
-            renderCmdPreview();
-          },
-        }, state.modoExcludente ? "Modo Livre" : "Ativar Exclusão")
+        proj
+          ? `Alvo: class ${clsFoco ? clsFoco.nome : proj.entidade}`
+          : `Alvo: class ${domSel.entidade} (nova)`,
+        proj && proj.django
+          ? el("button", { class: "btn btn-sm btn-green", onclick: () => modalNovaClasse(proj) }, "+ Nova Classe")
+          : el("button", {
+              class: "btn btn-sm " + (state.modoExcludente ? "btn-amber" : ""),
+              onclick: () => {
+                state.modoExcludente = !state.modoExcludente;
+                if (state.modoExcludente && !proj) {
+                  const limpos = [];
+                  for (const p of state.padroesAtivos) {
+                    if (!conflitosAtuais(limpos)[p]) limpos.push(p);
+                  }
+                  state.padroesAtivos = limpos;
+                }
+                atualizarConteudoPadroes();
+                renderColClasses();
+                renderColLigacoes();
+                renderCmdPreview();
+              },
+            }, state.modoExcludente ? "Modo Livre" : "Ativar Exclusão")
       ),
-      el("div", { class: "card-sub" },
-        state.modoExcludente
-          ? "Padrões concorrentes pelo mesmo papel arquitetural ficam desativados automaticamente."
-          : "Todos os 28 padrões podem ser combinados livremente.")
+      proj && proj.classes.length > 1
+        ? el("div", { class: "pill-group", style: "margin-top:6px" },
+            ...proj.classes.map((c) =>
+              el("button", {
+                class: "pill" + (clsFoco && clsFoco.nome === c.nome ? " on" : ""),
+                onclick: () => {
+                  state.classeAtiva = c.nome;
+                  atualizarConteudoPadroes();
+                  renderColClasses();
+                  renderColLigacoes();
+                },
+              }, `${c.nome} (${(c.padroes || []).length})`)
+            )
+          )
+        : null,
+      el("div", { class: "card-sub", style: "margin-top:4px" },
+        proj
+          ? `Padrões aplicados em class ${clsFoco ? clsFoco.nome : proj.entidade}. Crie novas classes com padrões próprios em + Nova Classe.`
+          : (state.modoExcludente
+              ? "Exclusão Mútua ATIVA: defina os padrões da classe antes de detalhar campos e ligações."
+              : "Modo Livre ATIVO: todos os 28 padrões podem ser combinados livremente.")),
+      el("div", { class: "pill-group", style: "margin-top:6px" },
+        el("button", {
+          class: "pill" + (!state.filtroEscopoPadrao ? " on" : ""),
+          onclick: () => { state.filtroEscopoPadrao = ""; atualizarConteudoPadroes(); },
+        }, `Todos (${state.data.padroes.length})`),
+        ...(state.data.escopos_padrao || []).map((es) => {
+          const qtd = state.data.padroes.filter((p) => p.escopo === es.id).length;
+          return el("button", {
+            class: "pill" + (state.filtroEscopoPadrao === es.id ? " on" : ""),
+            title: es.desc,
+            onclick: () => { state.filtroEscopoPadrao = es.id; atualizarConteudoPadroes(); },
+          }, `${es.nome} (${qtd})`);
+        })
+      )
     );
   }
 
@@ -2178,7 +2716,7 @@ function atualizarConteudoPadroes() {
               !proj ? el("button", { title: "Desencaixar", onclick: () => togglePadrao(ch) }, "x") : null
             )
           )
-        : el("span", { class: "dropzone-empty" }, "Arraste ou clique nos padrões abaixo para encaixar no projeto")
+        : el("span", { class: "dropzone-empty" }, "Arraste ou clique nos padrões abaixo para encaixar na classe")
     );
   }
 
@@ -2187,7 +2725,8 @@ function atualizarConteudoPadroes() {
   const porCat = new Map();
   const q = state.buscaPadrao.trim().toLowerCase();
   for (const p of state.data.padroes) {
-    if (q && !p.chave.includes(q) && !p.titulo.toLowerCase().includes(q) && !p.problema.toLowerCase().includes(q)) continue;
+    if (state.filtroEscopoPadrao && p.escopo !== state.filtroEscopoPadrao) continue;
+    if (q && !p.chave.includes(q) && !p.titulo.toLowerCase().includes(q) && !p.problema.toLowerCase().includes(q) && !p.escopo_nome.toLowerCase().includes(q)) continue;
     if (!porCat.has(p.categoria_nome)) porCat.set(p.categoria_nome, []);
     porCat.get(p.categoria_nome).push(p);
   }
@@ -2203,13 +2742,14 @@ function atualizarConteudoPadroes() {
         return el("div", {
           class: cls,
           draggable: !proj && !bl && !isAtivo,
-          title: `${p.conceito}\n\nQuando não usar: ${p.quando_nao}`,
+          title: `[${p.escopo_nome}] ${p.conceito}\n\nQuando não usar: ${p.quando_nao}`,
           ondragstart: (e) => e.dataTransfer.setData("text/sgs-pat", p.chave),
           onclick: () => { if (!bl) togglePadrao(p.chave); },
         },
           el("div", { class: "pat-top" },
             el("span", { class: "pat-name" },
               p.titulo.split(" (")[0],
+              el("span", { class: `scope-tag es-${p.escopo}` }, p.escopo_nome),
               isAtivo ? el("span", { class: "pat-badge on" }, "ATIVO")
                       : (bl ? el("span", { class: "pat-badge bloq" }, "EXCLUDENTE") : null)
             ),
@@ -2245,12 +2785,12 @@ function renderColPadroes() {
       el("div", { id: "pat-mode-header" }),
       !proj
         ? el("div", { class: "pill-group", style: "margin-top:7px" },
-            el("button", { class: "btn btn-sm", onclick: () => aplicarPreset("prova") }, "Prova (9)"),
+            el("button", { class: "btn btn-sm", onclick: () => aplicarPreset("prova") }, "Essenciais (9)"),
             el("button", { class: "btn btn-sm", onclick: () => aplicarPreset("criacao") }, "Criação"),
             el("button", { class: "btn btn-sm", onclick: () => aplicarPreset("estrutural") }, "Estrutural"),
             el("button", { class: "btn btn-sm", onclick: () => aplicarPreset("comportamental") }, "Comportamental"),
             el("button", { class: "btn btn-sm", onclick: () => aplicarPreset("todos") }, "Todos (28)"),
-            el("button", { class: "btn btn-sm", onclick: () => { state.padroesAtivos = []; atualizarConteudoPadroes(); renderCmdPreview(); } }, "Limpar")
+            el("button", { class: "btn btn-sm", onclick: () => { state.padroesAtivos = []; atualizarConteudoPadroes(); renderColClasses(); renderColLigacoes(); renderCmdPreview(); } }, "Limpar")
           )
         : null,
       el("div", { style: "margin-top:7px" },
@@ -2296,6 +2836,67 @@ async function abrirArquivoProjeto(proj, caminho) {
   renderDrawer();
 }
 
+function rotuloFuncaoArquivo(arq) {
+  const base = arq.split("/").pop();
+  const mapaBase = {
+    ".gitignore": "Regras de arquivos ignorados pelo Git",
+    "README.md": "Documentação e instruções do projeto",
+    "especificacao.json": "Especificação completa (Spec SGS)",
+    "incrementos.json": "Histórico de campos incrementados",
+    "modulos.json": "Classes e apps extras adicionadas",
+    "ligacoes.json": "Ligações ForeignKey entre classes",
+    "requirements.txt": "Dependências Python do sistema",
+    "pytest.ini": "Configuração da suíte de testes",
+    "iniciar.sh": "Script de inicialização local",
+    "manage.py": "CLI administrativa do Django",
+    "settings.py": "Configurações do projeto / app Django",
+    "urls.py": "Mapa de rotas HTTP",
+    "models.py": "Modelos ORM e validações (Model)",
+    "forms.py": "Formulários validados (ModelForm)",
+    "views.py": "Telas e ações CRUD (Views)",
+    "api.py": "Endpoints da API REST (JSON)",
+    "api_drf.py": "ViewSet da API (Django REST Framework)",
+    "serializers.py": "Serializers da API (DRF)",
+    "services.py": "Regras de negócio (Camada de Service)",
+    "viewmodels.py": "Formatação de tela (ViewModel / MVVM)",
+    "admin.py": "Registro no painel Django Admin",
+    "apps.py": "Configuração da app Django",
+    "wsgi.py": "Ponto de entrada WSGI",
+    "asgi.py": "Ponto de entrada ASGI",
+    "env.py": "Leitor de variáveis .env",
+    "lnnl.py": "Motor de ID interno LNNL",
+    "crypto.py": "Criptografia simétrica Fernet em repouso",
+    "twofactor.py": "Autenticação em dois fatores (2FA) com expiração",
+    "rbac.py": "Controle de acesso baseado em papéis (RBAC)",
+    "antibot.py": "Proteção Anti-Bot (honeypot e tempo mínimo)",
+    "ratelimit.py": "Limitação de taxa de requisições (Rate Limit)",
+    "test_infra_seguranca.py": "Testes de infra, segurança e bibliotecas",
+    "entidades.py": "Entidade principal (@property)",
+    "politicas.py": "Padrão Strategy (políticas)",
+    "categorias.py": "Polimorfismo / categorias",
+    "extras.py": "Padrão Decorator (adicionais)",
+    "servicos.py": "Camada de Service (núcleo)",
+    "adaptador.py": "Padrão Adapter (gateway externo)",
+    "fachada.py": "Padrão Facade (ponto único)",
+    "situacoes.py": "Padrão State (estados)",
+    "eventos.py": "Padrão Observer (eventos)",
+    "fabrica.py": "Fábrica de dados / objetos",
+  };
+  if (mapaBase[base]) return mapaBase[base];
+  if (arq.startsWith("nucleo/")) {
+    const mod = base.replace(/\.py$/, "");
+    const p = (state.data?.padroes || []).find((x) => x.modulo === mod);
+    if (p) return `Padrão ${p.titulo}`;
+    return "Módulo do núcleo Python";
+  }
+  if (base.startsWith("test_")) return "Testes automatizados (pytest)";
+  if (arq.includes("/templates/") || base.endsWith(".html")) return "Template HTML (interface web)";
+  if (arq.includes("/static/") || base.endsWith(".css")) return "Estilo visual / recurso estático";
+  if (arq.startsWith("docs/")) return "Documentação técnica / ADR";
+  if (arq.startsWith("gabarito/")) return "Gabarito de referência";
+  return "Arquivo do projeto";
+}
+
 function renderDrawer() {
   const dr = $("drawer");
   dr.hidden = !state.drawerAberto;
@@ -2308,22 +2909,31 @@ function renderDrawer() {
   const proj = projetoSelecionado();
 
   if (state.drawerAba === "log") {
+    dr.classList.remove("compacto");
     $("drawer-info").textContent = "Saída do motor SGS";
     setChildren(body, el("pre", { class: "log-pane" }, state.logTexto));
   } else if (!proj) {
-    $("drawer-info").textContent = "Selecione um projeto gerado";
-    setChildren(body, el("pre", { class: "log-pane" }, "Selecione um projeto existente na barra superior para inspecionar o código-fonte."));
+    dr.classList.add("compacto");
+    $("drawer-info").textContent = "Código disponível após selecionar ou gerar um projeto";
+    setChildren(body);
   } else {
-    $("drawer-info").textContent = `${proj.pasta} · ${state.arquivoAberto || `${proj.arquivos.length} arquivo(s)`}`;
+    dr.classList.remove("compacto");
+    const funcaoAtiva = state.arquivoAberto ? ` — ${rotuloFuncaoArquivo(state.arquivoAberto)}` : "";
+    $("drawer-info").textContent = `${proj.pasta} · ${state.arquivoAberto || `${proj.arquivos.length} arquivo(s)`}${funcaoAtiva}`;
     setChildren(body,
       el("div", { class: "code-split" },
         el("div", { class: "file-tree" },
-          ...proj.arquivos.map((arq) =>
-            el("button", {
+          ...proj.arquivos.map((arq) => {
+            const funcao = rotuloFuncaoArquivo(arq);
+            return el("button", {
               class: "file-btn" + (arq === state.arquivoAberto ? " ativo" : ""),
+              title: `${arq} — ${funcao}`,
               onclick: () => abrirArquivoProjeto(proj, arq),
-            }, arq)
-          )
+            },
+              el("span", { class: "file-path" }, arq),
+              el("span", { class: "file-role" }, funcao)
+            );
+          })
         ),
         el("pre", { class: "code-view" }, state.conteudoArquivo || "Clique em um arquivo à esquerda para visualizar.")
       )
@@ -2335,9 +2945,10 @@ function renderAll() {
   if (!state.data) return;
   renderTopbar();
   renderColDominio();
+  renderColInfra();
+  renderColPadroes();
   renderColClasses();
   renderColLigacoes();
-  renderColPadroes();
   renderCmdPreview();
   renderDrawer();
 }

@@ -68,7 +68,15 @@ class Questionario:
             "comentarios": config["comentarios"], "comentarios_web": config["comentarios_web"],
             "exercicio": config["exercicio"], "testar": config["testar"], "id_publico": config["id_publico"],
             "id_interno": config["id_interno"], "lnnl_tipo": config["lnnl_tipo"], "estrutura": config["estrutura"],
-            "seguranca": config["seguranca"], "estado": False, "sistema": analise["sistema"] or gs.DOMINIOS[dominio]["sistema"],
+            "seguranca": config["seguranca"], "banco": config.get("banco", "sqlite3"),
+            "redis": config.get("redis", False), "argon2": config.get("argon2", False),
+            "fernet": config.get("fernet", False), "two_factor": config.get("two_factor", False),
+            "two_factor_expiracao": config.get("two_factor_expiracao", 10),
+            "recuperacao_senha": config.get("recuperacao_senha", False),
+            "rbac": config.get("rbac", False), "antibot": config.get("antibot", False),
+            "ratelimit": config.get("ratelimit", False), "anymail": config.get("anymail", False),
+            "tinymce": config.get("tinymce", False),
+            "estado": False, "sistema": analise["sistema"] or gs.DOMINIOS[dominio]["sistema"],
             "entidade": gs.DOMINIOS[dominio]["entidade"], "dominio": dominio,
             "campos": tipos_campos.analisar(analise["campos"]),   # tipo deduzido pelo nome (ou escrito no pedido)
         }
@@ -150,6 +158,40 @@ class Questionario:
                                    [("basica", "básica (estudo)"),
                                     ("baseline", "baseline das Instruções §12–14 (cabeçalhos, cookies, CSP, ADMIN_URL, "
                                                  "Argon2)")], d["seguranca"])),
+            se(web, lambda: _opcao("banco", "Banco de dados", "Banco de dados principal do projeto Django?",
+                                   [("sqlite3", "SQLite3 (local, padrão)"),
+                                    ("postgresql", "PostgreSQL (psycopg, com fallback SQLite3 nos testes)"),
+                                    ("mongodb", "MongoDB (django-mongodb-backend, fallback SQLite3 local)")], d["banco"])),
+            se(web, lambda: _sim_nao("redis", "Cache Redis",
+                                     "Configurar cache/sessões distribuídas em Redis (django-redis)?", d["redis"])),
+            se(lambda: web() and d["seguranca"] != "baseline", lambda: _sim_nao(
+                "argon2", "Argon2id", "Usar Argon2id (argon2-cffi, §16.1) para hash de senhas?", d["argon2"])),
+            se(web, lambda: _sim_nao("fernet", "Criptografia Fernet",
+                                     "Incluir criptografia simétrica Fernet em repouso (config/crypto.py, §18.1)?",
+                                     d["fernet"])),
+            se(web, lambda: _sim_nao("two_factor", "Two-Factor (2FA)",
+                                     "Incluir autenticação em dois fatores (2FA) com expiração configurável?",
+                                     d["two_factor"])),
+            se(lambda: web() and d["two_factor"], lambda: _livre(
+                "two_factor_expiracao", "Expiração 2FA",
+                "Tempo de expiração do código 2FA em minutos (1 a 60)?", str(d["two_factor_expiracao"]))),
+            se(web, lambda: _sim_nao("recuperacao_senha", "Recuperação de usuário/senha",
+                                     "Expor rotas de recuperação de usuário e senha (/conta/password_reset/)?",
+                                     d["recuperacao_senha"])),
+            se(web, lambda: _sim_nao("rbac", "RBAC",
+                                     "Incluir controle de acesso por papéis RBAC (admin/gestor/operador/leitor, §17.4)?",
+                                     d["rbac"])),
+            se(web, lambda: _sim_nao("antibot", "Anti-Bot",
+                                     "Incluir proteção Anti-Bot (honeypot + tempo mínimo + gancho de provedor)?",
+                                     d["antibot"])),
+            se(web, lambda: _sim_nao("ratelimit", "django-ratelimit",
+                                     "Incluir limitação de taxa na aplicação (django-ratelimit, §19)?",
+                                     d["ratelimit"])),
+            se(web, lambda: _sim_nao("anymail", "django-anymail",
+                                     "Incluir django-anymail para envio transacional de e-mails?", d["anymail"])),
+            se(web, lambda: _sim_nao("tinymce", "django-tinymce",
+                                     "Incluir editor rich-text django-tinymce para campos de texto longo?",
+                                     d["tinymce"])),
             se(lambda: tema_web() and d["tema"] == "T10", lambda: _opcao(
                 "paleta", "Paleta (T10)", "Paleta do tema T10 Personalizado (Instruções §11.9)?",
                 [(p, f"{p} {v[0]}") for p, v in temas_web.PALETAS.items()], d["paleta"])),
@@ -301,8 +343,7 @@ class Questionario:
     def argumentos(self):
         """Argumentos de processar()/gs.gerar() com as decisões tomadas até agora."""
         d = self.decisoes
-        web = {k: d[k] for k in ("estilo", "tema", "tom", "paleta", "comentarios_web", "id_publico", "id_interno",
-                                 "lnnl_tipo", "estrutura", "seguranca")}
+        web = {k: d[k] for k in gs.WEB_PADRAO}
         campos = [{"nome": c["nome"], "tipo": c["tipo"]} for c in d["campos"]]
         return dict(texto=self.pedido, dominio=d["dominio"], padroes=self.padroes_finais(), sistema=d["sistema"],
                     entidade=d["entidade"], django=d["django"], exercicio=d["exercicio"], testar=d["testar"],
@@ -322,9 +363,17 @@ class Questionario:
         if d["django"]:
             estilo = d["estilo"] + (f" · {d['tema']} {temas_web.TEMAS[d['tema']]['nome']} · {temas_web.NOMES_TONS[d['tom']]}"
                                     + (f" · {d['paleta']}" if d["tema"] == "T10" else "") if d["estilo"] == "web" else "")
+            extras_seg = [rot for flag, rot in (
+                (d["redis"], "Redis"), (d["argon2"] or d["seguranca"] == "baseline", "Argon2id"),
+                (d["fernet"], "Fernet"), (d["two_factor"], f"2FA ({d['two_factor_expiracao']}m)"),
+                (d["recuperacao_senha"], "Recup. Senha"), (d["rbac"], "RBAC"),
+                (d["antibot"], "Anti-Bot"), (d["ratelimit"], "Rate Limit"),
+                (d["anymail"], "Anymail"), (d["tinymce"], "TinyMCE"),
+            ) if flag]
             linhas += [["estilo", estilo], ["notas de apresentação", sim[d["comentarios_web"]]],
                        ["identificador", d["id_publico"] + (f" + LNNL tipo {d['lnnl_tipo']}" if d["id_interno"] else "")],
-                       ["estrutura / segurança", f"{d['estrutura']} · {d['seguranca']}"]]
+                       ["estrutura / banco / segurança", f"{d['estrutura']} · {d['banco']} · {d['seguranca']}"],
+                       ["segurança & bibliotecas", ", ".join(extras_seg) or "nenhuma extra"]]
         linhas += [["finalidade", "estudo" if d["estudo"] else "só gerar"], ["comentários no código", sim[d["comentarios"]]],
                    ["exercício / testes", f"{sim[d['exercicio']]} · {sim[d['testar']]}"]]
         if self.marcadas:
@@ -896,6 +945,10 @@ def _validar_livre(chave, bruto):
         if not re.fullmatch(r"[1-9]{2}", bruto) or bruto == "93":
             return None, "tipo LNNL: dois dígitos de 1 a 9 (11–99, sem zero), e nunca 93"
         return bruto, None
+    if chave == "two_factor_expiracao":
+        if not bruto.isdigit() or not 1 <= int(bruto) <= 60:
+            return None, "expiração 2FA: informe um inteiro em minutos entre 1 e 60"
+        return int(bruto), None
     if chave == "entidade":
         nome = gs.camel(bruto)
         if not nome.isidentifier() or not nome[0].isupper():

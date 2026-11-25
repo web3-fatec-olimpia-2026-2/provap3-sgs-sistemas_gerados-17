@@ -82,9 +82,19 @@ MOTOR_LNNL = AQUI / "motor-id-interno" / "referencia" / "python" / "lnnl.py"
 # Instruções de desenvolvimento DJANGO (§9.2 apps/, §10.4 UUID, §12–14 segurança) e do motor-id-interno.
 ESTILOS = {"simples": "sem formatação (HTML puro)", "cmd": "tela preta, estilo terminal",
            "bootstrap": "Bootstrap padrão", "web": "Bootstrap + temas (cores da pasta temas/)"}
-WEB_PADRAO = {"estilo": "simples", "tema": "T01", "tom": "tom3", "paleta": "P02", "comentarios_web": False,
-              "id_publico": "inteiro", "id_interno": False, "lnnl_tipo": "21", "estrutura": "plana",
-              "seguranca": "basica"}
+WEB_PADRAO = {
+    "estilo": "simples", "tema": "T01", "tom": "tom3", "paleta": "P02", "comentarios_web": False,
+    "id_publico": "inteiro", "id_interno": False, "lnnl_tipo": "21", "estrutura": "plana",
+    "seguranca": "basica",
+    "banco": "sqlite3", "redis": False, "argon2": False, "fernet": False,
+    "two_factor": False, "two_factor_expiracao": 10, "recuperacao_senha": False,
+    "rbac": False, "antibot": False,
+    "ratelimit": False, "anymail": False, "tinymce": False,
+}
+BANCOS_DADOS = ("sqlite3", "postgresql", "mongodb")
+WEB_BOOLS = ("comentarios_web", "id_interno", "redis", "argon2", "fernet",
+             "two_factor", "recuperacao_senha", "rbac", "antibot",
+             "ratelimit", "anymail", "tinymce")
 
 
 def normalizar_web(opcoes=None):
@@ -95,18 +105,26 @@ def normalizar_web(opcoes=None):
         if chave not in WEB_PADRAO:
             raise ErroGerador(f"opção web desconhecida: {chave!r}")
         w[chave] = valor
-    for chave in ("comentarios_web", "id_interno"):
+    for chave in WEB_BOOLS:
         w[chave] = bool(w[chave])
     w["tema"], w["paleta"] = str(w["tema"]).upper(), str(w["paleta"]).upper()
+    w["banco"] = str(w["banco"]).strip().lower()
     fechadas = {"estilo": list(ESTILOS), "tema": list(temas_web.TEMAS), "tom": temas_web.TONS,
                 "paleta": list(temas_web.PALETAS), "id_publico": ["inteiro", "uuid"], "estrutura": ["plana", "apps"],
-                "seguranca": ["basica", "baseline"]}
+                "seguranca": ["basica", "baseline"], "banco": list(BANCOS_DADOS)}
     for chave, opcoes_validas in fechadas.items():
         if w[chave] not in opcoes_validas:
             raise ErroGerador(f"{chave} inválido: {w[chave]!r} (use: {', '.join(opcoes_validas)})")
     w["lnnl_tipo"] = str(w["lnnl_tipo"])
     if not re.fullmatch(r"[1-9]{2}", w["lnnl_tipo"]) or w["lnnl_tipo"] == "93":
         raise ErroGerador("lnnl_tipo: dois dígitos de 1 a 9 (11–99, sem zero), e nunca 93 (reservado)")
+    try:
+        exp = int(w["two_factor_expiracao"])
+    except (TypeError, ValueError):
+        raise ErroGerador("two_factor_expiracao: informe um inteiro em minutos (1 a 60)") from None
+    if not 1 <= exp <= 60:
+        raise ErroGerador("two_factor_expiracao: informe entre 1 e 60 minutos")
+    w["two_factor_expiracao"] = exp
     return w
 
 # Padrões por CATEGORIA. Os 23 do GoF seguem a lista da Wikipédia (cópia em REFERENCIA_GOF):
@@ -6519,6 +6537,430 @@ def gerar_api_rest(s):
     return arq
 
 
+def _tem_infra_extra(w):
+    return w["banco"] != "sqlite3" or any(
+        w[k] for k in ("redis", "argon2", "fernet", "two_factor", "recuperacao_senha",
+                       "rbac", "antibot", "ratelimit", "anymail", "tinymce")
+    )
+
+
+def _bloco_env_infra(w):
+    linhas = []
+    if w["banco"] == "postgresql":
+        linhas += ["", "# Banco de dados PostgreSQL (deixe DB_HOST vazio para usar SQLite3 local/testes).",
+                   "DB_NAME=app_db", "DB_USER=app_user", "DB_PASSWORD=troque-esta-senha",
+                   "DB_HOST=", "DB_PORT=5432"]
+    elif w["banco"] == "mongodb":
+        linhas += ["", "# Banco de dados MongoDB (deixe MONGODB_URI vazio para usar SQLite3 local/testes).",
+                   "MONGODB_URI=", "MONGODB_NAME=app_db"]
+    if w["redis"]:
+        linhas += ["", "# Cache / sessões em Redis (deixe vazio para LocMemCache local/testes).",
+                   "REDIS_URL="]
+    if w["fernet"]:
+        linhas += ["", "# Criptografia simétrica Fernet em repouso (§18.1 — gere com Fernet.generate_key()).",
+                   "FERNET_KEY="]
+    if w["two_factor"]:
+        linhas += ["", "# Autenticação em dois fatores (2FA): tempo de expiração do código em minutos.",
+                   f"TWO_FACTOR_EXPIRACAO_MIN={w['two_factor_expiracao']}"]
+    if w["recuperacao_senha"] or w["anymail"]:
+        linhas += ["", "# E-mail transacional / recuperação de usuário e senha.",
+                   "DEFAULT_FROM_EMAIL=nao-responda@exemplo.com"]
+    if w["anymail"]:
+        linhas += ["ANYMAIL_PROVIDER=mailgun", "ANYMAIL_API_KEY="]
+    if w["antibot"]:
+        linhas += ["", "# Proteção Anti-Bot (honeypot local ou provedor externo).",
+                   "ANTIBOT_PROVIDER=honeypot", "ANTIBOT_SITE_KEY=", "ANTIBOT_SECRET_KEY="]
+    if w["ratelimit"]:
+        linhas += ["", "# Limitação de taxa de requisições (django-ratelimit, §19).",
+                   "RATELIMIT_ENABLE=1"]
+    return "\n".join(linhas)
+
+
+def _bloco_settings_infra(w):
+    blocos = []
+    if w["banco"] == "postgresql":
+        blocos.append(render(r'''
+            # Banco de dados principal: PostgreSQL (com fallback para SQLite3 se DB_HOST não estiver definido).
+            BANCO_DADOS_CONFIGURADO = "postgresql"
+            if os.environ.get("DB_HOST"):
+                DATABASES = {
+                    "default": {
+                        "ENGINE": "django.db.backends.postgresql",
+                        "NAME": os.environ.get("DB_NAME", "app_db"),
+                        "USER": os.environ.get("DB_USER", "app_user"),
+                        "PASSWORD": os.environ.get("DB_PASSWORD", ""),
+                        "HOST": os.environ.get("DB_HOST"),
+                        "PORT": os.environ.get("DB_PORT", "5432"),
+                    }
+                }
+            '''))
+    elif w["banco"] == "mongodb":
+        blocos.append(render(r'''
+            # Banco de dados principal: MongoDB (com fallback para SQLite3 local quando MONGODB_URI estiver vazio).
+            BANCO_DADOS_CONFIGURADO = "mongodb"
+            MONGODB_URI = os.environ.get("MONGODB_URI", "")
+            MONGODB_NAME = os.environ.get("MONGODB_NAME", "app_db")
+            if MONGODB_URI:
+                try:
+                    import django_mongodb_backend  # noqa: F401
+                    DATABASES = {"default": {"ENGINE": "django_mongodb_backend", "HOST": MONGODB_URI, "NAME": MONGODB_NAME}}
+                except ImportError:
+                    pass
+            '''))
+    if w["redis"]:
+        blocos.append(render(r'''
+            # Cache distribuído: Redis (com fallback para LocMemCache local/testes quando REDIS_URL estiver vazio).
+            REDIS_ATIVO = True
+            REDIS_URL = os.environ.get("REDIS_URL", "")
+            if REDIS_URL:
+                try:
+                    import django_redis  # noqa: F401
+                    CACHES = {
+                        "default": {
+                            "BACKEND": "django_redis.cache.RedisCache",
+                            "LOCATION": REDIS_URL,
+                            "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+                        }
+                    }
+                except ImportError:
+                    CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+            else:
+                CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+            '''))
+    if w["argon2"] and w["seguranca"] != "baseline":
+        blocos.append(render(r'''
+            # Hash de senhas com Argon2id (§16.1).
+            try:
+                import argon2  # noqa: F401
+                PASSWORD_HASHERS = ["django.contrib.auth.hashers.Argon2PasswordHasher",
+                                    "django.contrib.auth.hashers.PBKDF2PasswordHasher"]
+            except ImportError:
+                pass
+            '''))
+    if w["fernet"]:
+        blocos.append(render(r'''
+            # Criptografia em repouso Fernet (§18.1 — helper em config/crypto.py).
+            FERNET_ATIVO = True
+            FERNET_KEY = os.environ.get("FERNET_KEY", "")
+            '''))
+    if w["two_factor"]:
+        blocos.append(render(r'''
+            # Autenticação em dois fatores (2FA — helper em config/twofactor.py).
+            TWO_FACTOR_ATIVO = True
+            TWO_FACTOR_EXPIRACAO_MIN = int(os.environ.get("TWO_FACTOR_EXPIRACAO_MIN", "@@EXP@@"))
+            ''', EXP=w["two_factor_expiracao"]))
+    if w["recuperacao_senha"]:
+        blocos.append(render(r'''
+            # Recuperação de usuário e senha (§16.3 — rotas em /conta/ e expiração de 1h).
+            RECUPERACAO_SENHA_ATIVA = True
+            PASSWORD_RESET_TIMEOUT = 3600
+            DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "nao-responda@exemplo.com")
+            EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+            '''))
+    if w["rbac"]:
+        blocos.append(render(r'''
+            # Autorização baseada em papéis (RBAC — §17.4, helper em config/rbac.py).
+            RBAC_ATIVO = True
+            RBAC_PAPEIS = ("admin", "gestor", "operador", "leitor")
+            '''))
+    if w["antibot"]:
+        blocos.append(render(r'''
+            # Proteção Anti-Bot (honeypot + tempo mínimo + chave de provedor — config/antibot.py).
+            ANTIBOT_ATIVO = True
+            ANTIBOT_PROVIDER = os.environ.get("ANTIBOT_PROVIDER", "honeypot")
+            ANTIBOT_SITE_KEY = os.environ.get("ANTIBOT_SITE_KEY", "")
+            ANTIBOT_SECRET_KEY = os.environ.get("ANTIBOT_SECRET_KEY", "")
+            ANTIBOT_TEMPO_MIN_SEG = 2
+            '''))
+    if w["ratelimit"]:
+        blocos.append(render(r'''
+            # Limitação de taxa na aplicação (django-ratelimit, §19 — helper em config/ratelimit.py).
+            RATELIMIT_ENABLE = os.environ.get("RATELIMIT_ENABLE", "1") == "1"
+            RATELIMIT_USE_CACHE = "default"
+            '''))
+    if w["anymail"]:
+        blocos.append(render(r'''
+            # Envio transacional via django-anymail (usa console backend em testes/local sem API key).
+            ANYMAIL_ATIVO = True
+            DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "nao-responda@exemplo.com")
+            ANYMAIL = {
+                "PROVIDER": os.environ.get("ANYMAIL_PROVIDER", "mailgun"),
+                "API_KEY": os.environ.get("ANYMAIL_API_KEY", ""),
+            }
+            if ANYMAIL["API_KEY"]:
+                try:
+                    import anymail  # noqa: F401
+                    INSTALLED_APPS.append("anymail")
+                    EMAIL_BACKEND = f"anymail.backends.{ANYMAIL['PROVIDER']}.EmailBackend"
+                except ImportError:
+                    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+            else:
+                EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+            '''))
+    if w["tinymce"]:
+        blocos.append(render(r'''
+            # Editor Rich-Text TinyMCE para campos de texto longo.
+            TINYMCE_ATIVO = True
+            TINYMCE_DEFAULT_CONFIG = {
+                "height": 280,
+                "menubar": False,
+                "plugins": "lists link code",
+                "toolbar": "undo redo | bold italic | bullist numlist | link",
+            }
+            try:
+                import tinymce  # noqa: F401
+                INSTALLED_APPS.append("tinymce")
+            except ImportError:
+                pass
+            '''))
+    return ("\n\n" + "\n\n".join(b.rstrip("\n") for b in blocos)) if blocos else ""
+
+
+def _gerar_modulos_infra_seguranca(s):
+    """Módulos auxiliares de segurança/infra (web/config/) e testes correspondentes, só para o que foi ativado."""
+    w, app = s.web, s.app
+    if not _tem_infra_extra(w):
+        return {}
+    arq = {}
+    testes = []
+    if w["banco"] in ("postgresql", "mongodb"):
+        testes.append(render(r'''
+            def test_banco_de_dados_configurado(settings):
+                assert settings.BANCO_DADOS_CONFIGURADO == "@@BD@@"
+            ''', BD=w["banco"]))
+    if w["redis"]:
+        testes.append(render(r'''
+            def test_cache_redis_configurado(settings):
+                assert settings.REDIS_ATIVO is True and "default" in settings.CACHES
+            '''))
+    if w["argon2"] or w["seguranca"] == "baseline":
+        if w["argon2"]:
+            testes.append(render(r'''
+                def test_hash_de_senha_usa_argon2id(settings):
+                    from django.contrib.auth.hashers import make_password
+                    assert "Argon2PasswordHasher" in settings.PASSWORD_HASHERS[0]
+                    assert make_password("SenhaForte#123").startswith("argon2$")
+                '''))
+    if w["fernet"]:
+        arq["web/config/crypto.py"] = render(r'''
+            """Criptografia simétrica em repouso com Fernet (§18.1) e fallback determinístico sem pacote extra."""
+            import base64
+            import hashlib
+            import hmac
+
+            from django.conf import settings
+
+
+            def _chave_bytes():
+                bruta = (getattr(settings, "FERNET_KEY", "") or settings.SECRET_KEY).encode("utf-8")
+                return base64.urlsafe_b64encode(hashlib.sha256(bruta).digest())
+
+
+            def cifrar(texto):
+                if not isinstance(texto, str) or not texto:
+                    raise ValueError("texto obrigatório para cifrar")
+                try:
+                    from cryptography.fernet import Fernet
+                    return "fernet:" + Fernet(_chave_bytes()).encrypt(texto.encode("utf-8")).decode("ascii")
+                except ImportError:
+                    chave = _chave_bytes()
+                    dados = texto.encode("utf-8")
+                    fluxo = hashlib.sha256(chave).digest()
+                    cifrado = bytes(b ^ fluxo[i % len(fluxo)] for i, b in enumerate(dados))
+                    tag = hmac.new(chave, cifrado, hashlib.sha256).digest()[:16]
+                    return "enc:" + base64.urlsafe_b64encode(tag + cifrado).decode("ascii")
+
+
+            def decifrar(token):
+                if not isinstance(token, str) or ":" not in token:
+                    raise ValueError("token inválido")
+                pref, corpo = token.split(":", 1)
+                if pref == "fernet":
+                    from cryptography.fernet import Fernet
+                    return Fernet(_chave_bytes()).decrypt(corpo.encode("ascii")).decode("utf-8")
+                if pref == "enc":
+                    chave = _chave_bytes()
+                    bruto = base64.urlsafe_b64decode(corpo.encode("ascii"))
+                    tag, cifrado = bruto[:16], bruto[16:]
+                    esperado = hmac.new(chave, cifrado, hashlib.sha256).digest()[:16]
+                    if not hmac.compare_digest(tag, esperado):
+                        raise ValueError("integridade inválida")
+                    fluxo = hashlib.sha256(chave).digest()
+                    return bytes(b ^ fluxo[i % len(fluxo)] for i, b in enumerate(cifrado)).decode("utf-8")
+                raise ValueError("formato de token desconhecido")
+            ''')
+        testes.append(render(r'''
+            def test_criptografia_fernet_ida_e_volta():
+                from config.crypto import cifrar, decifrar
+                token = cifrar("123.456.789-09")
+                assert token != "123.456.789-09" and decifrar(token) == "123.456.789-09"
+                with pytest.raises(ValueError):
+                    decifrar("enc:token-corrompido")
+            '''))
+    if w["two_factor"]:
+        arq["web/config/twofactor.py"] = render(r'''
+            """Autenticação em dois fatores (2FA) com expiração configurável (TWO_FACTOR_EXPIRACAO_MIN)."""
+            import secrets
+            import time
+
+            from django.conf import settings
+
+            _PENDENTES = {}
+
+
+            def gerar_codigo(identificador, expiracao_min=None, agora=None):
+                minutos = int(expiracao_min if expiracao_min is not None else getattr(settings, "TWO_FACTOR_EXPIRACAO_MIN", 10))
+                instante = time.time() if agora is None else float(agora)
+                codigo = f"{secrets.randbelow(1_000_000):06d}"
+                _PENDENTES[str(identificador)] = (codigo, instante + minutos * 60)
+                return codigo
+
+
+            def validar_codigo(identificador, codigo, agora=None):
+                chave = str(identificador)
+                registro = _PENDENTES.get(chave)
+                if not registro:
+                    return False
+                esperado, expira_em = registro
+                instante = time.time() if agora is None else float(agora)
+                if instante > expira_em:
+                    _PENDENTES.pop(chave, None)
+                    return False
+                if secrets.compare_digest(str(codigo).strip(), esperado):
+                    _PENDENTES.pop(chave, None)
+                    return True
+                return False
+            ''')
+        testes.append(render(r'''
+            def test_two_factor_codigo_valido_e_expiracao(settings):
+                from config.twofactor import gerar_codigo, validar_codigo
+                assert settings.TWO_FACTOR_EXPIRACAO_MIN == @@EXP@@
+                cod = gerar_codigo("usuario@exemplo.com", agora=1000.0)
+                assert len(cod) == 6 and cod.isdigit()
+                assert validar_codigo("usuario@exemplo.com", "000000", agora=1010.0) is False
+                assert validar_codigo("usuario@exemplo.com", cod, agora=1010.0) is True
+                cod2 = gerar_codigo("expira@exemplo.com", expiracao_min=5, agora=2000.0)
+                assert validar_codigo("expira@exemplo.com", cod2, agora=2000.0 + 301.0) is False
+            ''', EXP=w["two_factor_expiracao"]))
+    if w["recuperacao_senha"]:
+        testes.append(render(r'''
+            @pytest.mark.django_db
+            def test_rota_recuperacao_de_senha_disponivel(client, settings):
+                assert settings.PASSWORD_RESET_TIMEOUT == 3600
+                resposta = client.get("/conta/password_reset/")
+                assert resposta.status_code == 200
+            '''))
+    if w["rbac"]:
+        arq["web/config/rbac.py"] = render(r'''
+            """Controle de acesso baseado em papéis (RBAC — §17.4)."""
+            from functools import wraps
+
+            from django.http import HttpResponseForbidden
+
+            PAPEIS = ("admin", "gestor", "operador", "leitor")
+            PERMISSOES = {
+                "admin": {"ver", "criar", "editar", "apagar", "configurar"},
+                "gestor": {"ver", "criar", "editar", "apagar"},
+                "operador": {"ver", "criar", "editar"},
+                "leitor": {"ver"},
+            }
+
+
+            def tem_permissao(papel, acao):
+                return acao in PERMISSOES.get(str(papel).lower(), set())
+
+
+            def exigir_papel(*permitidos):
+                alvos = {p.lower() for p in permitidos}
+
+                def decorador(view):
+                    @wraps(view)
+                    def embrulho(request, *args, **kwargs):
+                        papel = getattr(request, "papel_usuario", None) or request.headers.get("X-Papel", "")
+                        if str(papel).lower() not in alvos:
+                            return HttpResponseForbidden("Acesso negado pelo RBAC.")
+                        return view(request, *args, **kwargs)
+
+                    return embrulho
+
+                return decorador
+            ''')
+        testes.append(render(r'''
+            def test_rbac_matriz_de_permissoes_e_decorator():
+                from django.http import HttpResponse
+                from django.test import RequestFactory
+                from config.rbac import exigir_papel, tem_permissao
+                assert tem_permissao("admin", "configurar") is True
+                assert tem_permissao("leitor", "apagar") is False
+                view = exigir_papel("admin", "gestor")(lambda req: HttpResponse("ok"))
+                rf = RequestFactory()
+                assert view(rf.get("/", HTTP_X_PAPEL="leitor")).status_code == 403
+                assert view(rf.get("/", HTTP_X_PAPEL="gestor")).status_code == 200
+            '''))
+    if w["antibot"]:
+        arq["web/config/antibot.py"] = render(r'''
+            """Proteção Anti-Bot: honeypot + tempo mínimo humano + suporte a provedor externo."""
+            from django.conf import settings
+
+
+            def validar_envio(dados, tempo_segundos=5.0):
+                if str((dados or {}).get("_website", "")).strip():
+                    return False, "honeypot preenchido"
+                minimo = float(getattr(settings, "ANTIBOT_TEMPO_MIN_SEG", 2))
+                if float(tempo_segundos) < minimo:
+                    return False, "envio rápido demais"
+                return True, "ok"
+            ''')
+        testes.append(render(r'''
+            def test_antibot_barra_honeypot_e_envio_instantaneo():
+                from config.antibot import validar_envio
+                assert validar_envio({"nome": "Ana", "_website": ""}, tempo_segundos=4.0)[0] is True
+                assert validar_envio({"nome": "Bot", "_website": "http://spam"}, tempo_segundos=4.0)[0] is False
+                assert validar_envio({"nome": "Bot", "_website": ""}, tempo_segundos=0.2)[0] is False
+            '''))
+    if w["ratelimit"]:
+        arq["web/config/ratelimit.py"] = render(r'''
+            """Limitação de taxa na aplicação (§19), compatível com django-ratelimit e cache do Django."""
+            from django.conf import settings
+            from django.core.cache import caches
+
+
+            def verificar_limite(chave, limite=5, janela_seg=60):
+                if not getattr(settings, "RATELIMIT_ENABLE", True):
+                    return True
+                cache = caches[getattr(settings, "RATELIMIT_USE_CACHE", "default")]
+                chave_cache = f"rl:{chave}"
+                atual = cache.get(chave_cache, 0)
+                if atual >= limite:
+                    return False
+                cache.set(chave_cache, atual + 1, timeout=janela_seg)
+                return True
+            ''')
+        testes.append(render(r'''
+            def test_ratelimit_bloqueia_apos_limite():
+                from config.ratelimit import verificar_limite
+                assert verificar_limite("login:teste-rl", limite=2, janela_seg=60) is True
+                assert verificar_limite("login:teste-rl", limite=2, janela_seg=60) is True
+                assert verificar_limite("login:teste-rl", limite=2, janela_seg=60) is False
+            '''))
+    if w["anymail"]:
+        testes.append(render(r'''
+            def test_anymail_configurado(settings):
+                assert settings.ANYMAIL_ATIVO is True and "PROVIDER" in settings.ANYMAIL
+            '''))
+    if w["tinymce"]:
+        testes.append(render(r'''
+            def test_tinymce_configurado(settings):
+                assert settings.TINYMCE_ATIVO is True and "toolbar" in settings.TINYMCE_DEFAULT_CONFIG
+            '''))
+    if testes:
+        arq[f"web/{app}/tests/test_infra_seguranca.py"] = (
+            '"""Testes de infraestrutura, segurança e bibliotecas escolhidas na geração do sistema."""\n'
+            "import pytest\n\n\n" + "\n\n".join(t.rstrip("\n") for t in testes) + "\n"
+        )
+    return arq
+
+
 def gerar_web(s):
     arq = {}
     app, ent = s.app, s.ent
@@ -6695,12 +7137,13 @@ def gerar_web(s):
 
         # Endereço do Django Admin (com a barra no fim).
         ADMIN_URL=@@ADMIN@@
-        @@BASELINE@@
+        @@BASELINE@@@@INFRA_ENV@@
         ''', SISTEMA=s.sistema, ADMIN="gestao/" if s.web["seguranca"] == "baseline" else "admin/",
         BASELINE="" if s.web["seguranca"] != "baseline" else (
             "\n# Segurança (Instruções §12–14). CSP começa em Report-Only; CSP_IMPOR=1 passa a impor.\n"
             "CSP_IMPOR=0\n# Origens confiáveis do CSRF em produção, com esquema: https://seu-dominio\n"
-            "CSRF_TRUSTED_ORIGINS="))
+            "CSRF_TRUSTED_ORIGINS="),
+        INFRA_ENV=_bloco_env_infra(s.web))
     arq["web/config/settings.py"] = render(r'''
         """Configuração do projeto Django (gerada). Valores sensíveis vêm do web/.env (modelo: web/.env.example)."""
         import os
@@ -6765,10 +7208,12 @@ def gerar_web(s):
                                        if s.drf else "") + f'"{app}",',
         DEBUG="0" if s.web["seguranca"] == "baseline" else "1",
         ADMIN="gestao/" if s.web["seguranca"] == "baseline" else "admin/",
-        SEGURANCA=SETTINGS_BASELINE if s.web["seguranca"] == "baseline" else "")
+        SEGURANCA=(SETTINGS_BASELINE if s.web["seguranca"] == "baseline" else "") + _bloco_settings_infra(s.web))
     # Rotas do projeto. Perfil com rota (Prova P3: "citricultura/"): o app fica em /citricultura/ e a raiz leva
     # até ele; com DRF, a API do DRF (router) fica em /api/. Sem perfil: o app na raiz, como sempre.
     rotas_app = []
+    if s.web["recuperacao_senha"]:
+        rotas_app.append('path("conta/", include("django.contrib.auth.urls")),  # recuperação de usuário/senha')
     if s.drf:
         rotas_app.append(f'path("api/", include("{app}.api_drf")),  # API com o DRF (router + ViewSet): /api/…')
     rotas_app.append(f'path("{s.rota}", include("{app}.urls")),')
@@ -7059,7 +7504,10 @@ def gerar_web(s):
         elif a["tipo"] == "json":
             widgets_form.append(f'"{n}": forms.Textarea(attrs={{"rows": 3, "placeholder": \'{{"chave": "valor"}}\'}})')
         elif r == "texto_longo":
-            widgets_form.append(f'"{n}": forms.Textarea(attrs={{"rows": 3}})')
+            if w["tinymce"]:
+                widgets_form.append(f'"{n}": forms.Textarea(attrs={{"rows": 5, "data-editor": "tinymce", "class": "tinymce"}})')
+            else:
+                widgets_form.append(f'"{n}": forms.Textarea(attrs={{"rows": 3}})')
         elif r == "moeda":
             widgets_form.append(f'"{n}": forms.NumberInput(attrs={{"step": "0.01", "min": "0"}})')
         elif r == "telefone":
@@ -8056,6 +8504,7 @@ def gerar_testes_opcoes_web(s):
                 client.get(reverse("@@APP@@:criar"))
                 assert @@ENT@@.objects.count() == 0
             ''', APP=app, ENT=ent)
+    arq.update(_gerar_modulos_infra_seguranca(s))
     return arq
 
 
@@ -8976,10 +9425,30 @@ def pacote_do_projeto(projeto):
 def dependencias_pontuais(s):
     """As dependências que só ESTE sistema usa, pelas opções escolhidas: [(requisito, para quê)]."""
     pontuais = []
-    if s.django and s.drf:
+    if not s.django:
+        return pontuais
+    w = s.web
+    if s.drf:
         pontuais.append(("djangorestframework>=3.15", "DRF: a API com Serializer, ViewSet e router (/api/)"))
-    if s.django and s.web["seguranca"] == "baseline":
-        pontuais.append(("argon2-cffi>=23.1", "senhas com Argon2id (segurança baseline, §16.1)"))
+    if w["banco"] == "postgresql":
+        pontuais.append(("psycopg[binary]>=3.2", "driver PostgreSQL para o Django"))
+    elif w["banco"] == "mongodb":
+        pontuais.append(("django-mongodb-backend>=5.1", "backend MongoDB oficial para o Django"))
+    if w["redis"]:
+        pontuais.append(("django-redis>=5.4", "cache e sessões distribuídas em Redis"))
+        pontuais.append(("redis>=5.0", "cliente Python para Redis"))
+    if w["seguranca"] == "baseline" or w["argon2"]:
+        pontuais.append(("argon2-cffi>=23.1", "hash de senhas com Argon2id (§16.1)"))
+    if w["fernet"]:
+        pontuais.append(("cryptography>=43.0", "criptografia simétrica Fernet para dados sensíveis em repouso (§18.1)"))
+    if w["two_factor"]:
+        pontuais.append(("pyotp>=2.9", "códigos temporários de autenticação em dois fatores (2FA)"))
+    if w["ratelimit"]:
+        pontuais.append(("django-ratelimit>=4.1", "limitação de taxa de requisições na aplicação (§19)"))
+    if w["anymail"]:
+        pontuais.append(("django-anymail>=12.0", "envio transacional de e-mails via provedores HTTP"))
+    if w["tinymce"]:
+        pontuais.append(("django-tinymce>=4.1", "editor rich-text TinyMCE para campos de texto longo"))
     return pontuais
 
 

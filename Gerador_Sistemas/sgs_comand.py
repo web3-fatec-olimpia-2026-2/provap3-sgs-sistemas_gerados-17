@@ -202,18 +202,27 @@ CATALOGO = [
      "comando sgs"),
     ("sgs incrementar NN Classe.campo <padrão>", "8 · SGS",
      "INCREMENTAR CAMPOS diretamente no sistema NN: cria um campo novo ou modifica a regra de um campo existente "
-     "(inteiro>=0, inteiro:1..30, decimal>=0, lista:a,b,c, texto, texto-livre, simnao, data). A classe é refeita no "
-     "@property do núcleo, no model/form/API do Django e nos testes.",
+     "(Primitivos: texto, texto-livre, texto-longo, inteiro>=0, inteiro:1..30, decimal>=0, simnao, data, data-hora · "
+     "Seleção: lista:a,b,c, multipla:a,b,c · Negócio: moeda, email, telefone, url, cpf, cnpj, cep · "
+     "Estruturados: arquivo, imagem, geolocalizacao, json). A classe é refeita no @property do núcleo, Django e testes.",
      "sgs incrementar NN [Classe.campo <padrão>] [-sp]",
      "sgs incrementar 16 Viagcert.voo inteiro>=1", "✓ o campo Viagcert.voo (modificado): aplicado no sistema 16",
      "sgs incrementar NN sozinho conduz passo a passo ou lista os campos e padrões. Para cópia antes: sgs duplicar NN.",
      "comando sgs"),
-    ("sgs info NN", "8 · SGS", "Detalhes e arquivos do sistema NN.", "sgs info NN", "sgs info 01", "(o cartão do sistema)",
-     "", "comando sgs"),
+    ("sgs info NN", "8 · SGS", "Detalhes, arquitetura (infra/segurança/bibliotecas) e arquivos do sistema NN.",
+     "sgs info NN", "sgs info 01", "(resumo de infra/segurança + cartão do sistema)", "", "comando sgs"),
     ("sgs comandos NN", "8 · SGS", "Os comandos de terminal para rodar o sistema NN fora da tela.", "sgs comandos NN",
      "sgs comandos 01", "cd …\nbash iniciar.sh", "", "comando sgs"),
-    ("sgs padroes", "8 · SGS", "Os 28 padrões por categoria e as palavras que os ativam.", "sgs padroes [categoria]",
-     "sgs padroes criacao", "(tabela)", "sgs dominios mostra os domínios.", "comando sgs"),
+    ("sgs infra", "8 · SGS",
+     "Painel de Infra, Segurança & Bibliotecas (Passo 2): estrutura (plana/apps), PK (inteiro/UUIDv4), LNNL, banco "
+     "(SQLite3/PostgreSQL/MongoDB), Redis, baseline §12–14, Argon2id, Fernet, 2FA (com expiração), recuperação de senha, "
+     "RBAC, Anti-Bot, django-ratelimit, django-anymail e django-tinymce.",
+     "sgs infra", "sgs infra", "Passo 2 · Infra, Segurança & Bibliotecas (tabela clicável)",
+     "Aliases: sgs seguranca, sgs stack. Altera via sgs config <chave>=<valor>.", "comando sgs"),
+    ("sgs padroes", "8 · SGS", "Os 28 padrões por categoria ou escopo (arquitetura, classe, campo, relacao).",
+     "sgs padroes [categoria | escopo]", "sgs padroes relacao", "(tabela com chave, escopo e padrão)",
+     "Escopos: arquitetura, classe, campo, relacao (fk). Categorias: criacao, estrutural, comportamental, fundamentos, gof.",
+     "comando sgs"),
     ("sgs dominios [termo]", "8 · SGS",
      "Os 300 domínios nativos (100 palavras cada nos 001–100 e 102–300; 101 na Prova P3) + domínios personalizados; com termo, "
      "filtra por nome, sistema, entidade, setor ou palavra.",

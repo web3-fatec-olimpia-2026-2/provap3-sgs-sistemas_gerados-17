@@ -103,13 +103,17 @@ CONFIG_INICIAL = {
     "django": False, "exercicio": False, "testar": True, "estudo": True, "comentarios": True,
     "comentarios_web": False, "perguntar": False, "estilo": "web", "tema": "T01", "tom": "tom3", "paleta": "P02",
     "id_publico": "inteiro", "id_interno": False, "lnnl_tipo": "21", "estrutura": "plana", "seguranca": "basica",
+    "banco": "sqlite3", "redis": False, "argon2": False, "fernet": False,
+    "two_factor": False, "two_factor_expiracao": 10, "recuperacao_senha": False,
+    "rbac": False, "antibot": False,
+    "ratelimit": False, "anymail": False, "tinymce": False,
     "pwa": True, "porta_base": PORTA_PADRAO, "admin_usuario": "admin", "admin_email": "admin@exemplo.com",
     "admin_senha": "admin123", "visual": "cmd", "topo": True, "rodape": True,
 }
 # Valores fechados (listas): nada de texto livre vira CSS ou código.
 ESCOLHAS = {"estilo": list(gs.ESTILOS), "tema": list(temas_web.TEMAS), "tom": temas_web.TONS,
             "paleta": list(temas_web.PALETAS), "id_publico": ["inteiro", "uuid"], "estrutura": ["plana", "apps"],
-            "seguranca": ["basica", "baseline"], "visual": ["cmd", "sgs"]}
+            "seguranca": ["basica", "baseline"], "banco": list(gs.BANCOS_DADOS), "visual": ["cmd", "sgs"]}
 EXPLICA_CONFIG = {
     "django": "gerar também o site Django (caixa “+ Django”)",
     "exercicio": "modo exercício: questionário de revisão (exercicios.html, resposta oculta em “Ver resposta”); o código sai completo",
@@ -127,6 +131,18 @@ EXPLICA_CONFIG = {
     "lnnl_tipo": "código de tipo do LNNL: 2 dígitos de 1 a 9, nunca 93",
     "estrutura": "plana (web/<app>) · apps (apps/<app> + README — Instruções §9.2)",
     "seguranca": "basica · baseline (Instruções §12–14: cabeçalhos, cookies, CSP, ADMIN_URL)",
+    "banco": "banco de dados principal: sqlite3 · postgresql · mongodb (com fallback local para SQLite3 nos testes)",
+    "redis": "sim = configura cache distribuído com Redis (django-redis; fallback LocMemCache local)",
+    "argon2": "sim = hash de senhas com Argon2id (argon2-cffi, §16.1)",
+    "fernet": "sim = criptografia simétrica Fernet em repouso (config/crypto.py, §18.1)",
+    "two_factor": "sim = autenticação em dois fatores 2FA com expiração configurável (config/twofactor.py)",
+    "two_factor_expiracao": "tempo de expiração do código 2FA em minutos (1 a 60)",
+    "recuperacao_senha": "sim = rotas de recuperação de usuário e senha (/conta/password_reset/)",
+    "rbac": "sim = controle de acesso baseado em papéis RBAC (admin/gestor/operador/leitor, §17.4)",
+    "antibot": "sim = proteção Anti-Bot com honeypot, tempo mínimo e gancho de provedor (config/antibot.py)",
+    "ratelimit": "sim = limitação de taxa na aplicação (django-ratelimit, §19)",
+    "anymail": "sim = envio transacional de e-mail via django-anymail",
+    "tinymce": "sim = editor rich-text django-tinymce para campos de texto longo",
     "pwa": "sim = sites abrem em janela de app isolada (PWA) · não = aba comum (sgs pwa=false)",
     "porta_base": "o SGS é o 00 nesta porta; o sistema NN roda em porta_base + NN",
     "admin_usuario": "superusuário do Django criado pelo sgs rodar",
@@ -181,7 +197,10 @@ class Config:
                 novo = int(valor)
             except (TypeError, ValueError):
                 raise ValueError(f"{chave}: use um número inteiro") from None
-            if not 1024 <= novo <= 65000:
+            if chave == "two_factor_expiracao":
+                if not 1 <= novo <= 60:
+                    raise ValueError(f"{chave}: use um número entre 1 e 60 minutos")
+            elif not 1024 <= novo <= 65000:
                 raise ValueError(f"{chave}: use um número entre 1024 e 65000")
         elif chave in ESCOLHAS:
             novo = str(valor).strip()
@@ -587,7 +606,28 @@ def sugestoes(ctx, limite_historico=40):
         add(base + (" " if preencher and not base.endswith("=") else ""), descricao, "sgs")
     for comando, descricao in (("sgs cmd sgs", "tela nas cores do SGS (prompt verde)"),
                                ("cmd", "tela no estilo do Prompt de Comando (= sgs cmd)"),
-                               ("cmd sgs", "tela nas cores do SGS (= sgs cmd sgs)")):
+                               ("cmd sgs", "tela nas cores do SGS (= sgs cmd sgs)"),
+                               ("sgs infra", "painel de Infra, Segurança & Bibliotecas (Passo 2)"),
+                               ("sgs padroes arquitetura", "padrões no escopo Arquitetura (SRP, Service, MVVM)"),
+                               ("sgs padroes classe", "padrões no escopo Classe (criação e comportamento)"),
+                               ("sgs padroes campo", "padrões no escopo Campo (@property, Flyweight)"),
+                               ("sgs padroes relacao", "padrões no escopo Ligação / FK (colaboração)"),
+                               ("sgs config banco=postgresql", "usa PostgreSQL como banco principal"),
+                               ("sgs config banco=mongodb", "usa MongoDB como banco principal"),
+                               ("sgs config redis=sim", "ativa cache/sessões Redis (django-redis)"),
+                               ("sgs config id_publico=uuid", "usa UUIDv4 na chave primária"),
+                               ("sgs config id_interno=sim", "ativa motor-id-interno (LNNL)"),
+                               ("sgs config estrutura=apps", "ativa estrutura modular apps/"),
+                               ("sgs config seguranca=baseline", "ativa segurança baseline (§12–14: CSP, cookies, Argon2id)"),
+                               ("sgs config argon2=sim", "ativa hash de senhas Argon2id"),
+                               ("sgs config fernet=sim", "ativa criptografia Fernet em repouso"),
+                               ("sgs config two_factor=sim", "ativa autenticação 2FA com expiração"),
+                               ("sgs config recuperacao_senha=sim", "ativa rotas de recuperação de usuário/senha"),
+                               ("sgs config rbac=sim", "ativa controle de acesso RBAC"),
+                               ("sgs config antibot=sim", "ativa proteção Anti-Bot"),
+                               ("sgs config ratelimit=sim", "ativa django-ratelimit (§19)"),
+                               ("sgs config anymail=sim", "ativa envio transacional django-anymail"),
+                               ("sgs config tinymce=sim", "ativa editor rich-text django-tinymce")):
         add(comando, descricao, "sgs")
     for comando, descricao in TERMINAL_SUGERIDOS:
         add(comando, descricao, "terminal")
@@ -1207,11 +1247,13 @@ COMANDOS_SGS = [
     ("sgs parar NN | porta | todos", "derruba um site (ou todos) e libera a porta", True),
     ("sgs comandos NN", "comandos de terminal para rodar o sistema NN fora da tela", True),
     ("sgs comand [n]", "módulo de ajuda: a lista numerada dos comandos da esteira (sgs exit volta)", False),
-    ("sgs padroes [categoria]", "os 28 padrões por categoria e as palavras que os ativam", False),
+    ("sgs padroes [categoria|escopo]", "os 28 padrões por categoria ou escopo (arquitetura, classe, campo, relacao)", False),
+    ("sgs infra", "PAINEL DE INFRA, SEGURANÇA & BIBLIOTECAS (Passo 2): banco, Redis, UUID, LNNL, baseline, Argon2id, "
+                  "Fernet, 2FA, RBAC, Anti-Bot, ratelimit, anymail e tinymce", False),
     ("sgs dominios [termo | novo | remover]", "os 300 domínios (100 palavras cada; 101 = Prova P3) + domínios "
                                               "personalizados · sgs dominios novo cadastra um novo domínio · "
                                               "sgs dominios saude filtra", True),
-    ("sgs config [chave=valor]", "mostra/altera a configuração (caixas, porta base, admin, pwa)", False),
+    ("sgs config [chave=valor]", "mostra/altera a configuração (infra, segurança, bibliotecas, tema, porta, admin, pwa)", False),
     ("sgs pwa=true | sgs pwa=false", "PWA isolado (padrão: janela de app) ou aba comum do navegador", True),
     ("sgs tutorial", "TUTORIAL prático: classe nova, ligar, campos, o padrão do campo (@property), padrões de "
                      "projeto, API (abre ao lado da Wiki e do Study Hub)", False),
@@ -1553,14 +1595,92 @@ def sgs_listar(ctx, args, _opcoes=None):
     return ok(*blocos)
 
 
+def _resumo_infra_web(w):
+    """Lista [(grupo, valor)] com as decisões de Infra, Segurança & Bibliotecas gravadas no sistema."""
+    w = {**gs.WEB_PADRAO, **(w or {})}
+    extras_seg = [rot for flag, rot in (
+        (w["argon2"] or w["seguranca"] == "baseline", "Argon2id"),
+        (w["fernet"], "Fernet"), (w["antibot"], "Anti-Bot"),
+    ) if flag]
+    acesso = [rot for flag, rot in (
+        (w["rbac"], "RBAC"),
+        (w["recuperacao_senha"], "Recup. Usuário/Senha"),
+        (w["two_factor"], f"2FA ({w['two_factor_expiracao']} min)"),
+    ) if flag]
+    libs = [rot for flag, rot in (
+        (w["ratelimit"], "django-ratelimit"),
+        (w["anymail"], "django-anymail"),
+        (w["tinymce"], "django-tinymce"),
+    ) if flag]
+    return [
+        ["Estrutura & IDs", f"{w['estrutura']} · PK {w['id_publico']}"
+         + (f" · LNNL ({w['lnnl_tipo']})" if w["id_interno"] else "")],
+        ["Banco & Cache", f"{w['banco']}" + (" + Redis" if w["redis"] else "")],
+        ["Segurança & Cripto", f"{w['seguranca']}" + (f" · {', '.join(extras_seg)}" if extras_seg else "")],
+        ["Acesso & Identidade", ", ".join(acesso) or "padrão Django"],
+        ["Bibliotecas", ", ".join(libs) or "nenhuma extra"],
+    ]
+
+
 def sgs_info(ctx, args, _opcoes=None):
     destino, n = escolher(ctx, args[0] if args else None)
     info = info_sistema(destino)
+    spec = ler_spec(destino) or {}
     sugestoes = [cmd(f"sgs editar {nn(n)}"), cmd(f"sgs incrementar {nn(n)}"), cmd(f"sgs ligar {nn(n)}"),
                  cmd(f"sgs duplicar {nn(n)}"), cmd(f"sgs testar {nn(n)}"), cmd(f"cd {nn(n)}")]
     sugestoes += [cmd(f"sgs rodar {nn(n)}"), cmd(f"sgs app {nn(n)} …", f"sgs app {nn(n)} ", True)] if info["django"] else []
-    return ok(bloco("tabela", colunas=["próximos passos"] + [""] * (len(sugestoes) - 1), linhas=[sugestoes]),
-              cartao=cartao(destino, info, ctx.saida, ctx.config.valores["porta_base"]))
+    blocos = []
+    if info["django"]:
+        blocos.append(bloco("tabela", colunas=["Infra, Segurança & Bibliotecas", "ativo neste sistema"],
+                            linhas=_resumo_infra_web(spec.get("web"))))
+    blocos.append(bloco("tabela", colunas=["próximos passos"] + [""] * (len(sugestoes) - 1), linhas=[sugestoes]))
+    return ok(*blocos, cartao=cartao(destino, info, ctx.saida, ctx.config.valores["porta_base"]))
+
+
+def sgs_infra(ctx, _args=None, _opcoes=None):
+    """sgs infra (ou sgs seguranca) — Passo 2 no modo CMD: Infraestrutura, Segurança & Bibliotecas com comandos clicáveis."""
+    c = ctx.config.valores
+
+    def tog(chave, ativo):
+        prox = "nao" if ativo else "sim"
+        return cmd(f"{'ativo' if ativo else 'desligado'} → {prox}", f"sgs config {chave}={prox}")
+
+    linhas = [
+        ["1 · Estrutura", c["estrutura"], cmd("plana", "sgs config estrutura=plana"),
+         cmd("apps/", "sgs config estrutura=apps")],
+        ["1 · Chave Pública", c["id_publico"], cmd("inteiro", "sgs config id_publico=inteiro"),
+         cmd("uuid", "sgs config id_publico=uuid")],
+        ["1 · ID Interno LNNL", f"sim ({c['lnnl_tipo']})" if c["id_interno"] else "não",
+         tog("id_interno", c["id_interno"]), cmd("lnnl_tipo=21", "sgs config lnnl_tipo=", True)],
+        ["2 · Banco Principal", c["banco"],
+         cmd("sqlite3", "sgs config banco=sqlite3"),
+         cmd("postgresql / mongodb", "sgs config banco=postgresql" if c["banco"] != "postgresql" else "sgs config banco=mongodb")],
+        ["2 · Cache Redis", "sim" if c["redis"] else "não", tog("redis", c["redis"]), "django-redis"],
+        ["3 · Hardening HTTP/CSP", c["seguranca"], cmd("basica", "sgs config seguranca=basica"),
+         cmd("baseline (§12–14)", "sgs config seguranca=baseline")],
+        ["3 · Argon2id", "sim (Baseline)" if c["seguranca"] == "baseline" else ("sim" if c["argon2"] else "não"),
+         tog("argon2", c["argon2"]), "hash de senhas §16.1"],
+        ["3 · Fernet", "sim" if c["fernet"] else "não", tog("fernet", c["fernet"]), "criptografia em repouso §18.1"],
+        ["3 · Anti-Bot", "sim" if c["antibot"] else "não", tog("antibot", c["antibot"]), "honeypot + tempo mínimo"],
+        ["4 · RBAC", "sim" if c["rbac"] else "não", tog("rbac", c["rbac"]), "papéis admin/gestor/operador/leitor"],
+        ["4 · Recup. Senha", "sim" if c["recuperacao_senha"] else "não",
+         tog("recuperacao_senha", c["recuperacao_senha"]), "/conta/password_reset/"],
+        ["4 · Two-Factor (2FA)", f"sim ({c['two_factor_expiracao']} min)" if c["two_factor"] else "não",
+         tog("two_factor", c["two_factor"]), cmd("expiração (min)", "sgs config two_factor_expiracao=", True)],
+        ["5 · django-ratelimit", "sim" if c["ratelimit"] else "não", tog("ratelimit", c["ratelimit"]), "taxa de requisições §19"],
+        ["5 · django-anymail", "sim" if c["anymail"] else "não", tog("anymail", c["anymail"]), "e-mail transacional"],
+        ["5 · django-tinymce", "sim" if c["tinymce"] else "não", tog("tinymce", c["tinymce"]), "rich-text em texto-longo"],
+    ]
+    blocos = [
+        bloco("titulo", texto="Passo 2 · Infra, Segurança & Bibliotecas (para os próximos sgs gerar com Django)"),
+        bloco("tabela", colunas=["bloco", "atual", "alternar / escolher", "opção / efeito"], linhas=linhas),
+    ]
+    if c["ratelimit"] and not c["redis"]:
+        blocos.append(texto("Aviso: django-ratelimit ativo sem Redis — em produção recomenda-se ativar: sgs config redis=sim", "aviso"))
+    if (c["recuperacao_senha"] or c["two_factor"]) and not c["anymail"]:
+        blocos.append(texto("Dica: recuperação de senha / 2FA ativos — para envio transacional, considere: sgs config anymail=sim", "suave"))
+    blocos.append(texto("Altere várias chaves de uma vez com: sgs config banco=postgresql redis=sim fernet=sim rbac=sim", "suave"))
+    return ok(*blocos, config=ctx.config.publica())
 
 
 def sgs_testar(ctx, args, _opcoes=None):
@@ -1660,17 +1780,29 @@ def sgs_comandos(ctx, args, _opcoes=None):
 
 
 def sgs_padroes(ctx, args, _opcoes=None):
-    filtro = gs.APELIDOS.get(gs.normalizar(args[0])) if args else None
-    if args and filtro not in ("gof", "criacao", "estrutural", "comportamental", "fundamentos"):
-        return falha("categoria desconhecida: use criacao, estrutural, comportamental, fundamentos ou gof")
+    arg = gs.normalizar(args[0]) if args else None
+    mapa_escopo = {"arquitetura": "arquitetura", "arq": "arquitetura", "classe": "classe", "entidade": "classe",
+                   "campo": "campo", "atributo": "campo", "relacao": "relacao", "ligacao": "relacao", "fk": "relacao"}
+    escopo_filtro = mapa_escopo.get(arg) if arg else None
+    filtro = gs.APELIDOS.get(arg) if (arg and not escopo_filtro) else None
+    if args and not escopo_filtro and filtro not in ("gof", "criacao", "estrutural", "comportamental", "fundamentos"):
+        return falha("filtro desconhecido: use categoria (criacao, estrutural, comportamental, fundamentos, gof) "
+                     "ou escopo (arquitetura, classe, campo, relacao)")
     blocos = []
+    nomes_esc = {e["id"]: e["nome"] for e in sgs_wysiwyg.ESCOPOS_PADRAO}
     for c in catalogo()["categorias"]:
         if filtro and not (filtro == c["chave"] or (filtro == "gof" and c["chave"] != "fundamentos")):
             continue
-        blocos.append(bloco("titulo", texto=f"{c['nome']} ({len(c['padroes'])})"))
-        blocos.append(bloco("tabela", colunas=["chave", "padrão", "palavras que ativam"],
-                            linhas=[[cmd(p["chave"], f"sgs gerar generico {p['chave']}", True), p["titulo"],
-                                     ", ".join(p["palavras"])] for p in c["padroes"]]))
+        itens = [p for p in c["padroes"]
+                 if not escopo_filtro or sgs_wysiwyg.ESCOPO_DO_PADRAO.get(p["chave"], "classe") == escopo_filtro]
+        if not itens:
+            continue
+        blocos.append(bloco("titulo", texto=f"{c['nome']} ({len(itens)})"))
+        blocos.append(bloco("tabela", colunas=["chave", "escopo", "padrão", "palavras que ativam"],
+                            linhas=[[cmd(p["chave"], f"sgs gerar generico {p['chave']}", True),
+                                     nomes_esc.get(sgs_wysiwyg.ESCOPO_DO_PADRAO.get(p["chave"], "classe"), "Classe"),
+                                     p["titulo"], ", ".join(p["palavras"])] for p in itens]))
+    blocos.append(texto("Filtros por escopo: sgs padroes arquitetura · classe · campo · relacao", "suave"))
     blocos.append(bloco("link", texto="Referência: cópia da Wikipédia com a lista GoF", href="/referencia"))
     return ok(*blocos)
 
@@ -2486,6 +2618,7 @@ SGS = {"ajuda": sgs_ajuda, "help": sgs_ajuda, "gerar": sgs_gerar, "listar": sgs_
        "info": sgs_info, "testar": sgs_testar, "rodar": sgs_rodar, "parar": sgs_parar, "servidores": sgs_servidores,
        "comandos": sgs_comandos, "comand": sgs_comand_cmd, "padroes": sgs_padroes, "padrões": sgs_padroes,
        "dominios": sgs_dominios, "domínios": sgs_dominios, "dominio": sgs_dominios, "domínio": sgs_dominios,
+       "infra": sgs_infra, "seguranca": sgs_infra, "segurança": sgs_infra, "stack": sgs_infra,
        "config": sgs_config, "pwa": sgs_pwa, "wiki": sgs_wiki,
        "clear": sgs_limpar, "cls": sgs_limpar, "limpar": sgs_limpar, "exit": sgs_exit, "sair": sgs_exit,
        "cancelar": sgs_cancelar, "estilo": sgs_estilo, "tema": sgs_tema, "temas": sgs_tema, "tipos": sgs_tipos,
@@ -2596,7 +2729,7 @@ MANIFEST = json.dumps({
 }, ensure_ascii=False)
 SERVICE_WORKER = """
 // Service worker do SGS: a página principal funciona como app (PWA); os comandos sempre vão ao servidor.
-const CACHE = "sgs-v4";
+const CACHE = "sgs-v12";
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(["/"]))); self.skipWaiting(); });
 self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
 self.addEventListener("fetch", (e) => {
@@ -2895,19 +3028,22 @@ PAGINA = r"""<!doctype html>
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--fundo); color: var(--texto); font: 14px/1.55 var(--mono); }
   ::selection { background: var(--selecao); color: #fff; }
-  main { padding: 10px 16px 190px; }
+  main { padding: 10px 14px 190px; }
+  /* barra superior fixa na esquerda com o alternador WYSIWYG | CMD na mesma posição do modo WYSIWYG */
+  .barra-modo { position: sticky; top: 0; z-index: 10; display: flex; align-items: flex-start; gap: 12px;
+                padding: 5px 14px; min-height: 34px; background: var(--painel);
+                border-bottom: 1px solid var(--borda); }
+  .switch-modo { display: inline-flex; flex: none; background: var(--fundo); border: 1px solid var(--borda);
+                 border-radius: 5px; padding: 2px; gap: 2px; font-family: var(--mono); }
+  .switch-modo span, .switch-modo a { padding: 2px 9px; border-radius: 3px; text-decoration: none;
+                                      font-size: 11px; line-height: 1.45; font-weight: 700; }
+  .switch-modo .on { background: #1c1c1c; color: var(--forte); border: 1px solid #3e3e3e; }
+  .switch-modo a { color: var(--suave); border: 1px solid transparent; }
+  .switch-modo a:hover { background: #181818; color: #ffffff; }
   /* os comandos principais (sem o "sgs" na frente): fonte menor, separados por "|", até o fim da tela */
-  .principais { margin: 0 0 8px; font-size: 12px; line-height: 1.5; color: var(--suave); overflow-wrap: anywhere; }
+  .principais { margin: 2px 0 0; flex: 1; font-size: 12px; line-height: 1.5; color: var(--suave); overflow-wrap: anywhere; }
   .principais .cmd { color: var(--topo); text-decoration: none; white-space: nowrap; }   /* "api config" não parte */
   .principais .cmd:hover { color: #ffffff; text-decoration: underline; }
-  .barra-modo { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
-  .barra-modo .principais { margin: 0; flex: 1; }
-  .switch-modo { display: inline-flex; flex: none; border: 1px solid var(--borda); border-radius: 999px; padding: 2px;
-                 gap: 2px; font-size: 11px; background: var(--painel); }
-  .switch-modo span, .switch-modo a { padding: 2px 9px; border-radius: 999px; text-decoration: none; font-weight: 700; }
-  .switch-modo .on { background: var(--marca); color: var(--fundo); }
-  .switch-modo a { color: var(--topo); }
-  .switch-modo a:hover { background: var(--selecao); color: #ffffff; }
   :root[data-topo="0"] #principais { display: none; }      /* sgs topo oculta/mostra (abre à mostra) */
   :root[data-rodape="0"] .opcoes { display: none; }        /* sgs foot oculta/mostra as caixas; o prompt fica */
   .eco-cmd { margin-top: 14px; color: var(--forte); white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -2982,14 +3118,14 @@ PAGINA = r"""<!doctype html>
 </style>
 </head>
 <body>
+<header class="barra-modo">
+  <nav class="switch-modo" aria-label="Alternar WYSIWYG e CMD">
+    <a href="/" title="Abrir bancada visual WYSIWYG (tela inicial)">WYSIWYG</a>
+    <span class="on">CMD</span>
+  </nav>
+  <p class="principais" id="principais"></p>
+</header>
 <main>
-  <div class="barra-modo">
-    <p class="principais" id="principais"></p>
-    <nav class="switch-modo" aria-label="Alternar WYSIWYG e CMD">
-      <a href="/" title="Abrir bancada visual WYSIWYG (tela inicial)">WYSIWYG</a>
-      <span class="on">CMD</span>
-    </nav>
-  </div>
   <section id="saida"></section>
 </main>
 <div id="prompt">
@@ -3024,9 +3160,9 @@ const saida = $("saida"), ta = $("texto"), caixa = $("caixa");
 // Os comandos principais do topo, mostrados SEM o "sgs" na frente (o clique manda o comando inteiro).
 // [comando, preencher?] — preencher = só escreve no prompt (falta o NN…). O "sgs" sozinho aparece como "ajuda".
 const PRINCIPAIS = [
-  ["sgs", false], ["sgs gerar ", true], ["sgs provap3", false], ["sgs listar", false], ["sgs comand", false],
+  ["sgs", false], ["sgs gerar ", true], ["sgs listar", false], ["sgs comand", false],
   ["sgs rodar ", true],
-  ["sgs estilo", false], ["sgs padroes", false], ["sgs config", false], ["clear", false],
+  ["sgs estilo", false], ["sgs infra", false], ["sgs padroes", false], ["sgs config", false], ["clear", false],
   ["sgs info ", true], ["sgs testar ", true], ["sgs servidores", false], ["sgs parar ", true], ["sgs editar ", true],
   ["sgs duplicar ", true], ["sgs app ", true], ["sgs ligar ", true], ["sgs incrementar ", true], ["sgs api config ", true], ["history", false],
   ["sgs dominios", false], ["sgs tipos ", true], ["sgs tema", false], ["sgs comandos ", true], ["sgs cancelar", false],

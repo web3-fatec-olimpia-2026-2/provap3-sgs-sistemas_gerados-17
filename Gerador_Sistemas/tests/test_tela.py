@@ -1026,9 +1026,10 @@ def test_pagina_tem_os_comandos_do_topo_e_o_terminal(servidor):
     principais = re.search(r"const PRINCIPAIS = (\[.*?\]);", html, re.S).group(1)
     assert '"sgs comand"' in principais and "pwa" not in principais       # pwa só na lista completa
     comandos = {c.strip() for c, _ in json.loads(principais)}
-    assert {"sgs", "sgs gerar", "sgs provap3", "sgs listar", "sgs rodar", "sgs estilo", "sgs config", "clear",
+    assert {"sgs", "sgs gerar", "sgs listar", "sgs rodar", "sgs estilo", "sgs config", "clear",
             "sgs info", "sgs parar", "sgs editar", "sgs duplicar", "sgs app", "sgs ligar", "sgs incrementar",
             "sgs api config", "sgs dominios", "sgs tipos", "sgs tutorial", "sgs wiki", "sgs hub", "sgs cmd"} <= comandos
+    assert "sgs provap3" not in comandos
     assert 'c.trim().replace(/^sgs /, "")' in html                         # no topo, sem o "sgs" na frente
     assert '<p class="principais" id="principais"></p>' in html and '[i ? "|" : "", item]' in html   # "|" sem espaço
     assert "max-width: 1100px" not in html                                 # até o fim da tela
@@ -1412,6 +1413,7 @@ def test_modo_wysiwyg_rotas_conflitos_e_comando(ctx):
     resp_root = tela.atender(ctx, "GET", "/", cab, lambda _n: b"")
     assert resp_root.status == 200 and b"WYSIWYG" in resp_root.corpo and b'href="/cmd"' in resp_root.corpo
     assert b"/wysiwyg/estado" in resp_root.corpo and b"setChildren(" in resp_root.corpo
+    assert b"Prova P3" not in resp_root.corpo
 
     resp_html = tela.atender(ctx, "GET", "/wysiwyg", cab, lambda _n: b"")
     assert resp_html.status == 200 and resp_html.corpo == resp_root.corpo
@@ -1425,6 +1427,8 @@ def test_modo_wysiwyg_rotas_conflitos_e_comando(ctx):
     assert estado["ok"] is True
     assert len(estado["dominios"]) == 300
     assert len(estado["padroes"]) == 28
+    assert [e["id"] for e in estado["escopos_padrao"]] == ["arquitetura", "classe", "campo", "relacao"]
+    assert all(p["escopo"] in {"arquitetura", "classe", "campo", "relacao"} for p in estado["padroes"])
     assert len(estado["temas"]) == 10 and len(estado["tons"]) == 6 and len(estado["temas_resolvidos"]) == 180
     assert estado["temas_resolvidos"]["T10:escuro:P01"]["--c-dom"] != estado["temas_resolvidos"]["T10:escuro:P07"]["--c-dom"]
     assert estado["temas_resolvidos"]["T10:tom5:P02"]["--bg"] != estado["temas_resolvidos"]["T10:tom5:P07"]["--bg"]
@@ -1434,7 +1438,23 @@ def test_modo_wysiwyg_rotas_conflitos_e_comando(ctx):
             assert gs.ler_regra(item["regra"]), item
     assert len(estado["grupos_excludentes"]) >= 5
     assert len(estado["sistemas"]) == 1 and estado["sistemas"][0]["numero"] == "01"
-    assert estado["sistemas"][0]["classes"]
+    assert estado["sistemas"][0]["classes"] and isinstance(estado["sistemas"][0]["classes"][0]["padroes"], list)
+    # Ordem das 5 colunas (Opção A): 1 Projeto -> 2 Infra/Segurança -> 3 Padrões da Classe -> 4 Classes -> 5 Ligações
+    html_str = resp_root.corpo.decode("utf-8")
+    pos = [html_str.index(t) for t in ("1 · Projeto", "2 · Infra, Segurança", "3 · Padrões da Classe", "4 · Classes", "5 · Ligações")]
+    assert pos == sorted(pos)
+
+    # Config de Infra, Segurança e Bibliotecas (Passo 2) + paridade no CMD (sgs infra, sgs padroes escopo, sgs info)
+    assert rodar(ctx, "sgs config banco=postgresql redis=sim fernet=sim two_factor=sim two_factor_expiracao=15 rbac=sim ratelimit=sim anymail=sim tinymce=sim antibot=sim recuperacao_senha=sim")["ok"] is True
+    assert ctx.config.valores["banco"] == "postgresql" and ctx.config.valores["two_factor_expiracao"] == 15
+    assert rodar(ctx, "sgs config two_factor_expiracao=99")["ok"] is False
+    assert rodar(ctx, "sgs config banco=oracle")["ok"] is False
+    r_infra = rodar(ctx, "sgs infra")
+    assert r_infra["ok"] is True and "postgresql" in textos(r_infra) and "Two-Factor" in textos(r_infra)
+    r_esc = rodar(ctx, "sgs padroes relacao")
+    assert r_esc["ok"] is True and "Adapter" in textos(r_esc) and "Ligação / FK" in textos(r_esc)
+    r_info = rodar(ctx, "sgs info 01")
+    assert r_info["ok"] is True
 
     r_dt = rodar(ctx, "sgs incrementar 01 Reserva.agendado_em data-hora")
     assert r_dt["ok"] is True and "data-hora" in textos(r_dt)
