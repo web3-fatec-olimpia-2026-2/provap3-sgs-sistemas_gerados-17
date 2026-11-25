@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-sgs_dominios.py — módulo para adicionar, listar e remover DOMÍNIOS personalizados além dos 101 nativos.
+sgs_dominios.py — módulo para adicionar, listar e remover DOMÍNIOS personalizados além dos 300 nativos.
 
-Os 101 domínios nativos moram em catalogo_100_dominios.txt + dominios.py (intocados).
-Domínios criados pelo usuário ficam salvos em dominios_extras.json (IDs a partir de 102) e são carregados
+Os 300 domínios nativos moram em catalogo_100_dominios.txt + dominios.py + dominios_102_300.py (intocados).
+Domínios criados pelo usuário ficam salvos em dominios_extras.json (IDs a partir de 301) e são carregados
 automaticamente por dominios.montar() — valendo em `sgs gerar`, `sgs dominios`, `sgs app` e na CLI.
 
 Uso pela linha de comando (ou pela tela do SGS via `sgs dominios novo`):
     python sgs_dominios.py listar
-    python sgs_dominios.py novo energia_eolica --sistema "Eólica Sul" --entidade Turbina \\
-        --palavras "eolica, turbina, vento, aerogerador, parque eolico"
-    python sgs_dominios.py remover energia_eolica
+    python sgs_dominios.py novo energia_maremotriz --sistema "Maré Energia" --entidade TurbinaMare \\
+        --palavras "maremotriz, mare, oceano, turbina submarina, energia das mares"
+    python sgs_dominios.py remover energia_maremotriz
 """
 import argparse
 import json
@@ -41,7 +41,11 @@ def _snake(texto):
 
 
 def _camel(texto):
-    partes = re.findall(r"[A-Za-z0-9]+", _normalizar(texto))
+    limpo = unicodedata.normalize("NFKD", str(texto or "").strip())
+    limpo = "".join(c for c in limpo if not unicodedata.combining(c))
+    if re.fullmatch(r"[A-Z][A-Za-z0-9]*", limpo):
+        return limpo
+    partes = re.findall(r"[A-Za-z0-9]+", limpo.lower())
     return "".join(p.capitalize() for p in partes)
 
 
@@ -174,7 +178,7 @@ def cadastrar_dominio(chave, sistema, entidade, palavras, setor=SETOR_PADRAO, id
     if chave_limpa in ja_existe:
         raise ValueError(f"já existe um domínio com a chave '{chave_limpa}' — escolha outra chave")
 
-    maior_id = max([num for num, *_ in dom.ler_catalogo()] + [int(d.get("id", 101)) for d in extras], default=101)
+    maior_id = max([num for num, *_ in dom.ler_catalogo()] + [int(d.get("id", 300)) for d in extras], default=300)
     novo = {
         "id": maior_id + 1,
         "chave": chave_limpa,
@@ -196,13 +200,14 @@ def cadastrar_dominio(chave, sistema, entidade, palavras, setor=SETOR_PADRAO, id
 
 
 def remover_dominio(alvo, caminho=None):
-    """Remove um domínio personalizado (por chave ou ID >= 102). Protege os 101 domínios nativos."""
+    """Remove um domínio personalizado (por chave ou ID > último nativo). Protege todos os domínios nativos."""
     import dominios as dom
 
     alvo_str = str(alvo or "").strip()
     nativos = {c: num for num, c, _, _, _ in dom.ler_catalogo()}
-    if alvo_str.lower() in nativos or (alvo_str.isdigit() and 1 <= int(alvo_str) <= 101):
-        raise ValueError(f"o domínio '{alvo_str}' é nativo do catálogo (001–101) e não pode ser removido")
+    max_nativo = max(nativos.values(), default=300)
+    if alvo_str.lower() in nativos or (alvo_str.isdigit() and 1 <= int(alvo_str) <= max_nativo):
+        raise ValueError(f"o domínio '{alvo_str}' é nativo do catálogo (001–{max_nativo:03d}) e não pode ser removido")
     extras = ler_extras(caminho)
     alvo_norm = _snake(alvo_str)
     achado = next(
@@ -217,13 +222,13 @@ def remover_dominio(alvo, caminho=None):
 
 
 def main(argv=None):
-    p = argparse.ArgumentParser(description="Gerencia domínios personalizados do SGS (além dos 101 nativos).")
+    p = argparse.ArgumentParser(description="Gerencia domínios personalizados do SGS (além dos 300 nativos).")
     sub = p.add_subparsers(dest="acao")
     sub.add_parser("listar", help="lista os domínios personalizados cadastrados")
     novo = sub.add_parser("novo", help="adiciona um domínio personalizado")
-    novo.add_argument("chave", help="identificador do domínio (ex.: energia_eolica)")
-    novo.add_argument("--sistema", required=True, help="nome do sistema (ex.: Eólica Sul)")
-    novo.add_argument("--entidade", required=True, help="nome da classe principal (ex.: Turbina)")
+    novo.add_argument("chave", help="identificador do domínio (ex.: energia_maremotriz)")
+    novo.add_argument("--sistema", required=True, help="nome do sistema (ex.: Maré Energia)")
+    novo.add_argument("--entidade", required=True, help="nome da classe principal (ex.: TurbinaMare)")
     novo.add_argument("--palavras", required=True, help="palavras-chave separadas por vírgula (mínimo 3)")
     novo.add_argument("--setor", default=SETOR_PADRAO)
     novo.add_argument("--ident", default="cliente")
@@ -237,7 +242,7 @@ def main(argv=None):
     if args.acao == "listar" or not args.acao:
         extras = ler_extras()
         if not extras:
-            print("Nenhum domínio personalizado cadastrado ainda (os 101 nativos estão ativos).")
+            print("Nenhum domínio personalizado cadastrado ainda (os 300 nativos estão ativos).")
             return 0
         for d in extras:
             print(f"{int(d['id']):03d} | {d['chave']} | {d['sistema']} | {d['entidade']} | "

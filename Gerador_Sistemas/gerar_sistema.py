@@ -461,8 +461,8 @@ DOMINIOS = {
     },
 }
 
-# Os 101 domínios nativos (8 acima + 93 de dominios.py, na ordem do catalogo_100_dominios.txt: 100 palavras cada
-# nos 001–100 e 101 palavras no 101) + domínios personalizados salvos em dominios_extras.json (sgs_dominios.py).
+# Os 300 domínios nativos (8 acima + 292 de dominios.py/dominios_102_300.py, na ordem do catalogo_100_dominios.txt:
+# 100 palavras cada nos 001–100 e 102–300, e 101 palavras no 101) + domínios personalizados em dominios_extras.json.
 import dominios as _dominios  # noqa: E402
 
 _DOMINIOS_BASE = dict(DOMINIOS)
@@ -9718,8 +9718,8 @@ def principal(argv=None):
     p = argparse.ArgumentParser(description="Gerador DETERMINÍSTICO de sistemas de estudo (ILP-037 · P3).",
                                 formatter_class=argparse.RawDescriptionHelpFormatter, epilog=__doc__)
     p.add_argument("--listar", nargs="?", const="", metavar="TERMO",
-                   help="mostra os 100 domínios (por setor) e os padrões; com TERMO, só os domínios que batem (ex.: saude)")
-    p.add_argument("--dominio", help="um dos 100 domínios do catálogo (hotel, petshop, oficina… — veja --listar)")
+                   help="mostra os 300 domínios (por setor) e os padrões; com TERMO, só os domínios que batem (ex.: saude)")
+    p.add_argument("--dominio", help="um dos 300 domínios do catálogo (hotel, petshop, oficina… — veja --listar)")
     p.add_argument("--assunto", help="texto livre: o gerador escolhe domínio e padrões por palavras-chave")
     p.add_argument("--spec", help="arquivo JSON de especificação (veja --modelo-spec)")
     p.add_argument("--modelo-spec", action="store_true", help="imprime um JSON de especificação para editar")

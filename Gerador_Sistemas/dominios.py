@@ -1,12 +1,12 @@
 """
-dominios.py — os 100 DOMÍNIOS do gerador (catálogo escrito à mão, determinístico, sem IA) + o 101, o domínio da
+dominios.py — os 300 DOMÍNIOS do gerador (catálogo escrito à mão, determinístico, sem IA), incluindo o 101 da
 Prova Prática P3 (citricultura), que tem PERFIL próprio (PERFIS, no fim: pasta, projeto/app Django, rotas, DRF).
 
 Duas fontes, juntadas em gerar_sistema.DOMINIOS:
-  1. catalogo_100_dominios.txt — a lista enviada pelo usuário (ID | DOMINIO | SISTEMA | ENTIDADE | PALAVRAS):
-     nome do sistema, entidade e as 100 palavras que ativam cada domínio (001–100) + as 101 palavras do 101.
-  2. DADOS (abaixo) — o resto que cada sistema precisa, coerente com o setor: atributos com os papéis
-     ident/quantidade/preço, variantes (Strategy), categorias (polimorfismo), extras (Decorator), gateway
+  1. catalogo_100_dominios.txt — a lista do catálogo (ID | DOMINIO | SISTEMA | ENTIDADE | PALAVRAS):
+     nome do sistema, entidade e as 100 palavras que ativam cada domínio (001–100 e 102–300) + as 101 do 101.
+  2. DADOS (abaixo + dominios_102_300.py) — o resto que cada sistema precisa, coerente com o setor: atributos com
+     os papéis ident/quantidade/preço, variantes (Strategy), categorias (polimorfismo), extras (Decorator), gateway
      (Adapter), recursos e textos do painel, nomes de exemplo. Os 8 domínios originais (hotel, cinema,
      clinica, academia, loja, biblioteca, estacionamento, generico) continuam em gerar_sistema.py, iguais.
 
@@ -19,6 +19,7 @@ Formato compacto de cada domínio (uma chamada D por domínio; todos os textos s
   painel      "título | livre | ocupado | ação livre | ação ocupado | zero | contagem"
 """
 from pathlib import Path
+from dominios_102_300 import SETORES_102_300, construir_dados_102_300
 
 AQUI = Path(__file__).resolve().parent
 CATALOGO = AQUI / "catalogo_100_dominios.txt"
@@ -28,7 +29,7 @@ SETORES = [(1, 10, "Hospedagem, Turismo e Lazer"), (11, 22, "Saúde e Bem-Estar"
            (55, 64, "Mobilidade, Veículos e Logística"), (65, 72, "Imóveis, Condomínios e Serviços Urbanos"),
            (73, 80, "Serviços Pessoais, Pets e Estética"), (81, 90, "Finanças, Jurídico e Corporativo"),
            (91, 100, "Indústria, Agro, Mídia e Genérico"),
-           (101, 101, "Prova Prática P3 (ISW-030)")]
+           (101, 101, "Prova Prática P3 (ISW-030)")] + SETORES_102_300
 
 # Nomes de exemplo (o ident é sempre uma pessoa/organização): cada domínio pega 4, em sequência.
 NOMES = ["Ana", "Bruno", "Carla", "Diego", "Elisa", "Fábio", "Gabriela", "Henrique", "Isabela", "João",
@@ -38,7 +39,7 @@ NOMES = ["Ana", "Bruno", "Carla", "Diego", "Elisa", "Fábio", "Gabriela", "Henri
 
 
 def setor(numero):
-    """Nome do setor de um ID do catálogo (1..101; o 101 é o domínio da Prova Prática P3)."""
+    """Nome do setor de um ID do catálogo (1..300; o 101 é o domínio da Prova Prática P3)."""
     return next(nome for ini, fim, nome in SETORES if ini <= numero <= fim)
 
 
@@ -821,6 +822,7 @@ DADOS = {
                       "PagaCoop", "Talhão | pronto para colher | EM COLHEITA | Colher | (em colheita) | "
                                   "ENTRESSAFRA - nenhum talhão pronto | talhão(ões) pronto(s)"),
 }
+DADOS.update(construir_dados_102_300(D))
 
 # PERFIL de um domínio: as particularidades do sistema gerado — nome da pasta, projeto e app Django, rota do app,
 # DRF e o pytest.ini. Sem perfil, vale o de sempre (pasta <sistema>__<padrões>…, projeto "config", app = plural da
@@ -840,7 +842,7 @@ for _chave, _perfil in PERFIS.items():
 
 
 def montar(dominios_base, caminho_extras=None):
-    """DOMINIOS completos (101 nativos + extras personalizados de dominios_extras.json), + INFO {chave: {"id", "setor"}}.
+    """DOMINIOS completos (300 nativos + extras personalizados de dominios_extras.json), + INFO {chave: {"id", "setor"}}.
 
     dominios_base: os 8 domínios originais (dados completos no gerar_sistema.py). As palavras deles passam a
     ser as do catálogo; sistema e entidade precisam bater com o catálogo (senão é erro de cadastro).

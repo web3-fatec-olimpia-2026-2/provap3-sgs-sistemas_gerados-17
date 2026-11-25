@@ -277,7 +277,7 @@ def test_sgs_tipos_mostra_a_deducao(ctx):
 def test_sgs_dominios_mostra_setores_e_filtra(ctx):
     r = rodar(ctx, "sgs dominios")
     tabela = next(b for b in r["blocos"] if b["t"] == "tabela")
-    assert len(tabela["linhas"]) == 11 and "101 domínios" in textos(r)            # só os setores: tela limpa
+    assert len(tabela["linhas"]) == 21 and "300 domínios" in textos(r)            # só os setores: tela limpa
     assert "citricultura" in textos(r) and "Prova Prática P3" in textos(r)       # o 101: o domínio da prova
     r = rodar(ctx, "sgs dominios pet")
     assert r["ok"] and "petshop" in textos(r) and "Pet Shop Amigo" in textos(r) and "cinema" not in textos(r)
@@ -1338,28 +1338,29 @@ def test_sgs_dominios_novo_direto_guiado_e_remover(tmp_path):
     c.config.alterar("perguntar", False)
     try:
         # 1) Direto numa linha
-        r = rodar(c, 'sgs dominios novo energia_eolica sistema="Eólica Sul" entidade=Turbina '
-                     'palavras="eolica, turbina, vento, aerogerador"')
-        assert r["ok"] and "102" in textos(r) and "energia_eolica" in textos(r), textos(r)
-        assert "energia_eolica" in textos(rodar(c, "sgs dominios"))
-        g_res = rodar(c, "sgs gerar energia_eolica strategy", testar=False)
-        assert g_res["ok"] and g_res["cartao"]["sistema"] == "Eólica Sul"
+        r = rodar(c, 'sgs dominios novo energia_maremotriz sistema="Maré Energia" entidade=TurbinaMare '
+                     'palavras="maremotriz, turbina submarina, energia das mares, oceano"')
+        assert r["ok"] and "301" in textos(r) and "energia_maremotriz" in textos(r), textos(r)
+        assert "energia_maremotriz" in textos(rodar(c, "sgs dominios"))
+        g_res = rodar(c, "sgs gerar energia_maremotriz strategy", testar=False)
+        assert g_res["ok"] and g_res["cartao"]["sistema"] == "Maré Energia"
         # 2) Fluxo guiado (QuestionarioDominio)
         r = rodar(c, "sgs dominios novo")
         assert r["pergunta"] and "Nome do sistema" in textos(r)
-        rodar(c, "Marcenaria Fina")
-        rodar(c, "marcenaria_fina")
-        rodar(c, "Bancada")
+        rodar(c, "Astrofotografia Sul")
+        rodar(c, "astrofotografia_sul")
+        rodar(c, "Telescopio")
         rodar(c, "")                                                # setor = Personalizados
-        rodar(c, "marcenaria, serraria, bancada, madeira macica")
+        rodar(c, "astrofotografia, telescopio, nebulosa, ceu profundo")
         r = rodar(c, "sgs dominios novo -sp")
-        assert r["ok"] and "103" in textos(r) and "marcenaria_fina" in textos(r), textos(r)
+        assert r["ok"] and "302" in textos(r) and "astrofotografia_sul" in textos(r), textos(r)
         assert c.questionario is None
         # 3) Remoção (protege nativos; remove extras)
         assert rodar(c, "sgs dominios remover hotel")["ok"] is False
-        assert rodar(c, "sgs dominios remover marcenaria_fina")["ok"] is True
-        assert rodar(c, "sgs dominios remover 102")["ok"] is True
-        assert "energia_eolica" not in gs.DOMINIOS
+        assert rodar(c, "sgs dominios remover 300")["ok"] is False
+        assert rodar(c, "sgs dominios remover astrofotografia_sul")["ok"] is True
+        assert rodar(c, "sgs dominios remover 301")["ok"] is True
+        assert "energia_maremotriz" not in gs.DOMINIOS
     finally:
         gs.recarregar_dominios()
 

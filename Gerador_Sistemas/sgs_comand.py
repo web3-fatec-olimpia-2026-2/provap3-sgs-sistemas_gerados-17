@@ -215,16 +215,16 @@ CATALOGO = [
     ("sgs padroes", "8 · SGS", "Os 28 padrões por categoria e as palavras que os ativam.", "sgs padroes [categoria]",
      "sgs padroes criacao", "(tabela)", "sgs dominios mostra os domínios.", "comando sgs"),
     ("sgs dominios [termo]", "8 · SGS",
-     "Os 101 domínios nativos (100 palavras cada nos 001–100; 101 na Prova P3) + domínios personalizados; com termo, "
+     "Os 300 domínios nativos (100 palavras cada nos 001–100 e 102–300; 101 na Prova P3) + domínios personalizados; com termo, "
      "filtra por nome, sistema, entidade, setor ou palavra.",
-     "sgs dominios [termo]", "sgs dominios saude", "011 clinica · 013 hospital · 014 odontologia …",
+     "sgs dominios [termo]", "sgs dominios saude", "011 clinica · 013 hospital · 129 cardiologia …",
      "Sem termo mostra só os setores. Para adicionar um domínio novo: sgs dominios novo.", "comando sgs"),
     ("sgs dominios novo", "8 · SGS",
-     "Módulo para cadastrar um NOVO domínio personalizado (além dos 101 nativos), com dados básicos e palavras-chave. "
-     "Salvo em dominios_extras.json (ID ≥ 102) e ativo na hora em sgs gerar e sgs dominios.",
+     "Módulo para cadastrar um NOVO domínio personalizado (além dos 300 nativos), com dados básicos e palavras-chave. "
+     "Salvo em dominios_extras.json (ID ≥ 301) e ativo na hora em sgs gerar e sgs dominios.",
      'sgs dominios novo [chave sistema="..." entidade=Classe palavras="a, b, c"]',
-     'sgs dominios novo energia_eolica sistema="Eólica Sul" entidade=Turbina palavras="eolica, turbina, vento"',
-     "✓ domínio 102 (energia_eolica · Eólica Sul · Turbina) cadastrado",
+     'sgs dominios novo energia_maremotriz sistema="Maré Energia" entidade=TurbinaMare palavras="maremotriz, mare, oceano"',
+     "✓ domínio 301 (energia_maremotriz · Maré Energia · TurbinaMare) cadastrado",
      "Sem argumentos, conduz passo a passo (termine com sgs dominios novo -sp). Para remover: sgs dominios remover <chave>.",
      "comando sgs"),
     ("sgs config", "8 · SGS", "Mostra ou altera a configuração (caixas, porta base, admin, PWA).",

@@ -438,14 +438,14 @@ python Gerador_Sistemas/gerar_sistema.py --dominio hotel --padrao prova --campos
 
 ---
 
-## 4. Os 101 domínios, por setor
+## 4. Os 300 domínios, por setor
 
-A lista vem do usuário ([`catalogo_100_dominios.txt`](catalogo_100_dominios.txt), lida sem alteração): ID,
-domínio, sistema, entidade e 30 palavras que ativam cada um (e o **101**, `citricultura`, de `ProvaPraticaP3/domínio 101.txt`, com 101 palavras e perfil próprio da Prova Prática P3). O resto (atributos com validação, variantes do
-Strategy, categorias, extras do Decorator, gateway do Adapter, painel, nomes de exemplo) está escrito à mão em
-[`dominios.py`](dominios.py), coerente com o setor. Os 8 domínios originais continuam iguais (só ganharam as
-palavras novas) e foram renumerados: hotel 001, cinema 002, clinica 011, academia 012, loja 023, biblioteca 045,
-estacionamento 055, generico 100.
+O catálogo ([`catalogo_100_dominios.txt`](catalogo_100_dominios.txt)) reúne **300 domínios nativos** organizados em
+**21 setores**: ID, domínio, sistema, entidade e **100 palavras únicas** que ativam cada domínio (`001–100` e `102–300`),
+além do **101** (`citricultura`, copiado sem alteração de `ProvaPraticaP3/domínio 101.txt`, com 101 palavras e perfil
+próprio da Prova Prática P3). Os atributos com validação, variantes do Strategy, categorias, extras do Decorator,
+gateway do Adapter e textos do painel ficam em [`dominios.py`](dominios.py) e [`dominios_102_300.py`](dominios_102_300.py),
+e novos domínios personalizados (`ID ≥ 301`) podem ser cadastrados via [`sgs_dominios.py`](sgs_dominios.py) ou `sgs dominios novo`.
 
 | IDs | Setor |
 |---|---|
@@ -460,6 +460,16 @@ estacionamento 055, generico 100.
 | 081–090 | Finanças, Jurídico e Corporativo |
 | 091–100 | Indústria, Agro, Mídia e Genérico |
 | 101 | Prova Prática P3 (ISW-030) — `citricultura` (`sgs provap3`: pasta `provaP3`, projeto `cooperativa`, app `citricultura`, DRF em `/api/`) |
+| 102–121 | Agronegócio Especializado e Meio Ambiente |
+| 122–141 | Saúde Especializada, Clínicas e Bem-Estar |
+| 142–161 | Comércio Especializado e Lojas de Nicho |
+| 162–181 | Gastronomia Especializada, Bebidas e Alimentos |
+| 182–201 | Engenharia, Construção Civil e Manutenção |
+| 202–221 | Logística, Frota, Náutica e Mobilidade |
+| 222–241 | Tecnologia, Software, Dados e Mídia Digital |
+| 242–261 | Indústria, Manufatura e Produção |
+| 262–281 | Finanças, Negócios, Jurídico e Gestão |
+| 282–300 | Serviços Pessoais, Cultura, Esporte e Governo |
 
 Ver ou procurar: `sgs dominios [termo]` na tela, `--listar [termo]` na linha de comando. Nomes com “&” (Casa & Obra)
 saem escapados nas páginas; o nome da pasta continua só com `[a-z0-9_]`.

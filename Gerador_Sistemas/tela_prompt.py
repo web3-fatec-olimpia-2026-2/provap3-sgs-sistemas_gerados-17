@@ -1207,7 +1207,7 @@ COMANDOS_SGS = [
     ("sgs comandos NN", "comandos de terminal para rodar o sistema NN fora da tela", True),
     ("sgs comand [n]", "módulo de ajuda: a lista numerada dos comandos da esteira (sgs exit volta)", False),
     ("sgs padroes [categoria]", "os 28 padrões por categoria e as palavras que os ativam", False),
-    ("sgs dominios [termo | novo | remover]", "os 101 domínios (100 palavras cada; 101 = Prova P3) + domínios "
+    ("sgs dominios [termo | novo | remover]", "os 300 domínios (100 palavras cada; 101 = Prova P3) + domínios "
                                               "personalizados · sgs dominios novo cadastra um novo domínio · "
                                               "sgs dominios saude filtra", True),
     ("sgs config [chave=valor]", "mostra/altera a configuração (caixas, porta base, admin, pwa)", False),
@@ -1751,14 +1751,14 @@ def sgs_dominios(ctx, args, _opcoes=None):
             return _salvar_dominio(ctx, dados)
         if sem_perguntar:
             return falha('para cadastrar direto numa linha, informe chave, sistema=, entidade= e palavras=: '
-                         'sgs dominios novo energia_eolica sistema="Eólica Sul" entidade=Turbina '
-                         'palavras="eolica, turbina, vento, aerogerador"')
+                         'sgs dominios novo energia_maremotriz sistema="Maré Energia" entidade=TurbinaMare '
+                         'palavras="maremotriz, turbina submarina, energia das mares, oceano"')
         q = perguntas.QuestionarioDominio(
             chave=dados["chave"], sistema=dados["sistema"], entidade=dados["entidade"],
             palavras=dados["palavras"], setor=dados["setor"], caminho_extras=ctx.caminho_dominios_extras,
         )
         ctx.questionario = q
-        return ok(texto("Cadastrar novo domínio personalizado (além dos 101 nativos): responda os dados básicos e "
+        return ok(texto("Cadastrar novo domínio personalizado (além dos 300 nativos): responda os dados básicos e "
                         "as palavras-chave (conclua com `sgs dominios novo -sp`).", "destaque"),
                   *perguntas.blocos(q))
     if sub in ("remover", "excluir", "apagar", "del"):

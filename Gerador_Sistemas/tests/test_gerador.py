@@ -68,15 +68,16 @@ def test_assunto_sem_dominio_vira_generico_com_nome_extraido():
     assert (r["dominio"], r["sistema"], r["padroes"]) == ("generico", "Observatório Astronômico", ["decorator"])
 
 
-# ---------------------------------------------------------------- os 101 domínios (catalogo_100_dominios.txt)
-def test_catalogo_tem_os_100_dominios_em_10_setores_e_o_101_da_prova():
-    assert len(g.DOMINIOS) == 101
-    assert [g.INFO_DOMINIOS[c]["id"] for c in g.DOMINIOS] == [f"{n:03d}" for n in range(1, 102)]
-    assert len({i["setor"] for i in g.INFO_DOMINIOS.values()}) == 11
+# ---------------------------------------------------------------- os 300 domínios (catalogo_100_dominios.txt)
+def test_catalogo_tem_os_300_dominios_em_21_setores_e_o_101_da_prova():
+    assert len(g.DOMINIOS) == 300
+    assert [g.INFO_DOMINIOS[c]["id"] for c in g.DOMINIOS] == [f"{n:03d}" for n in range(1, 301)]
+    assert len({i["setor"] for i in g.INFO_DOMINIOS.values()}) == 21
     assert g.INFO_DOMINIOS["citricultura"] == {"id": "101", "setor": "Prova Prática P3 (ISW-030)"}
     originais = {"hotel": "001", "cinema": "002", "clinica": "011", "academia": "012", "loja": "023",
                  "biblioteca": "045", "estacionamento": "055", "generico": "100"}
     assert {c: g.INFO_DOMINIOS[c]["id"] for c in originais} == originais
+    assert len({d["sistema"].lower() for d in g.DOMINIOS.values()}) == 300
     for chave, d in g.DOMINIOS.items():
         esperado = 101 if chave == "citricultura" else 100
         assert len(d["palavras"]) == esperado and not any("_" in p for p in d["palavras"]), chave   # "_" vira frase
@@ -121,7 +122,7 @@ def test_filtrar_dominios_por_termo():
     saude = {c for c, *_ in g.filtrar_dominios("saude")}
     assert {"clinica", "hospital", "hemocentro", "transporte_saude"} <= saude and "cinema" not in saude
     assert {c for c, *_ in g.filtrar_dominios("045")} == {"biblioteca"}
-    assert len(g.filtrar_dominios()) == 101 and g.filtrar_dominios("zzzz") == []
+    assert len(g.filtrar_dominios()) == 300 and g.filtrar_dominios("zzzz") == []
 
 
 # ---------------------------------------------------------------- domínio 101: o perfil da Prova Prática P3
@@ -674,30 +675,32 @@ def test_manage_py_e_iniciar_sh_isolam_django_settings_module_do_sgs(tmp_path):
 
 
 def test_modulo_sgs_dominios_cadastra_gera_e_remove(tmp_path):
-    """sgs_dominios.py adiciona domínios personalizados (ID >= 102), gera sistemas completos com testes verdes
-    e protege os 101 domínios nativos contra remoção."""
+    """sgs_dominios.py adiciona domínios personalizados (ID >= 301), gera sistemas completos com testes verdes
+    e protege os 300 domínios nativos contra remoção."""
     import sgs_dominios
     extras = tmp_path / "dominios_extras.json"
     try:
         novo = sgs_dominios.cadastrar_dominio(
-            "energia_eolica", "Eólica Sul", "Turbina",
-            "eolica, turbina, vento, aerogerador, parque eolico, geracao vento",
-            ident="operador", recurso="torre", quantidade="horas", preco="tarifa_hora", unidade="hora(s)",
+            "maremotriz", "Maré Oceânica", "TurbinaMare",
+            "maremotriz, turbina submarina, forca das mares, oceano, barragem mare, geracao oceanica",
+            ident="operador", recurso="estacao", quantidade="horas", preco="tarifa_hora", unidade="hora(s)",
             caminho=extras,
         )
-        assert novo["id"] == 102 and novo["chave"] == "energia_eolica" and len(novo["palavras"]) == 6
+        assert novo["id"] == 301 and novo["chave"] == "maremotriz" and len(novo["palavras"]) == 6
         g.recarregar_dominios(extras)
-        assert "energia_eolica" in g.DOMINIOS and g.INFO_DOMINIOS["energia_eolica"]["id"] == "102"
-        assert g.analisar_assunto("usina eolica com turbina, vento e aerogerador")["dominio"] == "energia_eolica"
-        destino, s = g.gerar(dominio="energia_eolica", padroes=["strategy"], django=False, saida=tmp_path)
-        assert s.sistema == "Eólica Sul" and s.dados["entidade"] == "Turbina"
+        assert "maremotriz" in g.DOMINIOS and g.INFO_DOMINIOS["maremotriz"]["id"] == "301"
+        assert g.analisar_assunto("usina maremotriz com turbina submarina e forca das mares")["dominio"] == "maremotriz"
+        destino, s = g.gerar(dominio="maremotriz", padroes=["strategy"], django=False, saida=tmp_path)
+        assert s.sistema == "Maré Oceânica" and s.dados["entidade"] == "TurbinaMare"
         codigo, saida = rodar_pytest(destino)
         assert codigo == 0, saida
         with pytest.raises(ValueError, match="nativo"):
             sgs_dominios.remover_dominio("hotel", caminho=extras)
-        removido = sgs_dominios.remover_dominio("energia_eolica", caminho=extras)
-        assert removido["chave"] == "energia_eolica"
+        with pytest.raises(ValueError, match="nativo"):
+            sgs_dominios.remover_dominio("300", caminho=extras)
+        removido = sgs_dominios.remover_dominio("maremotriz", caminho=extras)
+        assert removido["chave"] == "maremotriz"
         g.recarregar_dominios(extras)
-        assert "energia_eolica" not in g.DOMINIOS
+        assert "maremotriz" not in g.DOMINIOS
     finally:
         g.recarregar_dominios()
