@@ -497,11 +497,12 @@ def _resumo_projeto(ctx, num, pasta, servidores_por_pasta):
             for ep in gs.endpoints_do_projeto(pasta):
                 pares = ep.get("campos") or []
                 if pares and isinstance(pares[0], (list, tuple)):
-                    campos_ep = [c for c, *_ in pares]
-                    ativos_ep = [c for c, exposto, *_ in pares if exposto]
+                    campos_ep = list(dict.fromkeys(c for c, *_ in pares))
+                    ativos_set = {c for c, exposto, *_ in pares if exposto}
+                    ativos_ep = [c for c in campos_ep if c in ativos_set]
                 else:
-                    campos_ep = list(pares)
-                    ativos_ep = list(ep.get("ativos") or campos_ep)
+                    campos_ep = list(dict.fromkeys(pares))
+                    ativos_ep = list(dict.fromkeys(ep.get("ativos") or campos_ep))
                 endpoints.append({
                     "rota": ep["rota"],
                     "entidade": ep.get("classe") or ep.get("entidade") or "",
@@ -800,7 +801,7 @@ _HTML_WYSIWYG = r"""<!doctype html>
   .proj-strip {
     display: flex; align-items: center; gap: 6px; padding: 6px 14px;
     background: var(--bg); border-bottom: 1px solid var(--border);
-    overflow-x: auto; scrollbar-width: thin; flex-shrink: 0;
+    overflow-x: auto; scrollbar-width: thin; flex-shrink: 0; overflow-anchor: none;
   }
   .proj-pill {
     display: inline-flex; align-items: center; gap: 6px;
@@ -858,7 +859,7 @@ _HTML_WYSIWYG = r"""<!doctype html>
   .col-body {
     flex: 1; min-width: 0; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 8px;
     display: flex; flex-direction: column; gap: 8px;
-    scrollbar-width: thin;
+    scrollbar-width: thin; overflow-anchor: none;
   }
   .col-body > * { flex-shrink: 0; min-width: 0; max-width: 100%; }
 
@@ -1370,10 +1371,13 @@ function el(tag, props = {}, ...filhos) {
   }
   return n;
 }
-/* Substitui filhos filtrando null/undefined/false (evita renderizar texto "null"). */
+/* Substitui filhos filtrando null/undefined/false e preservando a posição de rolagem. */
 function setChildren(node, ...items) {
+  const st = node.scrollTop, sl = node.scrollLeft;
   const validos = items.flat().filter((x) => x !== null && x !== undefined && x !== false);
   node.replaceChildren(...validos);
+  if (st) node.scrollTop = st;
+  if (sl) node.scrollLeft = sl;
 }
 
 const state = {
@@ -3164,8 +3168,15 @@ function renderDrawer() {
   }
 }
 
+const _SCROLL_IDS = ["col-dominio", "col-infra", "col-padroes", "col-classes", "col-ligacoes", "dom-list-slot", "proj-strip"];
+
 function renderAll() {
   if (!state.data) return;
+  const scrolls = {};
+  for (const id of _SCROLL_IDS) {
+    const n = $(id);
+    if (n) scrolls[id] = [n.scrollTop, n.scrollLeft];
+  }
   renderTopbar();
   renderColDominio();
   renderColInfra();
@@ -3174,6 +3185,14 @@ function renderAll() {
   renderColLigacoes();
   renderCmdPreview();
   renderDrawer();
+  const restaurar = () => {
+    for (const [id, [st, sl]] of Object.entries(scrolls)) {
+      const n = $(id);
+      if (n) { n.scrollTop = st; n.scrollLeft = sl; }
+    }
+  };
+  restaurar();
+  requestAnimationFrame(restaurar);
 }
 
 /* ---- EVENTOS GLOBAIS ---- */
