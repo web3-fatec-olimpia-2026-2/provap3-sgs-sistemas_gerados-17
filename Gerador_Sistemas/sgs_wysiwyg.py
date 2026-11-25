@@ -1578,7 +1578,7 @@ async function executarComando(linha, opcoesExtra = {}) {
     const r = await fetch("/comando", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ linha, opcoes: { ...state.opcoes, ...opcoesExtra } }),
+      body: JSON.stringify({ linha, opcoes: { ...state.opcoes, perguntar: false, ...opcoesExtra } }),
     });
     const d = await r.json();
     state.logTexto = `> ${linha}\n\n${formatarBlocos(d)}`;
@@ -1614,7 +1614,7 @@ async function gerarProjetoNovo() {
     const item = extras[i];
     const ultimo = i === extras.length - 1;
     const r = await executarComando(
-      `sgs incrementar ${num} ${ent}.${item.nome} ${item.regra}`,
+      `sgs incrementar -sp ${num} ${ent}.${item.nome} ${item.regra}`,
       { testar: ultimo ? state.opcoes.testar : false }
     );
     if (r && r.ok) aplicados += 1;
@@ -1769,7 +1769,7 @@ function modalIncrementarCampo(proj, classeNome, campoInicial = "", regraInicial
             return;
           }
           fecharModal();
-          await executarComando(`sgs incrementar ${proj.numero} ${classeNome}.${c} ${rg}`);
+          await executarComando(`sgs incrementar -sp ${proj.numero} ${classeNome}.${c} ${rg}`);
         },
       }, proj ? "Aplicar campo" : "Adicionar à prévia"),
     ]
@@ -1870,7 +1870,7 @@ function modalLigarClasses(proj, origemInit = "", alvoInit = "") {
           const o = selOrigem.value, a = selAlvo.value, c = inpCampo.value.trim() || a.toLowerCase();
           if (o === a) return toast("Escolha duas classes diferentes.", "erro");
           fecharModal();
-          await executarComando(`sgs ligar ${proj.numero} ${o}.${c} ${a}`);
+          await executarComando(`sgs ligar -sp ${proj.numero} ${o}.${c} ${a}`);
         },
       }, "Conectar classes"),
     ]
